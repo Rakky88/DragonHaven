@@ -89,7 +89,7 @@ one new weight-1 consumable, Spark Astrolabe. Ordinary/Special chest gates and
 Special egg DNA remain unchanged. The bonus remains fixed from egg seed through
 hatch/import/trade and is disclosed only by consuming the Astrolabe. There are no
 new Special Adventures or event assets. See RANDOM_REWARDS_AND_ODDS.md and
-TRIAL_EXPERTISE.md for the exact budget/drop rules and all eleven trial effects.
+TRIAL_EXPERTISE.md for the exact budget/drop rules and all fourteen trial effects.
 Migration 85 is a forward candidate; production application is not yet claimed.
 
 
@@ -176,7 +176,7 @@ D, cancellation and rejected/uncredited results do not animate a reward.
 The return animation uses the surviving navigation route, because completing
 a Trial removes its offer card before the result screen closes. The canonical
 screen also checks that the account and session epoch still match. Regression
-tests cover credited C results for all three ordinary Trials after card removal.
+tests cover credited C results for all six ordinary Trials after card removal.
 Reduced-motion settings
 stop ambient liquid effects and particles and apply fill changes immediately.
 A full unclaimed chest glows and opens Completed Adventures; claimed chests show
@@ -366,7 +366,7 @@ Trial resume candidate: resuming restores the saved game, score and mistakes,
 releases a previously held pointer and rotates the attempt ID to fence an old
 device. A private clock origin excludes time away. The six-hour expiry remains;
 expired attempts can be abandoned without rewards. No score, clock, seed or
-checkpoint can be uploaded by the player. All eleven games are replayed across
+checkpoint can be uploaded by the player. All fourteen games are replayed across
 one saved/resumed checkpoint in the parity fixture. Local restart, lost reply,
 old-ID refusal, elapsed-time refusal, expiry and one-reward checks pass. Event
 schedules, reward amounts, pools, probabilities and redeem codes do not change.
@@ -438,7 +438,7 @@ descending; existing recommendation/acquisition order breaks ties. Ordinary
 Adventures keep their single-focus display and ordering. Inspecting Expertise
 does not select or start a dragon. Duration formulas and rewards are unchanged.
 
-<!-- reference-source-fingerprint: 14ff14426abd1bbc -->
+<!-- reference-source-fingerprint: d1da373b21b2695d -->
 
 Calendar hardening after v0.05.29: canonical commands normalize the database
 instant to UTC. Legacy offline play retains its local day. Long-adventure
@@ -707,14 +707,18 @@ symbols. All five nested event asset directories are declared explicitly in
 Flutter's asset bundle. Compact-phone widget coverage at 320Ã—640 and an outer-
 edge alpha gate protect the layout and prevent visibly clipped cutouts.
 
-Starting a new event occurrence fills every currently empty slot with that
-specific event Trial, keeping existing standard offers and started runs. A
-persisted occurrence key prevents a second initial refill after dismissal or
-restart. Thereafter, during one active event its Trial joins Cavern Flight, Ruin Breaker, and
-Runeweaver as four equally weighted refill candidates: 25% each per empty
-slot. The board still holds at most three offers and duplicates remain
-possible. An unstarted event offer disappears after closing; a run started
-with a valid server session may finish afterward.
+Starting a new event occurrence grants up to three ordinary refill
+opportunities, limited by the three-slot board, while keeping existing offers
+and started runs. A persisted occurrence key prevents a second activation
+refill after dismissal or restart. During one active event, Arcana, Spirit,
+Might, and Event are equally weighted first-stage categories: `1/4` each. The
+Event category selects that event's Trial. Each focus category then uses its
+classic Trial, or splits `1/2` classic and `1/2` added Trial when the player owns
+a matching Ascended specialist or an Ascended Mastery dragon. Released dragons
+do not unlock the added Trials. Outside an event the three focus categories are
+`1/3` each with the same second-stage rule. The board still holds at most three
+offers and duplicates remain possible. An unstarted event offer disappears
+after closing; a run started with a valid server session may finish afterward.
 
 Every completed run receives the standard Trial reward. Seasonal expertise is
 split without tripling the grade reward:
@@ -746,7 +750,7 @@ the same maximum of one credited completion per local date.
   scores use accuracy, shortest duration, then earliest submission.
 - New starts stop at event close. The full frozen ranking remains visible for
   three days; its top three remain permanently in the Seasonal Chronicle.
-- The ordinary ranking selector shows the three standard Trials and at most one
+- The ordinary ranking selector shows the six standard Trials and at most one
   event occurrence, using a full-width themed Trial-scene card. The active event
   takes priority. Natural expiry retains that event for exactly three days;
   replacement by a newer event or explicit ending removes the old choice.
@@ -1271,7 +1275,7 @@ Sunwake remains endless until its third mistake, and personal bests retain exact
 integer scores above the former one-billion storage cap. Abandoning grants no
 reward; interrupted replies recover the same attempt/receipt. Current grade
 cutoffs, event schedules, eggs, achievements and reward pools are unchanged.
-The eight seasonal sprite screens and the full eleven-Trial VM/Deno command
+The eight seasonal sprite screens and the full fourteen-Trial VM/Deno command
 comparison pass locally. This candidate is not yet a production economy cutover;
 legacy seasonal ranking/social settlement remains a separate integration gate.
 

@@ -128,7 +128,7 @@ void main() {
             'emberheartBrooch': view.activeDragonId,
             'moonweaveBrooch': view.activeDragonId
           },
-      (d) => d['dragons'][0]['training']['might'] = 1201,
+      (d) => d['dragons'][0]['training']['might'] = 1216,
       (d) => d['dragons'][0]['dragonSpark'] = 51,
       (d) => d['dragons'][0]['expertiseMaxed'] = 'true',
       (d) => d['dragons'][0]['sex'] = 'unknown',

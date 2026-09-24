@@ -71,8 +71,9 @@ class GameAssetSnapshot {
       final properties = <String, dynamic>{};
       // Old saves acquire the same stable value as the model, without rerolls.
       properties['sex'] = DragonSex.fromJson(data).name;
+      Pet? dragon;
       if (location != 'egg') {
-        final dragon = Pet.fromJson(data);
+        dragon = Pet.fromJson(data);
         properties['dragonSpark'] = dragon.dragonSpark;
         properties['dragonSparkKnown'] = dragon.dragonSparkKnown;
         properties['highlightedExpertises'] =
@@ -114,6 +115,14 @@ class GameAssetSnapshot {
         'altarKnowledge',
       ]) {
         if (data.containsKey(key)) properties[key] = data[key];
+      }
+      // Ascended saves from before the expertise gift are compared using the
+      // same one-time upgrade as the model. This permits the reviewed upgrade
+      // without weakening the fingerprint for already-marked saves.
+      if (dragon != null) {
+        properties['training'] = dragon.training;
+        properties['ascensionExpertiseGiftGranted'] =
+            dragon.ascensionExpertiseGiftGranted;
       }
       // These facts are already visible through eggKnowledge even before its
       // derived flags are materialized on the entity. Compare the effective

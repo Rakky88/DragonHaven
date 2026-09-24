@@ -4,6 +4,7 @@ import 'classic_trial_game.dart';
 import 'moonlit_orchard.dart';
 import 'pet.dart';
 import 'seasonal_arcade_game.dart';
+import 'standard_trial_games.dart';
 import 'sunwake_surf.dart';
 import 'trial.dart';
 import 'trial_expertise.dart';
@@ -33,6 +34,24 @@ class TrialRunModel {
     }
     if (kind == TrialKind.runeweaver) {
       runes = RuneweaverGame(
+          seed: seed,
+          arcana: stat(TrainingFocus.arcana),
+          random: TrialRandom(seed));
+    }
+    if (kind == TrialKind.spiritAlignment) {
+      alignment = SpiritAlignmentGame(
+          seed: seed,
+          spirit: stat(TrainingFocus.spirit),
+          random: TrialRandom(seed));
+    }
+    if (kind == TrialKind.ruinGuard) {
+      guard = RuinGuardGame(
+          seed: seed,
+          might: stat(TrainingFocus.might),
+          random: TrialRandom(seed));
+    }
+    if (kind == TrialKind.runeOrbit) {
+      orbit = RuneOrbitGame(
           seed: seed,
           arcana: stat(TrainingFocus.arcana),
           random: TrialRandom(seed));
@@ -98,12 +117,18 @@ class TrialRunModel {
       cavern != null ||
       ruin != null ||
       runes != null ||
+      alignment != null ||
+      guard != null ||
+      orbit != null ||
       surf != null ||
       kind == TrialKind.midnightChime ||
       cake != null;
   CavernFlightGame? cavern;
   RuinBreakerGame? ruin;
   RuneweaverGame? runes;
+  SpiritAlignmentGame? alignment;
+  RuinGuardGame? guard;
+  RuneOrbitGame? orbit;
   SeasonalArcadeGame? arcade;
   SunwakeSurf? surf;
   MoonlitOrchard? orchard;
@@ -116,7 +141,14 @@ class TrialRunModel {
   int stat(TrainingFocus focus) => training[focus] ?? 0;
   double assistance(TrainingFocus focus) => stat(focus).toDouble();
   int get remainingMs => max(0, durationMs - elapsedMs - _witchPenaltyMs);
-  int get score => cavern?.score ?? ruin?.score ?? runes?.rounds ?? _score;
+  int get score =>
+      cavern?.score ??
+      ruin?.score ??
+      runes?.rounds ??
+      alignment?.score ??
+      guard?.score ??
+      orbit?.rounds ??
+      _score;
   int? get mistakeLimit => switch (kind) {
         TrialKind.wishcakeTower => 1,
         TrialKind.witchlightWard ||
@@ -131,6 +163,9 @@ class TrialRunModel {
       cavern?.ended ??
       ruin?.ended ??
       runes?.ended ??
+      alignment?.ended ??
+      guard?.ended ??
+      orbit?.ended ??
       ((!endless && remainingMs == 0) ||
           (mistakeLimit != null && mistakes >= mistakeLimit!));
   bool get witchReady => !ended && elapsedMs >= readyAtMs;
@@ -161,6 +196,9 @@ class TrialRunModel {
         if (cavern != null) 'cavern': cavern!.checkpoint(),
         if (ruin != null) 'ruin': ruin!.checkpoint(),
         if (runes != null) 'runes': runes!.checkpoint(),
+        if (alignment != null) 'alignment': alignment!.checkpoint(),
+        if (guard != null) 'guard': guard!.checkpoint(),
+        if (orbit != null) 'orbit': orbit!.checkpoint(),
         if (surf != null) 'surf': surf!.checkpoint(),
         if (kind == TrialKind.midnightChime)
           'chimes': arcade!.chimeCheckpoint(),
@@ -212,6 +250,21 @@ class TrialRunModel {
             Map<String, dynamic>.from(state['runes']),
             arcana: model.stat(TrainingFocus.arcana));
       }
+      if (model.alignment != null) {
+        model.alignment = SpiritAlignmentGame.fromCheckpoint(
+            Map<String, dynamic>.from(state['alignment']),
+            spirit: model.stat(TrainingFocus.spirit));
+      }
+      if (model.guard != null) {
+        model.guard = RuinGuardGame.fromCheckpoint(
+            Map<String, dynamic>.from(state['guard']),
+            might: model.stat(TrainingFocus.might));
+      }
+      if (model.orbit != null) {
+        model.orbit = RuneOrbitGame.fromCheckpoint(
+            Map<String, dynamic>.from(state['orbit']),
+            arcana: model.stat(TrainingFocus.arcana));
+      }
       if (model.surf != null) {
         model.surf = SunwakeSurf.fromCheckpoint(
             Map<String, dynamic>.from(state['surf']));
@@ -252,6 +305,9 @@ class TrialRunModel {
     cavern?.advanceTo(target);
     ruin?.advanceTo(target);
     runes?.advanceTo(target);
+    alignment?.advanceTo(target);
+    guard?.advanceTo(target);
+    orbit?.advanceTo(target);
     if (arcade != null) {
       arcade!.advanceTo(target);
       for (final event in arcade!.takeActions()) {
@@ -359,14 +415,25 @@ class TrialRunModel {
       case TrialControl.flap when cavern != null:
         if (a != 0 || b != 0) throw const FormatException('input_invalid');
         cavern!.flap(elapsedMs);
+      case TrialControl.flap when alignment != null:
+        if (a != 0 || b != 0) throw const FormatException('input_invalid');
+        alignment!.tap(elapsedMs);
       case TrialControl.strikeRuin when ruin != null:
         if (a != 0 || b != 0) throw const FormatException('input_invalid');
         ruin!.strike(elapsedMs);
+      case TrialControl.strikeRuin when guard != null:
+        if (a != 0 || b != 0) throw const FormatException('input_invalid');
+        guard!.tap(elapsedMs);
       case TrialControl.tapRune when runes != null:
         if (a < 0 || a > 4 || b != 0) {
           throw const FormatException('input_invalid');
         }
         runes!.tap(a, elapsedMs);
+      case TrialControl.tapRune when orbit != null:
+        if (a < 0 || a > 4 || b != 0) {
+          throw const FormatException('input_invalid');
+        }
+        orbit!.tap(a, elapsedMs);
       case TrialControl.choosePumpkin when kind == TrialKind.witchlightWard:
         if (a < 0 || a > 5 || b != 0) {
           throw const FormatException('input_invalid');

@@ -1573,6 +1573,9 @@ _SeasonalTheme _themeFor(TrialKind kind) => switch (kind) {
           failureNl: 'Laat de regenboog doorstromen!'),
       TrialKind.cavernFlight ||
       TrialKind.ruinBreaker ||
-      TrialKind.runeweaver =>
+      TrialKind.runeweaver ||
+      TrialKind.spiritAlignment ||
+      TrialKind.ruinGuard ||
+      TrialKind.runeOrbit =>
         throw ArgumentError.value(kind, 'kind', 'Not a seasonal Trial'),
     };

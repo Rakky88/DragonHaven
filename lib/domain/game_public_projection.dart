@@ -185,6 +185,7 @@ abstract final class GamePublicProjection {
             'damagedTowerFloors',
             'damagedTowerRepairFactors',
             'returningVisitors',
+            'towerDragonAwayUntil',
             'returningSpecialAdventureId',
             'returningSpecialAvailableUntil',
           ]),

@@ -24,8 +24,11 @@ Future<List<Object?>> trialCommandProbe() async {
         persistenceEnabled: false,
         idGenerator: ids.uuid,
         random: ServerEntropy(seed, stream: 'rewards'));
+    final requiredFocus = ascendedTrialFocus(kind);
     game.pet
-      ..stage = DragonStage.hatchling
+      ..stage =
+          requiredFocus == null ? DragonStage.hatchling : DragonStage.ascended
+      ..evolutionPath = requiredFocus?.name
       ..firstEgg = false
       ..favorite = true;
     game.pet.training.addAll({'might': 300, 'arcana': 300, 'spirit': 300});
@@ -123,7 +126,9 @@ Future<List<Object?>> trialCommandProbe() async {
     if (finalResult is! Map ||
         finalResult['score'] != model.score ||
         model.score <= 0 ||
-        trialDefinitions[kind]!.isEndless && model.score <= 20000) {
+        trialDefinitions[kind]!.isEndless &&
+            kind != TrialKind.spiritAlignment &&
+            model.score <= 20000) {
       throw StateError('trial_command_parity_incomplete_${kind.name}');
     }
     results.add({

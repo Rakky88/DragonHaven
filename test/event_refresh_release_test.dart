@@ -8,6 +8,8 @@ import 'package:dragon_haven/services/event_branding_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'support/trial_rotation_random.dart';
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   setUp(() => SharedPreferences.setMockInitialValues({}));
@@ -79,11 +81,13 @@ void main() {
   });
 
   test(
-      'activation fills only empty slots once; stopping preserves started trials',
+      'event-category activation fills empty slots once and preserves started trials',
       () async {
     var now = DateTime.utc(2026, 9, 9, 12);
     final game = HouseholdProvider(
-        clock: () => now, random: Random(8), persistenceEnabled: false);
+        clock: () => now,
+        random: const EventCategoryRandom(),
+        persistenceEnabled: false);
     addTearDown(game.dispose);
     game.availableTrials;
     final original = game.trialOffers.first;

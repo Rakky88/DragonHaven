@@ -11,6 +11,10 @@ class DragonTrialRecords extends StatefulWidget {
     required this.cavernFlightBest,
     required this.ruinBreakerBest,
     required this.runeweaverBest,
+    this.spiritAlignmentBest = 0,
+    this.ruinGuardBest = 0,
+    this.runeOrbitBest = 0,
+    this.showNewTrials = false,
     this.account = false,
     this.compact = false,
     this.collapsible = false,
@@ -20,6 +24,10 @@ class DragonTrialRecords extends StatefulWidget {
   final int cavernFlightBest;
   final int ruinBreakerBest;
   final int runeweaverBest;
+  final int spiritAlignmentBest;
+  final int ruinGuardBest;
+  final int runeOrbitBest;
+  final bool showNewTrials;
   final bool account;
   final bool compact;
   final bool collapsible;
@@ -114,6 +122,27 @@ class _DragonTrialRecordsState extends State<DragonTrialRecords> {
                         label: 'Runeweaver',
                         score: widget.runeweaverBest,
                       ),
+                      if (widget.showNewTrials ||
+                          widget.spiritAlignmentBest > 0 ||
+                          widget.ruinGuardBest > 0 ||
+                          widget.runeOrbitBest > 0) ...[
+                        _Record(
+                          kind: TrialKind.spiritAlignment,
+                          label: strings.pick(
+                              'Spirit Alignment', 'Geestuitlijning'),
+                          score: widget.spiritAlignmentBest,
+                        ),
+                        _Record(
+                          kind: TrialKind.ruinGuard,
+                          label: strings.pick('Ruin Guard', 'Ruinewacht'),
+                          score: widget.ruinGuardBest,
+                        ),
+                        _Record(
+                          kind: TrialKind.runeOrbit,
+                          label: strings.pick('Rune Orbit', 'Runenbaan'),
+                          score: widget.runeOrbitBest,
+                        ),
+                      ],
                     ],
                   ),
           ),

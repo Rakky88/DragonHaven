@@ -19,6 +19,12 @@ class TrialIconSprite extends StatelessWidget {
           'assets/images/ui/trials/trial_record_ruin_breaker.png',
         TrialKind.runeweaver =>
           'assets/images/ui/trials/trial_record_runeweaver.png',
+        TrialKind.spiritAlignment =>
+          'assets/images/ui/trials/trial_record_cavern_flight.png',
+        TrialKind.ruinGuard =>
+          'assets/images/ui/trials/trial_record_ruin_breaker.png',
+        TrialKind.runeOrbit =>
+          'assets/images/ui/trials/trial_record_runeweaver.png',
         TrialKind.witchlightWard =>
           'assets/images/events/halloween/trial_icon.webp',
         TrialKind.hollyfrostGiftforge =>

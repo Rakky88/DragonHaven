@@ -5,6 +5,7 @@ import 'package:dragon_haven/models/dragon_lineage.dart';
 import 'package:dragon_haven/models/house.dart';
 import 'package:dragon_haven/models/shop_item.dart';
 import 'package:dragon_haven/widgets/furniture_art.dart';
+import 'package:dragon_haven/widgets/house_room_scene.dart';
 import 'package:dragon_haven/widgets/dragon_art.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -91,6 +92,105 @@ void main() {
     ));
     await tester.pump(const Duration(milliseconds: 500));
     expect(find.byType(Image), findsNWidgets(24));
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets(
+      'every bed asset uses safe contain padding and stays inside room bounds',
+      (tester) async {
+    const themes = <String>[
+      'aurora',
+      'ember',
+      'moon',
+      'forest',
+      'ocean',
+      'crystal',
+      'cloud',
+      'sun',
+      'lavender',
+      'copper',
+      'starlight',
+      'meadow',
+      'storm',
+      'cherry',
+      'frost',
+      'honey',
+      'mushroom',
+      'velvet',
+      'rainbow',
+      'twilight',
+      'coral',
+      'sapphire',
+      'rose',
+      'dragon',
+    ];
+    final expectedIds = <String>{
+      'moss_cushion',
+      'cloud_basket',
+      'supporter_dragon_throne',
+      for (final theme in themes) 'decor_${theme}_cushion',
+      for (final theme in themes) 'decor_${theme}_daybed',
+    };
+    final beds = allFurnitureCatalog
+        .where((item) => item.slot == ItemSlot.bed)
+        .toList(growable: false);
+    expect(beds.map((item) => item.id).toSet(), expectedIds);
+    expect(beds, hasLength(51));
+
+    const sceneSize = Size(320, 256);
+    for (final item in beds) {
+      final asset = FurnitureArt.assetForItem(item.id);
+      expect(asset, isNotNull, reason: item.id);
+      expect(File(asset!).existsSync(), isTrue, reason: item.id);
+      for (final point in const [
+        Offset(.04, .04),
+        Offset(.96, .04),
+        Offset(.04, .96),
+        Offset(.96, .96),
+      ]) {
+        final rect = furnitureRoomPlacementRect(
+          item: item,
+          placement: HousePlacement(
+            itemId: item.id,
+            roomId: 'hearth',
+            x: point.dx,
+            y: point.dy,
+            scale: 1.35,
+          ),
+          sceneSize: sceneSize,
+        );
+        expect(rect.left, greaterThanOrEqualTo(0), reason: item.id);
+        expect(rect.top, greaterThanOrEqualTo(0), reason: item.id);
+        expect(rect.right, lessThanOrEqualTo(sceneSize.width), reason: item.id);
+        expect(rect.bottom, lessThanOrEqualTo(sceneSize.height),
+            reason: item.id);
+      }
+    }
+
+    await tester.binding.setSurfaceSize(const Size(900, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(MaterialApp(
+      home: Wrap(
+        children: [
+          for (final item in beds)
+            SizedBox(
+              width: 100,
+              height: 85,
+              child: FurnitureArt(item: item),
+            ),
+        ],
+      ),
+    ));
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(find.byType(FractionallySizedBox), findsNWidgets(51));
+    for (final box in tester
+        .widgetList<FractionallySizedBox>(find.byType(FractionallySizedBox))) {
+      expect(box.widthFactor, .94);
+      expect(box.heightFactor, .94);
+    }
+    for (final image in tester.widgetList<Image>(find.byType(Image))) {
+      expect(image.fit, BoxFit.contain);
+    }
     expect(tester.takeException(), isNull);
   });
 

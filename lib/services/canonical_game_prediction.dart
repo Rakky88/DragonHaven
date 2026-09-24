@@ -33,6 +33,26 @@ CanonicalGameSnapshot? predictGameDisplay(CanonicalGameSnapshot confirmed,
   final wallet = data['wallet'] as Map<String, dynamic>;
   final dragons = (data['dragons'] as List).cast<Map<String, dynamic>>();
   final eggs = (data['eggs'] as List).cast<Map<String, dynamic>>();
+  final houseData = data['house'] as Map<String, dynamic>;
+  final towerDragonAwayUntil =
+      (houseData['towerDragonAwayUntil'] ??= <String, dynamic>{}) as Map;
+  final returningVisitors = houseData['returningVisitors'] as Map;
+  bool isTemporarilyAway(Map<String, dynamic> dragon) {
+    final raw = towerDragonAwayUntil[dragon['id']];
+    return raw is String && DateTime.parse(raw).isAfter(now);
+  }
+
+  bool isReturningVisitor(Map<String, dynamic> dragon) {
+    if (dragon['location'] != 'released') return false;
+    final raw = returningVisitors[dragon['id']];
+    return raw is String && DateTime.parse(raw).isAfter(now);
+  }
+
+  bool isVisibleTowerDragon(Map<String, dynamic> dragon) =>
+      !isTemporarilyAway(dragon) &&
+      ((dragon['location'] != 'released' && dragon['roamsTower'] == true) ||
+          isReturningVisitor(dragon));
+
   bool spend(String currency, int price) {
     if ((wallet[currency] as int) < price) return false;
     wallet[currency] = (wallet[currency] as int) - price;
@@ -86,25 +106,73 @@ CanonicalGameSnapshot? predictGameDisplay(CanonicalGameSnapshot confirmed,
             dragons.where((d) => d['id'] == data['activeDragonId']).firstOrNull;
         if (dragon == null ||
             dragon['roamsTower'] != true ||
+            isTemporarilyAway(dragon) ||
             dragon['activeAdventureId'] != null ||
             dragon['currentFloorIndex'] == index) {
           return null;
         }
-        final returningVisitors = house['returningVisitors'] as Map;
         final occupancy = dragons.where((candidate) {
-          final visitorUntil = returningVisitors[candidate['id']];
-          final activeVisitor = candidate['location'] == 'released' &&
-              visitorUntil is String &&
-              DateTime.parse(visitorUntil).isAfter(now);
           return candidate['id'] != dragon['id'] &&
               candidate['currentFloorIndex'] == index &&
-              ((candidate['location'] != 'released' &&
-                      candidate['roamsTower'] == true) ||
-                  activeVisitor);
+              isVisibleTowerDragon(candidate);
         });
         if (occupancy.length >= towerFloorDragonCapacity) return null;
         dragon['currentFloorIndex'] = index;
         dragon['currentRoomId'] = roomId;
+      case 'clear_tower_floor':
+        final rooms = houseData['towerFloorRoomIds'] as List;
+        final index = payload['index'] as int;
+        if (index < 0 || index >= rooms.length) return null;
+        final damaged = (houseData['damagedTowerFloors'] as List).toSet();
+        final moving = dragons
+            .where((dragon) =>
+                dragon['currentFloorIndex'] == index &&
+                isVisibleTowerDragon(dragon))
+            .take(towerFloorDragonCapacity)
+            .where((dragon) => dragon['activeAdventureId'] == null)
+            .toList(growable: false)
+          ..sort((a, b) {
+            final acquired = (a['acquiredAt'] as String)
+                .compareTo(b['acquiredAt'] as String);
+            return acquired != 0
+                ? acquired
+                : (a['id'] as String).compareTo(b['id'] as String);
+          });
+        final movingIds = moving.map((dragon) => dragon['id']).toSet();
+        final alternatives = <int>[
+          for (var floor = 0; floor < rooms.length; floor++)
+            if (floor != index && !damaged.contains(floor)) floor,
+        ];
+        final occupancy = <int, int>{
+          for (final floor in alternatives)
+            floor: dragons
+                .where((dragon) =>
+                    !movingIds.contains(dragon['id']) &&
+                    dragon['currentFloorIndex'] == floor &&
+                    isVisibleTowerDragon(dragon))
+                .length,
+        };
+        final awayUntil =
+            now.add(const Duration(minutes: 15)).toUtc().toIso8601String();
+        for (final dragon in moving) {
+          final available = alternatives
+              .where(
+                  (floor) => (occupancy[floor] ?? 0) < towerFloorDragonCapacity)
+              .toList(growable: false)
+            ..sort((a, b) {
+              final count = (occupancy[a] ?? 0).compareTo(occupancy[b] ?? 0);
+              return count != 0 ? count : a.compareTo(b);
+            });
+          if (available.isEmpty) {
+            towerDragonAwayUntil[dragon['id']] = awayUntil;
+            continue;
+          }
+          final floor = available.first;
+          dragon['currentFloorIndex'] = floor;
+          dragon['currentRoomId'] = rooms[floor];
+          towerDragonAwayUntil.remove(dragon['id']);
+          occupancy[floor] = (occupancy[floor] ?? 0) + 1;
+        }
       case 'change_tower_floor_room':
         final house = data['house'] as Map;
         final rooms = house['towerFloorRoomIds'] as List;
@@ -142,6 +210,18 @@ CanonicalGameSnapshot? predictGameDisplay(CanonicalGameSnapshot confirmed,
             dragon['activeAdventureId'] = null;
           }
         }
+      case 'dismiss_trial':
+        final trials = data['trials'] as Map<String, dynamic>;
+        if (trials['attempt'] != null) return null;
+        final offers = trials['offers'] as List;
+        final offer = offers
+            .where((candidate) =>
+                candidate is Map &&
+                candidate['id'] == payload['offerId'] &&
+                candidate['startedAt'] == null)
+            .firstOrNull;
+        if (offer == null) return null;
+        offers.remove(offer);
       case 'reorder_tower_floor':
         final house = data['house'] as Map;
         final rooms = house['towerFloorRoomIds'] as List;

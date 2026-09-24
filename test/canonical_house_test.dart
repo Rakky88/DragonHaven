@@ -311,8 +311,7 @@ void main() {
         error('game_action_unavailable'));
     await expectLater(
         actions().clearFloor(19), error('game_action_unavailable'));
-    await expectLater(
-        actions().clearFloor(0), error('game_action_unavailable'));
+    await actions().clearFloor(0);
     expect(session.snapshot!.coins, coins);
     server.state['pet']['roamsTower'] = false;
     server.state['pet']['activeAdventureId'] = null;
@@ -346,6 +345,37 @@ void main() {
             .every((d) => d.floorIndex == 1),
         isTrue);
     expect(session.snapshot!.coins, coins);
+  });
+
+  test(
+      'clearing a single room persists a timed break and returns the dragon after refresh',
+      () async {
+    server.state['damagedTowerFloors'] = <int>[];
+    server.state['damagedTowerRepairFactors'] = <String, dynamic>{};
+    server.state['pet']
+      ..['roamsTower'] = true
+      ..['activeAdventureId'] = null
+      ..['currentFloorIndex'] = 0
+      ..['currentRoomId'] = 'hearth';
+    server.revision++;
+    await session.synchronize();
+    final id = session.snapshot!.activeDragonId!;
+
+    server.loseReply = true;
+    await expectLater(
+        actions().clearFloor(0), error('game_command_unavailable'));
+    await restart();
+    expect(session.snapshot!.house.temporarilyAwayDragonIds, {id});
+    expect(
+      session.snapshot!.house.towerDragonAwayUntil[id],
+      server.now.add(const Duration(minutes: 15)),
+    );
+
+    server.now = server.now.add(const Duration(minutes: 15));
+    await actions().refresh();
+    expect(session.snapshot!.house.temporarilyAwayDragonIds, isEmpty);
+    expect(session.snapshot!.dragon(id)!.floorIndex, 0);
+    expect(session.snapshot!.dragon(id)!.roomId, 'hearth');
   });
 
   test('malformed placement or roaming facts reject the entire public view',

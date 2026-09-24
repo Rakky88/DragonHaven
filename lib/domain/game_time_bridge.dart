@@ -14,6 +14,7 @@ abstract final class GameTimeBridge {
   ];
   static const _maps = [
     'returningVisitors',
+    'towerDragonAwayUntil',
     'rareInteractionAt',
     'seasonalEventPreviewExpiresAt',
     'seasonalEventDismissedUntil'

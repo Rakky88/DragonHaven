@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:dragon_haven/models/social.dart';
+import 'package:dragon_haven/models/pet.dart';
 import 'package:dragon_haven/models/trial.dart';
 import 'package:dragon_haven/providers/online_account_provider.dart';
 import 'package:dragon_haven/screens/canonical_adventures_screen.dart';
@@ -164,6 +165,103 @@ void main() {
     expect(find.byKey(const Key('trial-dragon-picker')), findsOneWidget);
     expect(find.textContaining('Best:'), findsWidgets);
     expect(server.sent, isEmpty);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('added Trial picker only shows matching Ascended forms',
+      (tester) async {
+    await setup(tester, const CanonicalTrialsScreen(), prepare: (state) {
+      final acquiredAt = DateTime.utc(2026, 9, 1);
+      state['sanctuaryDragons'] = [
+        Pet(
+          id: 'wrong-might',
+          name: 'Wrong',
+          stage: DragonStage.ascended,
+          firstEgg: false,
+          evolutionPath: TrainingFocus.might.name,
+          roamsTower: false,
+          acquiredAt: acquiredAt,
+          stageStartedAt: acquiredAt,
+          needsUpdatedAt: acquiredAt,
+        ).toJson(),
+        Pet(
+          id: 'right-arcana',
+          name: 'Right',
+          stage: DragonStage.ascended,
+          firstEgg: false,
+          evolutionPath: TrainingFocus.arcana.name,
+          roamsTower: false,
+          acquiredAt: acquiredAt,
+          stageStartedAt: acquiredAt,
+          needsUpdatedAt: acquiredAt,
+        ).toJson(),
+        Pet(
+          id: 'right-mastery',
+          name: 'Mastery',
+          stage: DragonStage.ascended,
+          firstEgg: false,
+          evolutionPath: 'mastery',
+          roamsTower: false,
+          acquiredAt: acquiredAt,
+          stageStartedAt: acquiredAt,
+          needsUpdatedAt: acquiredAt,
+        ).toJson(),
+      ];
+      state['releasedDragons'] = [
+        Pet(
+          id: 'released-arcana',
+          name: 'Released',
+          stage: DragonStage.ascended,
+          firstEgg: false,
+          evolutionPath: TrainingFocus.arcana.name,
+          roamsTower: false,
+          acquiredAt: acquiredAt,
+          stageStartedAt: acquiredAt,
+          needsUpdatedAt: acquiredAt,
+        ).toJson(),
+      ];
+      state['trialOffers'] = [
+        TrialOffer(
+          id: 'ascended-picker',
+          kind: TrialKind.runeOrbit,
+          appearedAt: DateTime.utc(2026, 9, 24),
+        ).toJson(),
+      ];
+    });
+    await tester.tap(find.byKey(const Key('choose-trial-ascended-picker')));
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(find.byKey(const Key('trial-dragon-right-arcana')), findsOneWidget);
+    expect(find.byKey(const Key('trial-dragon-right-mastery')), findsOneWidget);
+    expect(find.byKey(const Key('trial-dragon-wrong-might')), findsNothing);
+    expect(find.byKey(const Key('trial-dragon-released-arcana')), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets(
+      'Trial dismiss has no confirmation and reveals the restored empty card',
+      (tester) async {
+    await setup(tester, const CanonicalTrialsScreen(), prepare: (state) {
+      state['trialOffers'] = [
+        TrialOffer(
+          id: 'direct-dismiss',
+          kind: TrialKind.spiritAlignment,
+          appearedAt: DateTime.utc(2026, 9, 24, 12),
+        ).toJson(),
+      ];
+    });
+    final hold = Completer<void>();
+    server.hold = hold.future;
+
+    await tester.tap(find.byKey(const Key('dismiss-trial-direct-dismiss')));
+    await tester.pump();
+
+    expect(find.byType(AlertDialog), findsNothing);
+    expect(find.byKey(const Key('dismiss-trial-direct-dismiss')), findsNothing);
+    expect(find.byKey(const Key('canonical-empty-trials')), findsOneWidget);
+
+    hold.complete();
+    await finish(tester);
+    expect(server.sent.single.action, 'dismiss_trial');
     expect(tester.takeException(), isNull);
   });
 

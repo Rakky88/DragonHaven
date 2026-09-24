@@ -564,6 +564,11 @@ class _TrialOfferCard extends StatelessWidget {
         TrialKind.ruinBreaker =>
           'assets/images/ui/trials/trial_ruin_breaker.webp',
         TrialKind.runeweaver => 'assets/images/ui/trials/trial_runeweaver.webp',
+        TrialKind.spiritAlignment =>
+          'assets/images/ui/trials/trial_cavern_flight.webp',
+        TrialKind.ruinGuard =>
+          'assets/images/ui/trials/trial_ruin_breaker.webp',
+        TrialKind.runeOrbit => 'assets/images/ui/trials/trial_runeweaver.webp',
         TrialKind.witchlightWard =>
           'assets/images/events/halloween/trial_background.webp',
         TrialKind.hollyfrostGiftforge =>
@@ -772,7 +777,13 @@ Future<void> _startTrial(BuildContext context, TrialOffer offer) async {
   final game = context.read<HouseholdProvider>();
   final strings = AppStrings.of(context);
   final dragons = game.ownedDragons
-      .where((dragon) => dragon.activeAdventureId == null)
+      .where((dragon) =>
+          dragon.activeAdventureId == null &&
+          dragonMeetsTrialFormRequirement(
+            kind: offer.kind,
+            stage: dragon.stage,
+            activeEvolutionPath: dragon.activeEvolutionPath,
+          ))
       .toList()
     ..sort((a, b) => offer.definition
         .combinedExpertise(b)
@@ -1012,6 +1023,15 @@ String trialStatBenefit(AppStrings strings, TrialKind kind) => switch (kind) {
       TrialKind.runeweaver => strings.pick(
           'Higher Arcana keeps every demonstrated rune visible longer.',
           'Hogere Arcana houdt iedere getoonde rune langer zichtbaar.'),
+      TrialKind.spiritAlignment => strings.pick(
+          'Higher Spirit slows the shapes slightly.',
+          'Hogere Spirit vertraagt de vormen iets.'),
+      TrialKind.ruinGuard => strings.pick(
+          'Higher Might gives you slightly more time to guard each lane.',
+          'Hogere Kracht geeft je iets meer tijd om elke baan te bewaken.'),
+      TrialKind.runeOrbit => strings.pick(
+          'Higher Arcana keeps each rune in the golden gate slightly longer.',
+          'Hogere Arcana houdt elke rune iets langer in de gouden poort.'),
       TrialKind.witchlightWard ||
       TrialKind.hollyfrostGiftforge ||
       TrialKind.midnightChime ||

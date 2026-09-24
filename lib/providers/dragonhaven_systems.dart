@@ -440,6 +440,10 @@ extension DragonHavenSystems on HouseholdProvider {
       .where(
           (dragon) => returningVisitors[dragon.id]?.isAfter(_clock()) == true)
       .toList(growable: false);
+
+  bool isTowerDragonAway(String dragonId, {DateTime? at}) =>
+      towerDragonAwayUntil[dragonId]?.isAfter(at ?? _clock()) == true;
+
   List<Pet> get towerDragons {
     final result = <Pet>[];
     final floorCounts = <int, int>{};
@@ -447,6 +451,7 @@ extension DragonHavenSystems on HouseholdProvider {
       ...ownedDragons.where((dragon) => dragon.roamsTower),
       ...visitingDragons,
     ]) {
+      if (isTowerDragonAway(dragon.id)) continue;
       final floor = dragon.currentFloorIndex;
       if (floor < 0 || floor >= towerFloorRoomIds.length) continue;
       final count = floorCounts[floor] ?? 0;
@@ -746,6 +751,7 @@ extension DragonHavenSystems on HouseholdProvider {
     final now = _clock();
     final candidates = ownedDragons.where((dragon) {
       if (dragon.activeAdventureId != null ||
+          isTowerDragonAway(dragon.id, at: now) ||
           dragon.currentRoomId != roomId ||
           dragon.currentFloorIndex != floorIndex) {
         return false;
@@ -782,6 +788,7 @@ extension DragonHavenSystems on HouseholdProvider {
     final dragon = towerControllableDragon;
     if (dragon.isEgg ||
         !dragon.roamsTower ||
+        isTowerDragonAway(dragon.id) ||
         dragon.activeAdventureId != null ||
         floorIndex < 0 ||
         floorIndex >= towerFloorRoomIds.length ||
@@ -807,7 +814,13 @@ extension DragonHavenSystems on HouseholdProvider {
         );
     if (dragon == null) return DragonRoamingResult.dragonNotFound;
     if (dragon.roamsTower == enabled) {
-      if (!enabled) return DragonRoamingResult.unchanged;
+      if (!enabled) {
+        if (towerDragonAwayUntil.remove(dragon.id) != null) {
+          await _notifyAndSave();
+          return DragonRoamingResult.updated;
+        }
+        return DragonRoamingResult.unchanged;
+      }
       final previousFloor = dragon.currentFloorIndex;
       final previousRoom = dragon.currentRoomId;
       _normalizeRoamingState();
@@ -824,6 +837,7 @@ extension DragonHavenSystems on HouseholdProvider {
     final targetFloor = enabled ? _availableFloorFor(dragon) : null;
     if (enabled && targetFloor == null) return DragonRoamingResult.towerFull;
     dragon.roamsTower = enabled;
+    towerDragonAwayUntil.remove(dragon.id);
     if (enabled &&
         targetFloor != null &&
         (dragon.currentFloorIndex != targetFloor ||
@@ -837,17 +851,20 @@ extension DragonHavenSystems on HouseholdProvider {
   }
 
   Future<bool> clearDragonsFromRoom(int floorIndex) async {
+    if (floorIndex < 0 || floorIndex >= towerFloorRoomIds.length) return false;
     final alternatives = <int>[
       for (var index = 0; index < towerFloorRoomIds.length; index++)
         if (index != floorIndex && !damagedTowerFloors.contains(index)) index,
     ].toList(growable: false);
-    if (alternatives.isEmpty) return false;
     final dragons = towerDragons
         .where((dragon) =>
             dragon.activeAdventureId == null &&
             dragon.currentFloorIndex == floorIndex)
         .toList()
-      ..sort((a, b) => a.acquiredAt.compareTo(b.acquiredAt));
+      ..sort((a, b) {
+        final acquired = a.acquiredAt.compareTo(b.acquiredAt);
+        return acquired != 0 ? acquired : a.id.compareTo(b.id);
+      });
     if (dragons.isEmpty) return true;
     final occupancy = <int, int>{
       for (final floor in alternatives)
@@ -856,22 +873,24 @@ extension DragonHavenSystems on HouseholdProvider {
           exceptDragonIds: dragons.map((dragon) => dragon.id).toSet(),
         ),
     };
-    final openSlots = occupancy.values.fold<int>(
-      0,
-      (total, count) => total + max(0, maxDragonsPerTowerFloor - count),
-    );
-    if (openSlots < dragons.length) return false;
+    final awayUntil = _clock().add(const Duration(minutes: 15));
     for (final dragon in dragons) {
       final available = alternatives
           .where((floor) => (occupancy[floor] ?? 0) < maxDragonsPerTowerFloor)
           .toList(growable: false);
-      if (available.isEmpty) return false;
-      available
-          .sort((a, b) => (occupancy[a] ?? 0).compareTo(occupancy[b] ?? 0));
+      if (available.isEmpty) {
+        towerDragonAwayUntil[dragon.id] = awayUntil;
+        continue;
+      }
+      available.sort((a, b) {
+        final count = (occupancy[a] ?? 0).compareTo(occupancy[b] ?? 0);
+        return count != 0 ? count : a.compareTo(b);
+      });
       final targetFloor = available.first;
       dragon
         ..currentFloorIndex = targetFloor
         ..currentRoomId = towerFloorRoomIds[targetFloor];
+      towerDragonAwayUntil.remove(dragon.id);
       occupancy[targetFloor] = (occupancy[targetFloor] ?? 0) + 1;
     }
     await _notifyAndSave();
@@ -1122,7 +1141,6 @@ extension DragonHavenSystems on HouseholdProvider {
         .map((window) => trialKindByName(window.event.trialKindName))
         .whereType<TrialKind>()
         .toList(growable: false);
-    final eligibleKinds = <TrialKind>[...standardTrialKinds, ...seasonalKinds];
     final activationKey =
         seasonalKinds.isEmpty ? null : activeWindows.first.key;
     final newlyActivated =
@@ -1130,10 +1148,13 @@ extension DragonHavenSystems on HouseholdProvider {
     final activationChanged = activationKey != lastTrialEventActivationKey;
     lastTrialEventActivationKey = activationKey;
     if (newlyActivated) refillCount = 3;
+    final unlockedAscendedFocuses = unlockedAscendedTrialFocuses(ownedDragons);
     while (refillCount > 0 && trialOffers.length < 3) {
-      final kind = newlyActivated
-          ? seasonalKinds.first
-          : eligibleKinds[_random.nextInt(eligibleKinds.length)];
+      final kind = chooseTrialOfferKind(
+        _random,
+        unlockedAscendedFocuses: unlockedAscendedFocuses,
+        activeEventKinds: seasonalKinds,
+      );
       final eventId = trialDefinitions[kind]?.specialEventId;
       final specialWindow = eventId == null
           ? null
@@ -2370,6 +2391,82 @@ extension DragonHavenSystems on HouseholdProvider {
     return returningVisitors.length != before;
   }
 
+  /// Returns dragons whose fifteen-minute room break elapsed to a valid floor.
+  /// If visitors temporarily occupy every slot, the break remains active until
+  /// the next refresh instead of exceeding the three-dragons-per-room limit.
+  bool _restoreTowerDragonsFromBreak() {
+    if (towerDragonAwayUntil.isEmpty) return false;
+    final now = _clock();
+    final dueIds = towerDragonAwayUntil.entries
+        .where((entry) => !entry.value.isAfter(now))
+        .map((entry) => entry.key)
+        .toList(growable: false)
+      ..sort();
+    if (dueIds.isEmpty) return false;
+
+    final known = <String, Pet>{
+      for (final dragon in [...ownedDragons, ...releasedDragons])
+        dragon.id: dragon,
+    };
+    final ownedIds = ownedDragons.map((dragon) => dragon.id).toSet();
+    final visitorIds = visitingDragons.map((dragon) => dragon.id).toSet();
+    final restoringIds = dueIds.toSet();
+    final occupancy = <int, int>{
+      for (var floor = 0; floor < towerFloorRoomIds.length; floor++)
+        floor: _visibleFloorOccupancy(floor, exceptDragonIds: restoringIds),
+    };
+    var changed = false;
+    for (final id in dueIds) {
+      final dragon = known[id];
+      final mayReturn = dragon != null &&
+          dragon.activeAdventureId == null &&
+          ((ownedIds.contains(id) && dragon.roamsTower) ||
+              visitorIds.contains(id));
+      if (!mayReturn) {
+        towerDragonAwayUntil.remove(id);
+        changed = true;
+        continue;
+      }
+      final available = <int>[
+        for (var floor = 0; floor < towerFloorRoomIds.length; floor++)
+          if (!damagedTowerFloors.contains(floor) &&
+              (occupancy[floor] ?? 0) < maxDragonsPerTowerFloor)
+            floor,
+      ];
+      if (available.isEmpty) {
+        towerDragonAwayUntil[id] = now.add(const Duration(minutes: 1));
+        changed = true;
+        continue;
+      }
+      available.sort((a, b) {
+        final aCurrent = a == dragon.currentFloorIndex ? 0 : 1;
+        final bCurrent = b == dragon.currentFloorIndex ? 0 : 1;
+        if (aCurrent != bCurrent) return aCurrent.compareTo(bCurrent);
+        final aPreferred = towerFloorRoomIds[a] ==
+                    dragon.lineage.primaryRoomId ||
+                dragon.lineage.secondaryRoomIds.contains(towerFloorRoomIds[a])
+            ? 0
+            : 1;
+        final bPreferred = towerFloorRoomIds[b] ==
+                    dragon.lineage.primaryRoomId ||
+                dragon.lineage.secondaryRoomIds.contains(towerFloorRoomIds[b])
+            ? 0
+            : 1;
+        if (aPreferred != bPreferred) return aPreferred.compareTo(bPreferred);
+        final count = (occupancy[a] ?? 0).compareTo(occupancy[b] ?? 0);
+        return count != 0 ? count : a.compareTo(b);
+      });
+      final floor = available.first;
+      dragon
+        ..currentFloorIndex = floor
+        ..currentRoomId = towerFloorRoomIds[floor];
+      occupancy[floor] = (occupancy[floor] ?? 0) + 1;
+      towerDragonAwayUntil.remove(id);
+      changed = true;
+    }
+    return changed;
+  }
+
   Future<bool> discardEgg(String eggId) async {
     if (isEggReservedForTrade(eggId)) return false;
     final before = eggStash.length;
@@ -2784,6 +2881,7 @@ extension DragonHavenSystems on HouseholdProvider {
       ].where((dragon) {
         return dragon.id != exceptDragonId &&
             !exceptDragonIds.contains(dragon.id) &&
+            !isTowerDragonAway(dragon.id) &&
             dragon.currentFloorIndex == floor;
       }).length;
 
@@ -2817,17 +2915,32 @@ extension DragonHavenSystems on HouseholdProvider {
     final dragons = ownedDragons.toList()
       ..sort((a, b) {
         if (a.favorite != b.favorite) return a.favorite ? -1 : 1;
-        return a.acquiredAt.compareTo(b.acquiredAt);
+        final acquired = a.acquiredAt.compareTo(b.acquiredAt);
+        return acquired != 0 ? acquired : a.id.compareTo(b.id);
       });
     var selected = 0;
     final occupancy = <int, int>{};
+    for (final visitor in visitingDragons) {
+      final floor = visitor.currentFloorIndex;
+      if (isTowerDragonAway(visitor.id) ||
+          floor < 0 ||
+          floor >= towerFloorRoomIds.length ||
+          damagedTowerFloors.contains(floor) ||
+          towerFloorRoomIds[floor] != visitor.currentRoomId) {
+        continue;
+      }
+      occupancy[floor] = (occupancy[floor] ?? 0) + 1;
+    }
     for (final dragon in dragons) {
       if (!dragon.roamsTower) continue;
       if (selected >= towerRoamingCapacity) {
         dragon.roamsTower = false;
+        towerDragonAwayUntil.remove(dragon.id);
         changed = true;
         continue;
       }
+      selected++;
+      if (isTowerDragonAway(dragon.id)) continue;
       final current = dragon.currentFloorIndex;
       final currentIsValid = current >= 0 &&
           current < towerFloorRoomIds.length &&
@@ -2854,7 +2967,6 @@ extension DragonHavenSystems on HouseholdProvider {
         ..currentFloorIndex = floor
         ..currentRoomId = towerFloorRoomIds[floor];
       occupancy[floor] = (occupancy[floor] ?? 0) + 1;
-      selected++;
     }
     return changed;
   }

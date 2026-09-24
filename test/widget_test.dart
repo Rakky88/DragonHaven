@@ -498,6 +498,9 @@ void main() {
       TrialKind.cavernFlight => const Key('cavern-flight-game'),
       TrialKind.ruinBreaker => const Key('ruin-breaker-game'),
       TrialKind.runeweaver => const Key('runeweaver-game'),
+      TrialKind.spiritAlignment => const Key('spirit-alignment-game'),
+      TrialKind.ruinGuard => const Key('ruin-guard-game'),
+      TrialKind.runeOrbit => const Key('rune-orbit-game'),
       TrialKind.witchlightWard ||
       TrialKind.hollyfrostGiftforge ||
       TrialKind.midnightChime ||
@@ -2687,7 +2690,7 @@ void main() {
     expect(find.text('About DragonHaven'), findsOneWidget);
     expect(find.text('Rick Groot'), findsOneWidget);
     expect(find.text('2026'), findsOneWidget);
-    expect(find.text('v0.06.08'), findsOneWidget);
+    expect(find.text('v0.06.09'), findsOneWidget);
     expect(find.byKey(const Key('about-copy-download-link')), findsOneWidget);
     expect(find.byKey(const Key('about-copy-iphone-link')), findsNothing);
     expect(find.byKey(const Key('about-download-update')), findsOneWidget);

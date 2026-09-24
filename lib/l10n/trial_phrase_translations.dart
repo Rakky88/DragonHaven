@@ -196,6 +196,194 @@ const trialPhraseTranslations = <String, List<String>>{
     'Arcana mais alta mantém cada runa demonstrada visível por mais tempo.',
     'Arcanaが高いほど提示されたルーンが長く表示されます。'
   ],
+  'Higher Spirit slows the shapes slightly.': [
+    'Höherer Spirit verlangsamt die Formen leicht.',
+    'Un Spirit más alto ralentiza ligeramente las figuras.',
+    'Un Spirit supérieur ralentit légèrement les formes.',
+    'Uno Spirit più alto rallenta leggermente le forme.',
+    'Spirit mais alto desacelera ligeiramente as formas.',
+    'Spiritが高いほど図形の動きが少し遅くなります。'
+  ],
+  'Higher Might gives you slightly more time to guard each lane.': [
+    'Höherer Might gibt dir etwas mehr Zeit, jede Bahn zu schützen.',
+    'Un Might más alto te da un poco más de tiempo para proteger cada carril.',
+    'Un Might supérieur vous donne un peu plus de temps pour défendre chaque voie.',
+    'Uno Might più alto ti dà un po’ più di tempo per difendere ogni corsia.',
+    'Might mais alto dá um pouco mais de tempo para proteger cada faixa.',
+    'Mightが高いほど各レーンを守る時間が少し長くなります。'
+  ],
+  'Higher Arcana keeps each rune in the golden gate slightly longer.': [
+    'Höhere Arcana hält jede Rune etwas länger im goldenen Tor.',
+    'Una Arcana más alta mantiene cada runa un poco más de tiempo en la puerta dorada.',
+    'Une Arcana supérieure maintient chaque rune un peu plus longtemps dans la porte dorée.',
+    'Un’Arcana più alta mantiene ogni runa un po’ più a lungo nel portale dorato.',
+    'Arcana mais alta mantém cada runa um pouco mais de tempo no portal dourado.',
+    'Arcanaが高いほど各ルーンが黄金のゲート内に少し長く留まります。'
+  ],
+  'In inventory': [
+    'Im Inventar',
+    'En el inventario',
+    'Dans l’inventaire',
+    'Nell’inventario',
+    'No inventário',
+    'インベントリ内'
+  ],
+  'Placed in this room': [
+    'In diesem Raum platziert',
+    'Colocado en esta sala',
+    'Placé dans cette pièce',
+    'Posizionato in questa stanza',
+    'Colocado nesta sala',
+    'この部屋に配置済み'
+  ],
+  'The dragons moved to other rooms or stepped outside for fifteen minutes.': [
+    'Die Drachen sind in andere Räume gezogen oder für fünfzehn Minuten nach draußen gegangen.',
+    'Los dragones se trasladaron a otras salas o salieron durante quince minutos.',
+    'Les dragons ont rejoint d’autres pièces ou sont sortis pendant quinze minutes.',
+    'I draghi si sono spostati in altre stanze o sono usciti per quindici minuti.',
+    'Os dragões foram para outras salas ou saíram por quinze minutos.',
+    'ドラゴンは別の部屋へ移動したか、15分間外へ出ました。'
+  ],
+  'This room could not be cleared.': [
+    'Dieser Raum konnte nicht geräumt werden.',
+    'No se pudo despejar esta sala.',
+    'Cette pièce n’a pas pu être libérée.',
+    'Non è stato possibile liberare questa stanza.',
+    'Não foi possível esvaziar esta sala.',
+    'この部屋を空にできませんでした。'
+  ],
+  'Perfect overlap!': [
+    'Perfekte Überlappung!',
+    '¡Superposición perfecta!',
+    'Superposition parfaite !',
+    'Sovrapposizione perfetta!',
+    'Sobreposição perfeita!',
+    '完璧に重なりました！'
+  ],
+  'Next shape...': [
+    'Nächste Form …',
+    'Siguiente figura...',
+    'Forme suivante…',
+    'Prossima forma...',
+    'Próxima forma...',
+    '次の図形…'
+  ],
+  'Tap to lock the height': [
+    'Tippe, um die Höhe festzulegen',
+    'Toca para fijar la altura',
+    'Touchez pour fixer la hauteur',
+    'Tocca per bloccare l’altezza',
+    'Toque para fixar a altura',
+    'タップして高さを決める'
+  ],
+  'Tap to stop on the outline': [
+    'Tippe, um auf der Kontur anzuhalten',
+    'Toca para detenerte sobre el contorno',
+    'Touchez pour vous arrêter sur le contour',
+    'Tocca per fermarti sul contorno',
+    'Toque para parar sobre o contorno',
+    'タップして輪郭上で止める'
+  ],
+  'Align all three shapes': [
+    'Richte alle drei Formen aus',
+    'Alinea las tres figuras',
+    'Alignez les trois formes',
+    'Allinea tutte e tre le forme',
+    'Alinhe as três formas',
+    '3つの図形をすべて合わせる'
+  ],
+  'Tap once to lock the height, then tap again on the golden outline. Three displayed 100% scores make the next round 10% faster.':
+      [
+    'Tippe einmal, um die Höhe festzulegen, und dann erneut auf der goldenen Kontur. Drei angezeigte 100-%-Wertungen machen die nächste Runde 10 % schneller.',
+    'Toca una vez para fijar la altura y vuelve a tocar sobre el contorno dorado. Tres puntuaciones del 100 % hacen que la siguiente ronda sea un 10 % más rápida.',
+    'Touchez une fois pour fixer la hauteur, puis à nouveau sur le contour doré. Trois scores affichés à 100 % accélèrent la manche suivante de 10 %.',
+    'Tocca una volta per bloccare l’altezza, poi di nuovo sul contorno dorato. Tre punteggi visualizzati del 100% rendono il turno successivo più veloce del 10%.',
+    'Toque uma vez para fixar a altura e novamente sobre o contorno dourado. Três pontuações exibidas de 100% deixam a próxima rodada 10% mais rápida.',
+    '1回タップして高さを決め、黄金の輪郭上でもう一度タップします。表示された3つのスコアがすべて100%なら、次のラウンドは10%速くなります。'
+  ],
+  'Tap to guard the next lane': [
+    'Tippe, um die nächste Bahn zu schützen',
+    'Toca para proteger el siguiente carril',
+    'Touchez pour défendre la voie suivante',
+    'Tocca per difendere la corsia successiva',
+    'Toque para proteger a próxima faixa',
+    'タップして次のレーンを守る'
+  ],
+  'Each tap moves one lane to the right.': [
+    'Jedes Tippen bewegt dich eine Bahn nach rechts.',
+    'Cada toque te mueve un carril hacia la derecha.',
+    'Chaque toucher vous déplace d’une voie vers la droite.',
+    'Ogni tocco ti sposta di una corsia verso destra.',
+    'Cada toque move você uma faixa para a direita.',
+    'タップするたびに1レーン右へ移動します。'
+  ],
+  'Guard the ruins': [
+    'Bewache die Ruinen',
+    'Protege las ruinas',
+    'Défendez les ruines',
+    'Difendi le rovine',
+    'Proteja as ruínas',
+    '遺跡を守る'
+  ],
+  'Tap to move between three lanes. Meet each falling boulder before it lands. Three misses end the Trial.':
+      [
+    'Tippe, um zwischen drei Bahnen zu wechseln. Fange jeden fallenden Felsbrocken ab, bevor er landet. Drei Fehlschläge beenden die Prüfung.',
+    'Toca para moverte entre tres carriles. Intercepta cada roca antes de que caiga. Tres fallos terminan la Prueba.',
+    'Touchez pour passer entre trois voies. Interceptez chaque rocher avant qu’il ne tombe. Trois échecs mettent fin à l’Épreuve.',
+    'Tocca per spostarti tra tre corsie. Intercetta ogni masso prima che cada. Tre errori terminano la Prova.',
+    'Toque para alternar entre três faixas. Intercepte cada rocha antes que ela caia. Três erros encerram a Prova.',
+    'タップして3つのレーンを移動します。落石が着地する前に受け止めてください。3回失敗すると試練終了です。'
+  ],
+  'MATCH': ['TREFFER', 'COINCIDE', 'CORRESPONDANCE', 'ABBINA', 'COMBINE', '一致'],
+  'Tap when the matching rune reaches the top gate.': [
+    'Tippe, wenn die passende Rune das obere Tor erreicht.',
+    'Toca cuando la runa correcta llegue a la puerta superior.',
+    'Touchez lorsque la rune correspondante atteint la porte supérieure.',
+    'Tocca quando la runa corrispondente raggiunge il portale superiore.',
+    'Toque quando a runa correspondente alcançar o portal superior.',
+    '同じルーンが上のゲートに到達したらタップします。'
+  ],
+  'Catch the rune': [
+    'Fange die Rune',
+    'Atrapa la runa',
+    'Attrapez la rune',
+    'Cattura la runa',
+    'Capture a runa',
+    'ルーンを捕まえる'
+  ],
+  'Watch the target in the center. Tap anywhere when the same rune reaches the golden gate at the top. Three misses end the Trial.':
+      [
+    'Beobachte das Ziel in der Mitte. Tippe irgendwo, wenn dieselbe Rune das goldene Tor oben erreicht. Drei Fehlschläge beenden die Prüfung.',
+    'Mira el objetivo del centro. Toca en cualquier lugar cuando la misma runa llegue a la puerta dorada superior. Tres fallos terminan la Prueba.',
+    'Observez la cible au centre. Touchez n’importe où lorsque la même rune atteint la porte dorée en haut. Trois échecs mettent fin à l’Épreuve.',
+    'Osserva il simbolo al centro. Tocca in un punto qualsiasi quando la stessa runa raggiunge il portale dorato in alto. Tre errori terminano la Prova.',
+    'Observe o alvo no centro. Toque em qualquer lugar quando a mesma runa alcançar o portal dourado no topo. Três erros encerram a Prova.',
+    '中央の目標を確認します。同じルーンが上部の黄金ゲートに到達したら、画面のどこかをタップしてください。3回失敗すると試練終了です。'
+  ],
+  'Spirit Alignment': [
+    'Spirit-Ausrichtung',
+    'Alineación de Spirit',
+    'Alignement de Spirit',
+    'Allineamento di Spirit',
+    'Alinhamento de Spirit',
+    'Spiritの整列'
+  ],
+  'Ruin Guard': [
+    'Ruinenwache',
+    'Guardia de las ruinas',
+    'Garde des ruines',
+    'Guardia delle rovine',
+    'Guarda das ruínas',
+    '遺跡の守護'
+  ],
+  'Rune Orbit': [
+    'Runenorbit',
+    'Órbita rúnica',
+    'Orbite runique',
+    'Orbita runica',
+    'Órbita rúnica',
+    'ルーン軌道'
+  ],
   'This Trial is no longer available.': [
     'Diese Prüfung ist nicht mehr verfügbar.',
     'Esta Prueba ya no está disponible.',

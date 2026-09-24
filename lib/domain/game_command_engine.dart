@@ -254,6 +254,7 @@ abstract final class GameCommandEngine {
           result = TrialAttempts.display(activeAttempt);
         case 'resume_trial':
           activeAttempt = TrialAttempts.resume(
+              game: game,
               attempt: activeAttempt,
               id: args.text('attemptId'),
               replacementId: identities.uuid(),

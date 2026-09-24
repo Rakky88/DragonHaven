@@ -87,19 +87,21 @@ void main() {
     expect(dragon.activeEvolutionPath, 'arcana');
   });
 
-  test('all stages share one budget and specialization has no separate cap',
+  test('all stages share one budget and final evolution adds gift capacity',
       () {
     for (final stage in DragonStage.values) {
       final dragon = Pet(stage: stage, dragonSpark: 0);
       dragon.addTraining(TrainingFocus.arcana, 5000);
       dragon.addTraining(TrainingFocus.might, 200);
-      expect(dragon.trainingFor(TrainingFocus.arcana), 950);
+      expect(dragon.trainingFor(TrainingFocus.arcana),
+          stage == DragonStage.ascended ? 960 : 950);
       expect(dragon.trainingFor(TrainingFocus.might), 0);
       expect(dragon.expertiseMaxed, isTrue);
     }
   });
 
-  test('Mastery adds 50 to each type and retains its form after retraining',
+  test(
+      'Mastery adds its capacity and gift, and retains its form after retraining',
       () {
     for (final sinister in [false, true]) {
       final dragon = Pet(
@@ -112,17 +114,20 @@ void main() {
       expect(dragon.maximumTotalExpertise, before);
       dragon.evolve(start);
       expect(dragon.isMastery, isTrue);
-      expect(dragon.maximumTotalExpertise, before + 50);
+      expect(dragon.training, {'might': 105, 'arcana': 105, 'spirit': 105});
+      expect(dragon.maximumTotalExpertise,
+          before + masteryExpertiseBonus + masteryAscensionExpertiseGiftTotal);
       dragon.applyExpertiseCosts({TrainingFocus.spirit: -100});
       dragon.addTraining(TrainingFocus.might, 5000);
-      expect(dragon.totalTraining, before + 50);
-      expect(dragon.trainingFor(TrainingFocus.spirit), 0);
+      expect(dragon.totalTraining,
+          before + masteryExpertiseBonus + masteryAscensionExpertiseGiftTotal);
+      expect(dragon.trainingFor(TrainingFocus.spirit), 5);
       expect(dragon.isMastery, isTrue);
       expect(Pet.fromJson(dragon.toJson()).isMastery, isTrue);
     }
   });
 
-  test('migration preserves earned over-budget points but never adds more', () {
+  test('migration preserves earned over-budget points and grants one gift', () {
     for (final sinister in [false, true]) {
       final old = sinister ? 400 : 350;
       final dragon = Pet.fromJson({
@@ -134,13 +139,15 @@ void main() {
         'dragonSpark': 0,
         'training': {'might': old, 'arcana': old, 'spirit': old}
       });
-      expect(dragon.totalTraining, old * 3);
+      expect(dragon.totalTraining, old * 3 + 15);
+      expect(dragon.ascensionExpertiseGiftGranted, isTrue);
+      expect(Pet.fromJson(dragon.toJson()).totalTraining, old * 3 + 15);
       dragon.addTraining(TrainingFocus.might, 100);
-      expect(dragon.totalTraining, old * 3);
+      expect(dragon.totalTraining, old * 3 + 15);
       expect(dragon.expertiseMaxed, isTrue);
       dragon.applyExpertiseCosts({TrainingFocus.arcana: -100});
       dragon.addTraining(TrainingFocus.spirit, 200);
-      expect(dragon.totalTraining, sinister ? 1150 : 1000);
+      expect(dragon.totalTraining, sinister ? 1165 : 1015);
     }
   });
 
@@ -173,7 +180,7 @@ void main() {
       }
       dragon.evolve(start);
       expect(dragon.dragonSpark, rolled);
-      expect(dragon.maximumTotalExpertise, 1000 + rolled);
+      expect(dragon.maximumTotalExpertise, 1015 + rolled);
     }
     expect(seen, Set<int>.from(List.generate(51, (i) => i)));
   });
@@ -257,6 +264,7 @@ void main() {
     expect(restored.evolutionPath, 'spirit');
     expect(restored.trainingFor(TrainingFocus.might), 10);
     expect(restored.trainingFor(TrainingFocus.arcana), 20);
-    expect(restored.trainingFor(TrainingFocus.spirit), 30);
+    expect(restored.trainingFor(TrainingFocus.spirit), 40);
+    expect(restored.ascensionExpertiseGiftGranted, isTrue);
   });
 }

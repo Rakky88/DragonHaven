@@ -1,0 +1,161 @@
+name: Controlled game ruleset rollout
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Isolated target environment
+        required: true
+        type: choice
+        options:
+          - staging
+          - production
+      mode:
+        description: Plan is read-only; apply deploys with automatic rollback
+        required: true
+        type: choice
+        options:
+          - plan
+          - apply
+      minimum_client_build:
+        description: Exact compatible app build
+        required: true
+        type: string
+      release_tag:
+        description: Required for production apply
+        required: false
+        type: string
+      apk_sha256:
+        description: Lowercase SHA-256 of public DragonHaven.apk; production apply only
+        required: false
+        type: string
+      confirmation:
+        description: PLAN/APPLY_ENVIRONMENT_GAME_RULESET
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dragonhaven-game-ruleset-${{ inputs.environment }}
+  cancel-in-progress: false
+
+jobs:
+  rollout:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    timeout-minutes: 30
+    steps:
+      - name: Require exact operator scope
+        shell: pwsh
+        env:
+          TARGET: ${{ inputs.environment }}
+          MODE: ${{ inputs.mode }}
+          CONFIRMATION: ${{ inputs.confirmation }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
+          APK_SHA256: ${{ inputs.apk_sha256 }}
+        run: |
+          $expected = "$($env:MODE.ToUpperInvariant())_$($env:TARGET.ToUpperInvariant())_GAME_RULESET"
+          if ($env:CONFIRMATION -cne $expected) {
+            throw "Exact confirmation '$expected' is required."
+          }
+          if ($env:TARGET -eq 'production' -and $env:MODE -eq 'apply' -and
+              ($env:RELEASE_TAG -notmatch '^v[0-9]+\.[0-9]+\.[0-9]+$' -or
+               $env:APK_SHA256 -notmatch '^[0-9a-f]{64}$')) {
+            throw 'Production apply requires the public release tag and lowercase APK SHA-256.'
+          }
+
+      - name: Checkout exact candidate
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          ref: ${{ inputs.environment == 'production' && inputs.mode == 'apply' && inputs.release_tag || github.sha }}
+
+      - name: Flutter stable
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Deno 2
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      - name: Supabase CLI
+        uses: supabase/setup-cli@v3
+        with:
+          version: 2.116.0
+
+      - name: Prepare exact server candidate
+        run: flutter pub get
+
+      - name: Verify rollout helper contracts
+        run: python3 -m unittest tool/test_game_ruleset_rollout.py
+
+      - name: Link allowlisted project and execute controlled rollout
+        shell: pwsh
+        env:
+          TARGET: ${{ inputs.environment }}
+          MODE: ${{ inputs.mode }}
+          MINIMUM_BUILD: ${{ inputs.minimum_client_build }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
+          APK_SHA256: ${{ inputs.apk_sha256 }}
+          PRODUCTION_ACCESS_TOKEN: ${{ inputs.environment == 'production' && secrets.SUPABASE_ACCESS_TOKEN || '' }}
+          PRODUCTION_DB_PASSWORD: ${{ inputs.environment == 'production' && secrets.SUPABASE_DB_PASSWORD || '' }}
+          STAGING_ACCESS_TOKEN: ${{ inputs.environment == 'staging' && secrets.STAGING_SUPABASE_ACCESS_TOKEN || '' }}
+          STAGING_DB_PASSWORD: ${{ inputs.environment == 'staging' && secrets.STAGING_SUPABASE_DB_PASSWORD || '' }}
+          STAGING_PROJECT_REF: ${{ inputs.environment == 'staging' && secrets.STAGING_SUPABASE_PROJECT_REF || '' }}
+          STAGING_URL: ${{ inputs.environment == 'staging' && secrets.STAGING_SUPABASE_URL || '' }}
+          STAGING_KEY: ${{ inputs.environment == 'staging' && secrets.STAGING_SUPABASE_PUBLISHABLE_KEY || '' }}
+        run: |
+          if ($env:TARGET -eq 'production') {
+            $projectRef = 'tnzathhutuwmohmjfrlo'
+            $env:SUPABASE_ACCESS_TOKEN = $env:PRODUCTION_ACCESS_TOKEN
+            $dbPassword = $env:PRODUCTION_DB_PASSWORD
+          } else {
+            $projectRef = 'vtmjkhzalalozpfnbvsd'
+            if ($env:STAGING_PROJECT_REF -cne $projectRef) {
+              throw 'The registered staging project does not match the allowlist.'
+            }
+            $env:SUPABASE_ACCESS_TOKEN = $env:STAGING_ACCESS_TOKEN
+            $dbPassword = $env:STAGING_DB_PASSWORD
+          }
+          if ([string]::IsNullOrWhiteSpace($env:SUPABASE_ACCESS_TOKEN) -or
+              [string]::IsNullOrWhiteSpace($dbPassword)) {
+            throw 'Protected Supabase rollout configuration is missing.'
+          }
+          supabase link --project-ref $projectRef --password $dbPassword
+          if ($LASTEXITCODE -ne 0) { throw 'Supabase project link failed.' }
+          $parameters = @(
+            'tool/game_ruleset_rollout.py',
+            '--environment', $env:TARGET,
+            '--mode', $env:MODE,
+            '--minimum-client-build', $env:MINIMUM_BUILD,
+            '--evidence-dir', 'ruleset-rollout-evidence'
+          )
+          if ($env:TARGET -eq 'production' -and $env:MODE -eq 'apply') {
+            $parameters += @('--release-tag', $env:RELEASE_TAG, '--apk-sha256', $env:APK_SHA256)
+          }
+          if ($env:TARGET -eq 'staging' -and $env:MODE -eq 'apply') {
+            if ([string]::IsNullOrWhiteSpace($env:STAGING_URL) -or
+                [string]::IsNullOrWhiteSpace($env:STAGING_KEY)) {
+              throw 'Protected staging public-health configuration is missing.'
+            }
+            $parameters += @(
+              '--expected-url', $env:STAGING_URL,
+              '--expected-publishable-key', $env:STAGING_KEY
+            )
+          }
+          python3 @parameters
+          if ($LASTEXITCODE -ne 0) { throw 'Controlled ruleset rollout failed.' }
+
+      - name: Upload sanitized rollout and rollback evidence
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: game-ruleset-${{ inputs.environment }}-${{ inputs.mode }}-${{ github.run_number }}
+          path: ruleset-rollout-evidence/
+          if-no-files-found: warn
+          retention-days: 30

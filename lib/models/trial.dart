@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import '../l10n/ui_phrase_translations.dart';
 import 'chest.dart';
 import 'pet.dart';
@@ -9,6 +11,9 @@ enum TrialKind {
   cavernFlight,
   ruinBreaker,
   runeweaver,
+  spiritAlignment,
+  ruinGuard,
+  runeOrbit,
   witchlightWard,
   hollyfrostGiftforge,
   midnightChime,
@@ -44,6 +49,7 @@ class TrialDefinition {
 
   bool get isSeasonal => specialEventId != null;
   bool get isEndless =>
+      kind == TrialKind.spiritAlignment ||
       kind == TrialKind.sunwakeSurf ||
       kind == TrialKind.midnightChime ||
       kind == TrialKind.wishcakeTower;
@@ -130,6 +136,32 @@ const trialDefinitions = <TrialKind, TrialDefinition>{
     subtitleEn: 'Remember the runes and awaken the sealed gate.',
     subtitleNl: 'Onthoud de runen en wek de verzegelde poort.',
   ),
+  TrialKind.spiritAlignment: TrialDefinition(
+    kind: TrialKind.spiritAlignment,
+    focus: TrainingFocus.spirit,
+    titleEn: 'Spirit Alignment',
+    titleNl: 'Geestuitlijning',
+    subtitleEn:
+        'Align circle, square and triangle perfectly before the rhythm quickens.',
+    subtitleNl:
+        'Lijn cirkel, vierkant en driehoek perfect uit voordat het ritme versnelt.',
+  ),
+  TrialKind.ruinGuard: TrialDefinition(
+    kind: TrialKind.ruinGuard,
+    focus: TrainingFocus.might,
+    titleEn: 'Ruin Guard',
+    titleNl: 'Ruinewacht',
+    subtitleEn: 'Guard three lanes and shatter every falling boulder.',
+    subtitleNl: 'Bewaak drie banen en verbrijzel elke vallende rots.',
+  ),
+  TrialKind.runeOrbit: TrialDefinition(
+    kind: TrialKind.runeOrbit,
+    focus: TrainingFocus.arcana,
+    titleEn: 'Rune Orbit',
+    titleNl: 'Runenbaan',
+    subtitleEn: 'Catch the matching rune as it crosses the golden gate.',
+    subtitleNl: 'Vang de juiste rune wanneer die door de gouden poort gaat.',
+  ),
   TrialKind.witchlightWard: TrialDefinition(
     kind: TrialKind.witchlightWard,
     focus: TrainingFocus.arcana,
@@ -191,7 +223,75 @@ const standardTrialKinds = <TrialKind>[
   TrialKind.cavernFlight,
   TrialKind.ruinBreaker,
   TrialKind.runeweaver,
+  TrialKind.spiritAlignment,
+  TrialKind.ruinGuard,
+  TrialKind.runeOrbit,
 ];
+
+const classicTrialKindByFocus = <TrainingFocus, TrialKind>{
+  TrainingFocus.arcana: TrialKind.runeweaver,
+  TrainingFocus.spirit: TrialKind.cavernFlight,
+  TrainingFocus.might: TrialKind.ruinBreaker,
+};
+
+const ascendedTrialKindByFocus = <TrainingFocus, TrialKind>{
+  TrainingFocus.arcana: TrialKind.runeOrbit,
+  TrainingFocus.spirit: TrialKind.spiritAlignment,
+  TrainingFocus.might: TrialKind.ruinGuard,
+};
+
+TrainingFocus? ascendedTrialFocus(TrialKind kind) {
+  for (final entry in ascendedTrialKindByFocus.entries) {
+    if (entry.value == kind) return entry.key;
+  }
+  return null;
+}
+
+/// The added standard Trials are unlocked by owning a matching Ascended form.
+/// A Mastery form qualifies for every focus. Callers decide ownership; passing
+/// only `HouseholdProvider.ownedDragons` keeps released dragons excluded.
+bool dragonMeetsTrialFormRequirement({
+  required TrialKind kind,
+  required DragonStage stage,
+  required String activeEvolutionPath,
+}) {
+  final focus = ascendedTrialFocus(kind);
+  if (focus == null) return true;
+  return stage == DragonStage.ascended &&
+      (activeEvolutionPath == focus.name || activeEvolutionPath == 'mastery');
+}
+
+Set<TrainingFocus> unlockedAscendedTrialFocuses(Iterable<Pet> ownedDragons) => {
+      for (final focus in TrainingFocus.values)
+        if (ownedDragons.any((dragon) => dragonMeetsTrialFormRequirement(
+              kind: ascendedTrialKindByFocus[focus]!,
+              stage: dragon.stage,
+              activeEvolutionPath: dragon.activeEvolutionPath,
+            )))
+          focus,
+    };
+
+/// Selects the offer in two independent stages so unlocking another game can
+/// never dilute a focus category. Event is a fourth first-stage category.
+TrialKind chooseTrialOfferKind(
+  Random random, {
+  required Set<TrainingFocus> unlockedAscendedFocuses,
+  List<TrialKind> activeEventKinds = const [],
+}) {
+  const focusCategories = <TrainingFocus>[
+    TrainingFocus.arcana,
+    TrainingFocus.spirit,
+    TrainingFocus.might,
+  ];
+  final category = random.nextInt(activeEventKinds.isEmpty ? 3 : 4);
+  if (category == 3) {
+    return activeEventKinds[random.nextInt(activeEventKinds.length)];
+  }
+  final focus = focusCategories[category];
+  final classic = classicTrialKindByFocus[focus]!;
+  if (!unlockedAscendedFocuses.contains(focus)) return classic;
+  return random.nextInt(2) == 0 ? classic : ascendedTrialKindByFocus[focus]!;
+}
 
 TrialKind? trialKindByName(String? name) {
   if (name == null || name.isEmpty) return null;
@@ -292,6 +392,9 @@ TrialGrade trialGradeForScore(TrialKind kind, int score) {
     TrialKind.cavernFlight => const [250, 600, 1100, 1700, 2500],
     TrialKind.ruinBreaker => const [900, 2250, 4000, 6750, 9000],
     TrialKind.runeweaver => const [3, 6, 9, 12, 15],
+    TrialKind.spiritAlignment => const [150, 300, 600, 900, 1500],
+    TrialKind.ruinGuard => const [600, 1500, 2800, 4500, 7000],
+    TrialKind.runeOrbit => const [3, 6, 10, 15, 22],
     TrialKind.sunwakeSurf => const [500, 1500, 3000, 5000, 8000],
     TrialKind.moonlitOrchard => const [500, 1500, 3000, 5000, 8000],
     TrialKind.wishcakeTower => const [600, 1500, 2800, 4200, 10000],

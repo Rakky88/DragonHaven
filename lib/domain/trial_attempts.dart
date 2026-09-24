@@ -1,4 +1,5 @@
 import '../models/pet.dart';
+import '../models/trial.dart';
 import '../models/trial_input.dart';
 import '../models/trial_run_model.dart';
 import '../providers/household_provider.dart';
@@ -20,6 +21,11 @@ abstract final class TrialAttempts {
         dragon.stage == DragonStage.egg ||
         dragon.activeAdventureId != null ||
         offer == null ||
+        !dragonMeetsTrialFormRequirement(
+          kind: offer.kind,
+          stage: dragon.stage,
+          activeEvolutionPath: dragon.activeEvolutionPath,
+        ) ||
         !await game.beginTrial(offerId)) {
       throw const TrialAttemptException('game_action_unavailable');
     }
@@ -46,7 +52,8 @@ abstract final class TrialAttempts {
   }
 
   static Map<String, dynamic> resume(
-      {required Map<String, dynamic>? attempt,
+      {required HouseholdProvider game,
+      required Map<String, dynamic>? attempt,
       required String id,
       required String replacementId,
       required DateTime now}) {
@@ -56,8 +63,12 @@ abstract final class TrialAttempts {
     if (!now.isBefore(DateTime.parse(attempt['expiresAt'] as String))) {
       throw const TrialAttemptException('game_attempt_time_invalid');
     }
+    _requireEligibleAttemptDragon(game, attempt);
     final model = TrialRunModel.fromCheckpoint(
         Map<String, dynamic>.from(attempt['checkpoint'] as Map));
+    if (model.kind.name != attempt['gameId']) {
+      throw const TrialAttemptException('game_attempt_unavailable');
+    }
     final release = !model.ended && model.surfHeld
         ? TrialControl.releaseDragon
         : !model.ended && model.trace?.active == true
@@ -106,12 +117,17 @@ abstract final class TrialAttempts {
     if (attempt == null || attempt['type'] != 'trial' || attempt['id'] != id) {
       throw const TrialAttemptException('game_attempt_unavailable');
     }
-    final offerId = attempt['offerId'] as String;
-    final dragonId = (attempt['dragonIds'] as List).single as String;
     if (cancel) {
+      final offerId = attempt['offerId'];
+      if (offerId is! String) {
+        throw const TrialAttemptException('game_attempt_unavailable');
+      }
       await game.dismissTrial(offerId);
       return (attempt: null, result: {'cancelled': true, 'accepted': true});
     }
+    final dragon = _requireEligibleAttemptDragon(game, attempt);
+    final offerId = attempt['offerId'] as String;
+    final dragonId = dragon.id;
     final started = DateTime.parse(attempt['startedAt'] as String);
     final expires = DateTime.parse(attempt['expiresAt'] as String);
     final previous = attempt['elapsedMs'] as int;
@@ -136,6 +152,9 @@ abstract final class TrialAttempts {
     }
     final model = TrialRunModel.fromCheckpoint(
         Map<String, dynamic>.from(attempt['checkpoint'] as Map));
+    if (model.kind.name != attempt['gameId']) {
+      throw const TrialAttemptException('game_attempt_unavailable');
+    }
     for (final input in decoded) {
       model.apply(input);
     }
@@ -193,6 +212,41 @@ abstract final class TrialAttempts {
         },
       }
     );
+  }
+
+  static Pet _requireEligibleAttemptDragon(
+      HouseholdProvider game, Map<String, dynamic> attempt) {
+    final rawGameId = attempt['gameId'];
+    final kind = rawGameId is String ? trialKindByName(rawGameId) : null;
+    final ids = attempt['dragonIds'];
+    final offerId = attempt['offerId'];
+    if (kind == null ||
+        ids is! List ||
+        ids.length != 1 ||
+        ids.single is! String ||
+        offerId is! String) {
+      throw const TrialAttemptException('game_attempt_unavailable');
+    }
+    final dragon = game.ownedDragons
+        .where((candidate) => candidate.id == ids.single)
+        .firstOrNull;
+    final offer = game.trialOffers
+        .where((candidate) => candidate.id == offerId)
+        .firstOrNull;
+    if (dragon == null ||
+        dragon.stage == DragonStage.egg ||
+        dragon.activeAdventureId != null ||
+        offer == null ||
+        offer.kind != kind ||
+        offer.startedAt == null ||
+        !dragonMeetsTrialFormRequirement(
+          kind: kind,
+          stage: dragon.stage,
+          activeEvolutionPath: dragon.activeEvolutionPath,
+        )) {
+      throw const TrialAttemptException('game_attempt_unavailable');
+    }
+    return dragon;
   }
 }
 

@@ -1,6 +1,7 @@
 import '../tool/trial_input_pilot.dart';
 
 import 'package:dragon_haven/domain/game_command_engine.dart';
+import 'package:dragon_haven/domain/trial_attempts.dart';
 import 'package:dragon_haven/models/pet.dart';
 import 'package:dragon_haven/models/redeem_code.dart';
 import 'package:dragon_haven/models/trial.dart';
@@ -29,7 +30,10 @@ void main() {
   Future<Map<String, dynamic>> fixture(TrialKind kind) async {
     final game = HouseholdProvider(clock: () => now, persistenceEnabled: false);
     game.pet
-      ..stage = DragonStage.hatchling
+      ..stage = ascendedTrialFocus(kind) == null
+          ? DragonStage.hatchling
+          : DragonStage.ascended
+      ..evolutionPath = ascendedTrialFocus(kind)?.name
       ..firstEgg = false
       ..favorite = true;
     game.pet.training.addAll({'might': 300, 'arcana': 300, 'spirit': 300});
@@ -41,17 +45,113 @@ void main() {
               c.rewardId == eventId)
           .code;
       await game.redeemCode(code, keeperId: owner);
-      game.availableTrials;
-    } else {
-      game.trialOffers = [
-        TrialOffer(id: 'authority-offer', kind: kind, appearedAt: now)
-      ];
-      game.trialRefilledAt = now;
     }
+    final window = eventId == null
+        ? null
+        : game.activeSpecialAdventureWindows
+            .singleWhere((candidate) => candidate.event.id == eventId);
+    game.trialOffers = [
+      TrialOffer(
+        id: 'authority-offer',
+        kind: kind,
+        appearedAt: now,
+        specialEventKey: window?.key,
+      ),
+    ];
+    game.trialRefilledAt = now;
     final state = game.exportState();
     game.dispose();
     return state;
   }
+
+  for (final entry in ascendedTrialKindByFocus.entries) {
+    test('${entry.value.name}: server rejects a wrong Ascended specialist',
+        () async {
+      final state = await fixture(entry.value);
+      state['pet']['evolutionPath'] =
+          TrainingFocus.values.firstWhere((focus) => focus != entry.key).name;
+      await expectLater(
+        command(state, 'start_trial', {
+          'offerId': 'authority-offer',
+          'dragonId': state['pet']['id'],
+        }),
+        error('game_action_unavailable'),
+      );
+    });
+  }
+
+  test('released matching specialist cannot unlock or start a new Trial',
+      () async {
+    final game = HouseholdProvider(
+      initialize: false,
+      persistenceEnabled: false,
+      clock: () => now,
+    )
+      ..pet = Pet(
+        id: 'owned-wyrmling',
+        stage: DragonStage.wyrmling,
+        firstEgg: false,
+      )
+      ..releasedDragons.add(Pet(
+        id: 'released-spirit',
+        stage: DragonStage.ascended,
+        firstEgg: false,
+        evolutionPath: TrainingFocus.spirit.name,
+      ))
+      ..trialOffers = [
+        TrialOffer(
+          id: 'released-form-offer',
+          kind: TrialKind.spiritAlignment,
+          appearedAt: now,
+        ),
+      ]
+      ..trialRefilledAt = now;
+    await expectLater(
+      TrialAttempts.start(
+        game: game,
+        id: 'released-attempt',
+        seed: 1,
+        offerId: 'released-form-offer',
+        dragonId: 'released-spirit',
+        now: now,
+      ),
+      throwsA(isA<TrialAttemptException>().having(
+        (exception) => exception.code,
+        'code',
+        'game_action_unavailable',
+      )),
+    );
+    game.dispose();
+  });
+
+  test('resume and checkpoint revalidate the Ascended Trial form', () async {
+    var state = await fixture(TrialKind.spiritAlignment);
+    final started = await command(state, 'start_trial', {
+      'offerId': 'authority-offer',
+      'dragonId': state['pet']['id'],
+    });
+    state = started['state'] as Map<String, dynamic>;
+    final attempt = started['result'] as Map<String, dynamic>;
+    state['pet']['evolutionPath'] = TrainingFocus.might.name;
+    await expectLater(
+      command(state, 'resume_trial', {'attemptId': attempt['id']}, at: 1000),
+      error('game_attempt_unavailable'),
+    );
+    await expectLater(
+      command(
+        state,
+        'checkpoint_trial',
+        {
+          'attemptId': attempt['id'],
+          'inputs': TrialInputTranscript.encode([], startMilliseconds: 0),
+          'elapsedMs': 0,
+          'finish': false,
+        },
+        at: 1000,
+      ),
+      error('game_attempt_unavailable'),
+    );
+  });
 
   test(
       'expiry, reversed/ahead time, oversized chunk and wrong controls cannot settle',
@@ -126,7 +226,10 @@ void main() {
       final model = TrialRunModel(
           kind: kind,
           seed: attempt['seed'] as int,
-          training: {for (final f in TrainingFocus.values) f: 300});
+          training: {
+            for (final f in TrainingFocus.values)
+              f: state['pet']['training'][f.name] as int
+          });
       final queued = <TrialInput>[];
       var previous = 0;
       final empty = TrialInputTranscript.encode([], startMilliseconds: 0);
@@ -167,7 +270,8 @@ void main() {
       Map<String, dynamic>? finalResult, finalPayload;
       for (var at = 0; at <= 145000; at += 20) {
         model.advanceTo(at);
-        if (!model.ended && !(kind == TrialKind.midnightChime && at >= 130000)) {
+        if (!model.ended &&
+            !(kind == TrialKind.midnightChime && at >= 130000)) {
           pilotTrial(model, at, press);
         }
         model.takeEvents();
@@ -198,7 +302,8 @@ void main() {
       expect(finalResult, isNotNull);
       expect(finalResult!['score'], model.score);
       expect(model.score, greaterThan(0));
-      if (trialDefinitions[kind]!.isEndless) {
+      if (trialDefinitions[kind]!.isEndless &&
+          kind != TrialKind.spiritAlignment) {
         expect(model.score, greaterThan(20000));
       }
       expect(state['_activeGameAttempt'], isNull);

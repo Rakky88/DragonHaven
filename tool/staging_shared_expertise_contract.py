@@ -35,12 +35,14 @@ def main():
     history = query('select version from supabase_migrations.schema_migrations order by version', True)
     versions = [row['version'] for row in history]
     files = sorted(Path('supabase/migrations').glob('*.sql'))
-    if not versions or versions[-1] not in ('202609120083', '202609130084', '202609200085'):
+    if not versions or versions[-1] not in (
+            '202609120083', '202609130084', '202609200085',
+            '202609230095', '202609240096'):
         raise RuntimeError('staging_expertise_history_unreviewed')
     if versions != [p.name.split('_')[0] for p in files if p.name.split('_')[0] <= versions[-1]]:
         raise RuntimeError('staging_expertise_history_mismatch')
     pending = [p.read_text(encoding='utf-8') for p in files
-               if versions[-1] < p.name.split('_')[0] <= '202609200085']
+               if versions[-1] < p.name.split('_')[0] <= '202609240096']
     contract = Path('tool/shared_expertise_contract.sql').read_text(encoding='utf-8')
     sql = 'begin;\n' + '\n'.join(pending) + '\n' + contract.removeprefix('begin;\n')
     result = query(sql)

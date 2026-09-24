@@ -210,10 +210,11 @@ class _HouseScreenState extends State<HouseScreen> {
                 await household.clearDragonsFromRoom(widget.floorIndex);
             if (!mounted) return;
             _message(cleared
-                ? strings.pick('The dragons found cozy places on other floors.',
-                    'De draken hebben knusse plekken op andere verdiepingen gevonden.')
-                : strings.pick('Build another floor before clearing this room.',
-                    'Bouw nog een verdieping voordat je deze kamer leegmaakt.'));
+                ? strings.pick(
+                    'The dragons moved to other rooms or stepped outside for fifteen minutes.',
+                    'De draken zijn naar andere kamers gegaan of een kwartier naar buiten.')
+                : strings.pick('This room could not be cleared.',
+                    'Deze kamer kon niet worden leeggemaakt.'));
           },
         ),
         if (_editMode) ...[

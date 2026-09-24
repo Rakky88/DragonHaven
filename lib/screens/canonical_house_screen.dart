@@ -321,6 +321,7 @@ class _RoomCard extends StatelessWidget {
         .where((d) =>
             d.owned &&
             d.roamsTower &&
+            !view.house.temporarilyAwayDragonIds.contains(d.id) &&
             d.adventureId == null &&
             d.floorIndex == floorIndex)
         .take(3);
@@ -562,6 +563,7 @@ class _CanonicalFloorRoomScreenState extends State<_CanonicalFloorRoomScreen> {
     final dragon = _controllableDragon(view);
     if (roomId == null || dragon == null) return;
     final here = dragon.roamsTower &&
+        !view.house.temporarilyAwayDragonIds.contains(dragon.id) &&
         dragon.adventureId == null &&
         dragon.floorIndex == widget.floorIndex &&
         dragon.roomId == roomId;
@@ -571,11 +573,13 @@ class _CanonicalFloorRoomScreenState extends State<_CanonicalFloorRoomScreen> {
     }
     final occupancy = view.dragons.where((d) =>
         d.floorIndex == widget.floorIndex &&
+        !view.house.temporarilyAwayDragonIds.contains(d.id) &&
         ((d.owned && d.roamsTower) ||
             view.house.returningVisitorIds.contains(d.id)));
     if (_callingDragon ||
         !session.canAct ||
         !dragon.roamsTower ||
+        view.house.temporarilyAwayDragonIds.contains(dragon.id) ||
         dragon.adventureId != null ||
         view.house.damagedFloors.contains(widget.floorIndex) ||
         occupancy.length >= towerFloorDragonCapacity) {
@@ -681,6 +685,7 @@ class _CanonicalFloorRoomScreenState extends State<_CanonicalFloorRoomScreen> {
     final residents = view.dragons
         .where((d) =>
             d.adventureId == null &&
+            !view.house.temporarilyAwayDragonIds.contains(d.id) &&
             d.floorIndex == widget.floorIndex &&
             d.roomId == room.id &&
             ((d.owned && d.roamsTower) || visitorIds.contains(d.id)))
@@ -781,9 +786,7 @@ class _CanonicalFloorRoomScreenState extends State<_CanonicalFloorRoomScreen> {
         const SizedBox(height: 9),
         RoomActionButton(
           key: Key('canonical-clear-floor-${widget.floorIndex}'),
-          onPressed: session.canAct && view.house.floorRoomIds.length > 1
-              ? () => unawaited(_clearRoom())
-              : null,
+          onPressed: session.canAct ? () => unawaited(_clearRoom()) : null,
           kind: GameIconKind.roomClear,
           label: strings.pick('Clear dragons', 'Draken verplaatsen'),
         ),

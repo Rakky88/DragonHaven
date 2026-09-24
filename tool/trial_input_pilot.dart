@@ -1,6 +1,7 @@
 import 'package:dragon_haven/models/trial.dart';
 import 'package:dragon_haven/models/trial_input.dart';
 import 'package:dragon_haven/models/trial_run_model.dart';
+import 'package:dragon_haven/models/standard_trial_games.dart';
 
 /// Synthetic input pilot used only by replay/VM parity checks, never the app.
 void pilotTrial(TrialRunModel model, int at,
@@ -22,6 +23,43 @@ void pilotTrial(TrialRunModel model, int at,
             press(at, TrialControl.tapRune, rune);
           }
         }
+      }
+    case TrialKind.spiritAlignment:
+      final game = model.alignment!;
+      if (game.waitingForResult) return;
+      if (game.round >= 3) {
+        press(at, TrialControl.flap);
+        return;
+      }
+      if (game.phase == SpiritAlignmentPhase.vertical) {
+        if ((game.playerY - game.targetY).abs() <
+            SpiritAlignmentGeometry.snapTolerance * .75) {
+          press(at, TrialControl.flap);
+        }
+      } else if ((game.playerX - game.targetX).abs() <
+          SpiritAlignmentGeometry.snapTolerance * .75) {
+        press(at, TrialControl.flap);
+      }
+    case TrialKind.ruinGuard:
+      final game = model.guard!;
+      if (game.round >= 12) {
+        if (!game.locked &&
+            game.boulderProgress < .72 &&
+            game.playerLane == game.targetLane) {
+          press(at, TrialControl.strikeRuin);
+        }
+        return;
+      }
+      if (!game.locked &&
+          game.boulderProgress < .72 &&
+          game.playerLane != game.targetLane) {
+        press(at, TrialControl.strikeRuin);
+      }
+    case TrialKind.runeOrbit:
+      final game = model.orbit!;
+      if (game.accepting &&
+          (game.gateRune == game.targetRune || game.rounds >= 8)) {
+        press(at, TrialControl.tapRune, game.gateRune);
       }
     case TrialKind.witchlightWard:
       if (model.phase == 0 && model.witchReady && at > model.promptUntilMs) {

@@ -18,6 +18,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'support/canonical_ui_server.dart';
+import 'support/trial_rotation_random.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -48,8 +49,10 @@ void main() {
       late CanonicalUiServer server;
       late Directory directory;
       await tester.runAsync(() async {
-        final game =
-            HouseholdProvider(clock: () => now, persistenceEnabled: false);
+        final game = HouseholdProvider(
+            clock: () => now,
+            persistenceEnabled: false,
+            random: const EventCategoryRandom());
         game.pet
           ..stage = DragonStage.hatchling
           ..firstEgg = false

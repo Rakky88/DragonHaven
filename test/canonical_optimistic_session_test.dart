@@ -7,6 +7,7 @@ import 'package:dragon_haven/services/canonical_game_session.dart';
 import 'package:dragon_haven/services/canonical_game_snapshot.dart';
 import 'package:dragon_haven/models/adventure.dart';
 import 'package:dragon_haven/models/pet.dart';
+import 'package:dragon_haven/models/trial.dart';
 import '../tool/game_domain_probe.dart';
 import 'support/canonical_ui_server.dart';
 
@@ -78,6 +79,35 @@ void main() {
     expect((await pending)!.succeeded, isFalse);
     expect(session.snapshot!.coins, before.coins);
     expect(session.snapshot!.isSpeculative, isFalse);
+  });
+
+  test('dismissed Trial disappears immediately and returns after rejection',
+      () async {
+    server.state['trialOffers'] = [
+      TrialOffer(
+        id: 'optimistic-dismiss',
+        kind: TrialKind.spiritAlignment,
+        appearedAt: DateTime.utc(2026, 9, 24, 12),
+      ).toJson(),
+    ];
+    server.revision++;
+    await session.synchronize();
+    expect(session.snapshot!.trialOffers, hasLength(1));
+
+    final hold = Completer<void>();
+    server.hold = hold.future;
+    server.revision++;
+    final pending =
+        session.execute('dismiss_trial', {'offerId': 'optimistic-dismiss'});
+
+    expect(session.snapshot!.isSpeculative, isTrue);
+    expect(session.snapshot!.trialOffers, isEmpty);
+    expect(session.canAct, isTrue);
+
+    hold.complete();
+    expect((await pending)!.succeeded, isFalse);
+    expect(session.snapshot!.isSpeculative, isFalse);
+    expect(session.snapshot!.trialOffers.single.id, 'optimistic-dismiss');
   });
 
   test('two immediate previews serialize at confirmed revisions', () async {
@@ -327,6 +357,59 @@ void main() {
     expect(session.snapshot!.isSpeculative, isFalse);
     expect(session.snapshot!.dragon(id)!.floorIndex, 0);
     expect(session.snapshot!.dragon(id)!.roomId, 'hearth');
+  });
+
+  test('clearing the only room hides its dragon immediately and confirms',
+      () async {
+    server.state['towerFloorRoomIds'] = ['hearth'];
+    server.state['unlockedRoomIds'] = ['nest', 'hearth'];
+    server.state['damagedTowerFloors'] = <int>[];
+    server.state['damagedTowerRepairFactors'] = <String, dynamic>{};
+    server.state['pet']
+      ..['currentFloorIndex'] = 0
+      ..['currentRoomId'] = 'hearth'
+      ..['activeAdventureId'] = null
+      ..['roamsTower'] = true;
+    server.revision++;
+    await session.synchronize();
+    final id = session.snapshot!.activeDragonId!;
+    final hold = Completer<void>();
+    server.hold = hold.future;
+
+    final pending = session.execute('clear_tower_floor', {'index': 0});
+    expect(session.snapshot!.isSpeculative, isTrue);
+    expect(session.snapshot!.house.temporarilyAwayDragonIds, {id});
+    expect(session.canAct, isTrue);
+
+    hold.complete();
+    expect((await pending)!.succeeded, isTrue);
+    expect(session.snapshot!.isSpeculative, isFalse);
+    expect(session.snapshot!.house.temporarilyAwayDragonIds, {id});
+  });
+
+  test('a rejected room clear restores the dragon immediately', () async {
+    server.state['towerFloorRoomIds'] = ['hearth'];
+    server.state['unlockedRoomIds'] = ['nest', 'hearth'];
+    server.state['damagedTowerFloors'] = <int>[];
+    server.state['damagedTowerRepairFactors'] = <String, dynamic>{};
+    server.state['pet']
+      ..['currentFloorIndex'] = 0
+      ..['currentRoomId'] = 'hearth'
+      ..['activeAdventureId'] = null
+      ..['roamsTower'] = true;
+    server.revision++;
+    await session.synchronize();
+    final hold = Completer<void>();
+    server.hold = hold.future;
+    server.revision++;
+
+    final pending = session.execute('clear_tower_floor', {'index': 0});
+    expect(session.snapshot!.house.temporarilyAwayDragonIds, isNotEmpty);
+
+    hold.complete();
+    expect((await pending)!.succeeded, isFalse);
+    expect(session.snapshot!.isSpeculative, isFalse);
+    expect(session.snapshot!.house.temporarilyAwayDragonIds, isEmpty);
   });
 
   test('active returning visitors prevent an optimistic call into a full floor',

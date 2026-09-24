@@ -68,7 +68,8 @@ void main() {
       () async {
     final a = AdventureCatalog.mini.firstWhere((a) => a.expertiseCost > 0);
     game.adventureOptionIds[AdventureKind.mini] = [a.id];
-    game.pet.training[a.focus.name] = 999;
+    final maximum = game.pet.maximumTotalExpertise;
+    game.pet.training[a.focus.name] = maximum - 1;
     game.pet.training[a.expertiseCostFocus!.name] = 1;
     expect(game.pet.expertiseMaxed, isTrue);
     expect(await game.startAdventure(a), AdventureStartResult.started);
@@ -78,8 +79,8 @@ void main() {
     now = run.endsAt.add(const Duration(seconds: 1));
     expect(await game.claimAdventure(run.id), isNotNull);
     expect(game.pet.trainingFor(a.expertiseCostFocus!), 0);
-    expect(game.pet.trainingFor(a.focus), 1000);
-    expect(game.pet.totalTraining, 1000);
+    expect(game.pet.trainingFor(a.focus), maximum);
+    expect(game.pet.totalTraining, maximum);
     expect(game.pet.isMastery, isTrue);
     expect(await game.claimAdventure(run.id), isNull);
   });

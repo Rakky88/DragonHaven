@@ -7,6 +7,8 @@ import 'package:dragon_haven/models/trial.dart';
 import 'package:dragon_haven/providers/household_provider.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'support/trial_rotation_random.dart';
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   test('surf reef edges count hits while Might preserves its assistance', () {
@@ -197,8 +199,7 @@ void main() {
       expect(File(p.asset).existsSync(), true);
     }
   });
-  test(
-      'both previews fill slots, grant ordinary rewards once and restore bests',
+  test('both preview event rolls grant ordinary rewards once and restore bests',
       () async {
     for (final (code, id, kind) in [
       ('SUNWAKEEVENT', 'sunwake_summer_sea', TrialKind.sunwakeSurf),
@@ -209,12 +210,12 @@ void main() {
       )
     ]) {
       final now = DateTime.utc(2026, 9, 9, 12);
-      final game =
-          HouseholdProvider(clock: () => now, persistenceEnabled: false)
-            ..pet = Pet(
-                id: 'test-dragon',
-                firstEgg: false,
-                stage: DragonStage.hatchling);
+      final game = HouseholdProvider(
+          clock: () => now,
+          random: const EventCategoryRandom(),
+          persistenceEnabled: false)
+        ..pet = Pet(
+            id: 'test-dragon', firstEgg: false, stage: DragonStage.hatchling);
       addTearDown(game.dispose);
       await game.redeemCode(code, keeperId: 'DH-AAAA0001');
       expect(game.activeSpecialAdventureWindows.single.event.id, id);

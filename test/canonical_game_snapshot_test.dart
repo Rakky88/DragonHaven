@@ -117,6 +117,34 @@ void main() {
     expect(() => _parse(unknown), _error('game_snapshot_invalid'));
   });
 
+  test('temporary Tower absences are validated and expire against server time',
+      () {
+    final activeWire = _wire();
+    final dragonId = activeWire['data']['activeDragonId'] as String;
+    activeWire['data']['house']['towerDragonAwayUntil'] = {
+      dragonId: '2026-09-07T12:15:00Z',
+    };
+    final active = _parse(activeWire);
+    expect(active.house.temporarilyAwayDragonIds, {dragonId});
+    expect(active.house.towerDragonAwayUntil.keys, {dragonId});
+
+    final expiredWire = _wire();
+    expiredWire['data']['house']['towerDragonAwayUntil'] = {
+      dragonId: '2026-09-07T11:59:59Z',
+    };
+    expect(_parse(expiredWire).house.temporarilyAwayDragonIds, isEmpty);
+
+    final legacyWire = _wire();
+    legacyWire['data']['house'].remove('towerDragonAwayUntil');
+    expect(_parse(legacyWire).house.temporarilyAwayDragonIds, isEmpty);
+
+    final unknownWire = _wire();
+    unknownWire['data']['house']['towerDragonAwayUntil'] = {
+      'unknown-dragon': '2026-09-07T12:15:00Z',
+    };
+    expect(() => _parse(unknownWire), _error('game_snapshot_invalid'));
+  });
+
   test('wrong account, stale revision and a live-mode impostor are rejected',
       () {
     expect(() => _parse(_wire()..['owner_id'] = _other),

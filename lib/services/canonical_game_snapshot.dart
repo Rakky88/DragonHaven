@@ -423,6 +423,24 @@ class CanonicalHouseView {
       for (final entry in returningVisitors.entries)
         if (entry.value.isAfter(serverTime)) entry.key,
     });
+    // Older cached projections predate room breaks; an absent map means that
+    // every dragon is currently inside the Tower.
+    final away =
+        _map(data['towerDragonAwayUntil'] ?? const <String, dynamic>{});
+    if (away.entries.any((entry) =>
+        !_text(entry.key) ||
+        !_date(entry.value) ||
+        !dragons.any((dragon) => dragon.id == entry.key))) {
+      _invalid();
+    }
+    towerDragonAwayUntil = Map.unmodifiable({
+      for (final entry in away.entries)
+        entry.key: DateTime.parse(entry.value as String),
+    });
+    temporarilyAwayDragonIds = Set.unmodifiable({
+      for (final entry in towerDragonAwayUntil.entries)
+        if (entry.value.isAfter(serverTime)) entry.key,
+    });
   }
   late final List<HousePlacement> placements;
   late final Set<String> unlockedRooms;
@@ -432,6 +450,8 @@ class CanonicalHouseView {
   late final Map<int, double> repairFactors;
   late final Map<String, DateTime> returningVisitors;
   late final Set<String> returningVisitorIds;
+  late final Map<String, DateTime> towerDragonAwayUntil;
+  late final Set<String> temporarilyAwayDragonIds;
   late final int wardLevel;
   int? get nextFloorPrice =>
       floorRoomIds.length < 20 ? towerBuildPrice(floorRoomIds.length) : null;

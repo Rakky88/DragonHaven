@@ -197,7 +197,7 @@ Trial resume candidate: resuming restores the saved game, score and mistakes,
 releases a previously held pointer and rotates the attempt ID to fence an old
 device. A private clock origin excludes time away. The six-hour expiry remains;
 expired attempts can be abandoned without rewards. No score, clock, seed or
-checkpoint can be uploaded by the player. All eleven games are replayed across
+checkpoint can be uploaded by the player. All fourteen games are replayed across
 one saved/resumed checkpoint in the parity fixture. Local restart, lost reply,
 old-ID refusal, elapsed-time refusal, expiry and one-reward checks pass. Event
 schedules, reward amounts, pools, probabilities and redeem codes do not change.
@@ -248,7 +248,7 @@ Ruleset: v0.05.29 published and verified; production schema 65, economy activati
 
 Source baseline: v0.05.16, with subsequent changes and dormant server rules below
 
-<!-- reference-source-fingerprint: 38f246abd98c9585 -->
+<!-- reference-source-fingerprint: 10a75fa96defd1a4 -->
 
 Calendar hardening after v0.05.29: canonical commands normalize the database
 instant to UTC. Legacy offline play retains its local day. Long-adventure
@@ -443,12 +443,18 @@ reduction is uniformly selected from whole percentages 10–90: `1/81` each.
 
 Every dragon has one total training budget: ordinary 950, Sinister 1100,
 plus 50 after Mastery evolution, plus its permanent **Dragon Spark** (Dutch:
-**Drakenvonk**), uniformly 0 through 50 inclusive (1/51 per value). The private
-value is derived once from the persisted hatch seed using a separate fixed
-salt and stored explicitly on save. Existing eggs/dragons keep that same value
-through hatch, evolution, restore, trade and import. This uses no chest reward
-random draw and never rerolls on Astrolabe use. Public snapshots expose only
-null until revealed; the UI offers no undiscovered bonus hint or capacity bar.
+**Drakenvonk**), uniformly 0 through 50 inclusive (1/51 per value). Final
+evolution also gives a deterministic gift above that earlier capacity: +10 on
+the chosen Might, Arcana or Spirit path, or +5 on each of the three paths for
+Mastery. The shared capacity grows by the same 10 or 15 points. A persisted
+marker makes the grant exact-once; existing Ascended dragons receive the same
+gift once when their older save is upgraded. This gift has no random draw.
+The private Spark value is derived once from the persisted hatch seed using a
+separate fixed salt and stored explicitly on save. Existing eggs/dragons keep
+that same value through hatch, evolution, restore, trade and import. This uses
+no chest reward random draw and never rerolls on Astrolabe use. Public
+snapshots expose only null until revealed; the UI offers no undiscovered bonus
+hint or capacity bar.
 
 Individual expertise scores have no independent training ceiling. Gains stop
 when the shared total is full; scores cannot become negative. MAX is displayed
@@ -772,17 +778,38 @@ Normal timed Mini, Short, and Long offer rotations are deterministic from the ti
 
 ### 4.1 Trial offer type
 
-Outside a seasonal event, every empty Trial slot is selected uniformly from
-Cavern Flight, Ruin Breaker, and Runeweaver: `1/3` each. During one active
-seasonal event, its event Trial is added as a fourth eligible kind, so Cavern
-Flight, Ruin Breaker, Runeweaver, and the active event Trial each have exactly
-25% per ordinary refill. On first activation of an event occurrence, all currently
-empty slots are instead filled deterministically with that event's Trial (100%).
-Existing offers are preserved. A persisted occurrence key prevents repeating
-this initial fill. Duplicate kinds may occupy multiple slots. Personal previews
-use the same activation/refill rules with a separate occurrence.
+Each empty slot uses two independent selection stages. Without an active event,
+Arcana, Spirit, and Might are the first-stage categories at exactly `1/3` each.
+With an active event, Arcana, Spirit, Might, and Event are exactly `1/4` each;
+the Event result uses that event's Trial. A focus category normally selects its
+classic Trial: Runeweaver for Arcana, Cavern Flight for Spirit, and Ruin Breaker
+for Might. If the player owns a matching Ascended specialist or any Ascended
+Mastery dragon, that focus instead splits exactly `1/2` classic and `1/2` added
+Trial (Rune Orbit, Spirit Alignment, or Ruin Guard). Released dragons never
+unlock an added Trial. Consequently, outside an event an unlocked focus gives
+each of its two games `1/6`, while a locked focus gives its classic game the
+full `1/3`; during an event those values are `1/8` and `1/4` respectively.
+
+First activation of an event occurrence grants up to three normal refill
+opportunities, limited by the three-slot board, using the same two-stage odds.
+It no longer forces event-only offers. Existing offers are preserved. A
+persisted occurrence key prevents repeating this activation refill. Duplicate
+kinds may occupy multiple slots. Personal previews use the same rules with a
+separate occurrence.
 
 ### 4.2 Trial reward by grade
+
+The six standard Trials keep separate high scores and ranking ladders. Their
+inclusive C/B/A/S/S+ boundaries are:
+
+| Standard Trial | C | B | A | S | S+ |
+|---|---:|---:|---:|---:|---:|
+| Cavern Flight | 250 | 600 | 1100 | 1700 | 2500 |
+| Ruin Breaker | 900 | 2250 | 4000 | 6750 | 9000 |
+| Runeweaver | 3 | 6 | 9 | 12 | 15 |
+| Spirit Alignment | 150 | 300 | 600 | 900 | 1500 |
+| Ruin Guard | 600 | 1500 | 2800 | 4500 | 7000 |
+| Rune Orbit | 3 | 6 | 10 | 15 | 22 |
 
 Current boundaries published in v0.05.25: Halloween
 (Witchlight Ward) uses 500 / 1200 / 1600 / 1800 / 2000 for C/B/A/S/S+.
@@ -963,6 +990,25 @@ These systems use randomness but do not directly choose a reward item. Rewards r
 - Cavern Flight is seeded by the Trial-offer ID. Each obstacle has a gap center uniformly from 30% to 70% of the playfield, a 50% crystal state, a uniform movement phase, and—after four obstacles have been passed—a 25% chance to move. Replaying the same persisted offer recreates its seeded sequence.
 - Runeweaver is seeded by the Trial-offer ID combined with the selected dragon's hatch seed. Every added rune is uniform among the available rune keys. From round six onward, rune positions are shuffled.
 - Ruin Breaker uses timing and player input; it does not roll a reward-affecting target sequence.
+- Spirit Alignment keeps its outline fixed at the exact horizontal and vertical
+  center. Circle, square and triangle appear in that fixed order, moving first
+  vertically at the left and then horizontally after the first tap. A round
+  continues only when all three
+  displayed overlaps are exactly 100%, then movement becomes exactly 1.10 times
+  as fast for each successive round. The percentage is the true geometric
+  intersection of the equal circle, square, or triangle in one square logical
+  arena. A fixed sub-pixel input snap moves a near-perfect stop onto exact
+  alignment; every other result stays below 100%. Spirit slows both movement
+  cycles by multiplying their duration by `1 + (S / 10000) * 0.8`; it never
+  changes the measured overlap. The run has no timer and ends on the first
+  imperfect three-shape round.
+- Ruin Guard selects each falling boulder's lane uniformly from three lanes.
+  Might lengthens its fall time by `M / 100 %`; every third completed boulder
+  raises speed by a factor of 1.08. Three missed boulders end the run.
+- Rune Orbit selects the target rune uniformly from five runes for each round.
+  Their gate order is deterministic; Arcana lengthens each visible step by
+  `A / 100 %` before the score-driven acceleration. Three wrong captures end
+  the run. None of these layout draws selects a reward.
 - Every online seasonal Trial uses the server-provided seed; local preview/test
   seeds remain injectable. These random layouts never roll a reward item.
   Witchlight retains its seeded draws (target, unused lane, palette color and
@@ -1274,7 +1320,7 @@ server trial settlement and live cutover remain separate open work.
 
 ### Verified Trial inputs and constellation command (10 September 2026)
 
-The canonical command candidate derives all eleven Trial scores from replayed
+The canonical command candidate derives all fourteen Trial scores from replayed
 controls, then uses the existing grade reward function and private server reward
 entropy once. Public layout seeds and checkpoints never select reward drops.
 The seven-day constellation UI now uses the existing authoritative claim command;

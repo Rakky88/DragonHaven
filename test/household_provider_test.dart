@@ -1811,6 +1811,201 @@ void main() {
     expect(restored.pet.currentRoomId, 'hearth');
   });
 
+  test(
+      'clearing a full room relocates what fits and gives overflow a persistent fifteen-minute break',
+      () async {
+    var now = DateTime.utc(2026, 9, 24, 12);
+    final game = HouseholdProvider(
+      random: Random(510),
+      clock: () => now,
+      persistenceEnabled: false,
+    );
+    game.pet
+      ..stage = DragonStage.hatchling
+      ..name = 'Nova'
+      ..roamsTower = true
+      ..currentFloorIndex = 0
+      ..currentRoomId = 'hearth';
+    game.towerFloorRoomIds = ['hearth', 'crystal'];
+    game.unlockedRoomIds.addAll(game.towerFloorRoomIds);
+    for (var index = 0; index < 3; index++) {
+      game.sanctuaryDragons.add(Pet(
+        id: 'clear-roamer-$index',
+        name: 'Roamer $index',
+        stage: DragonStage.hatchling,
+        firstEgg: false,
+        acquiredAt: DateTime.utc(2026, 1, index + 1),
+        roamsTower: true,
+        currentFloorIndex: index == 0 ? 0 : 1,
+        currentRoomId: index == 0 ? 'hearth' : 'crystal',
+      ));
+    }
+
+    expect(await game.clearDragonsFromRoom(0), isTrue);
+    final visibleOnSource = game.towerDragons
+        .where((dragon) => dragon.currentFloorIndex == 0)
+        .toList();
+    expect(visibleOnSource, isEmpty);
+    expect(
+      game.towerDragons.where((dragon) => dragon.currentFloorIndex == 1).length,
+      3,
+    );
+    expect(game.towerDragonAwayUntil, hasLength(1));
+    final awayId = game.towerDragonAwayUntil.keys.single;
+    expect(
+      game.towerDragonAwayUntil[awayId],
+      now.add(const Duration(minutes: 15)),
+    );
+
+    final persisted = game.exportState();
+    expect(
+      (persisted['towerDragonAwayUntil'] as Map<String, dynamic>).keys,
+      {awayId},
+      reason: 'The server snapshot must persist a room break across restarts.',
+    );
+    expect(
+        game.towerDragons.map((dragon) => dragon.id), isNot(contains(awayId)));
+
+    now = now.add(const Duration(minutes: 15));
+    await game.refreshForCurrentDate();
+    expect(game.towerDragonAwayUntil, isEmpty);
+    expect(game.towerDragons.map((dragon) => dragon.id), contains(awayId));
+    for (var floor = 0; floor < game.towerFloorRoomIds.length; floor++) {
+      expect(
+        game.towerDragons
+            .where((dragon) => dragon.currentFloorIndex == floor)
+            .length,
+        lessThanOrEqualTo(3),
+      );
+    }
+    game.dispose();
+  });
+
+  test('clearing uses the same identity tie-break as its optimistic preview',
+      () async {
+    final game = HouseholdProvider(
+      random: Random(513),
+      persistenceEnabled: false,
+    );
+    game.pet
+      ..stage = DragonStage.hatchling
+      ..roamsTower = false;
+    game.towerFloorRoomIds = ['hearth', 'crystal'];
+    game.unlockedRoomIds.addAll(game.towerFloorRoomIds);
+    final acquired = DateTime.utc(2026, 1, 1);
+    for (final id in ['source-b', 'source-a']) {
+      game.sanctuaryDragons.add(Pet(
+        id: id,
+        name: id,
+        stage: DragonStage.hatchling,
+        firstEgg: false,
+        acquiredAt: acquired,
+        roamsTower: true,
+        currentFloorIndex: 0,
+        currentRoomId: 'hearth',
+      ));
+    }
+    for (var index = 0; index < 2; index++) {
+      game.sanctuaryDragons.add(Pet(
+        id: 'destination-$index',
+        name: 'Destination $index',
+        stage: DragonStage.hatchling,
+        firstEgg: false,
+        acquiredAt: DateTime.utc(2025, 1, index + 1),
+        roamsTower: true,
+        currentFloorIndex: 1,
+        currentRoomId: 'crystal',
+      ));
+    }
+
+    expect(await game.clearDragonsFromRoom(0), isTrue);
+    final sourceA =
+        game.sanctuaryDragons.firstWhere((dragon) => dragon.id == 'source-a');
+    expect(sourceA.currentFloorIndex, 1);
+    expect(game.towerDragonAwayUntil.keys, {'source-b'});
+    game.dispose();
+  });
+
+  test('returning visitors reserve a room slot during roaming normalization',
+      () async {
+    final now = DateTime.utc(2026, 9, 24, 12);
+    final game = HouseholdProvider(
+      random: Random(514),
+      clock: () => now,
+      persistenceEnabled: false,
+    );
+    game.pet
+      ..stage = DragonStage.hatchling
+      ..name = 'Nova'
+      ..favorite = true
+      ..roamsTower = true
+      ..currentFloorIndex = 0
+      ..currentRoomId = 'hearth';
+    game.towerFloorRoomIds = ['hearth', 'crystal'];
+    game.unlockedRoomIds.addAll(game.towerFloorRoomIds);
+    game.damagedTowerFloors = {1};
+    for (final entry in [('resident', 1), ('displaced', 2)]) {
+      game.sanctuaryDragons.add(Pet(
+        id: entry.$1,
+        name: entry.$1,
+        stage: DragonStage.hatchling,
+        firstEgg: false,
+        acquiredAt: DateTime.utc(2026, 1, entry.$2),
+        roamsTower: true,
+        currentFloorIndex: entry.$1 == 'resident' ? 0 : 1,
+        currentRoomId: entry.$1 == 'resident' ? 'hearth' : 'crystal',
+      ));
+    }
+    final visitor = Pet(
+      id: 'returning-visitor',
+      name: 'Visitor',
+      stage: DragonStage.wyrmling,
+      firstEgg: false,
+      acquiredAt: DateTime.utc(2025),
+      roamsTower: false,
+      currentFloorIndex: 0,
+      currentRoomId: 'hearth',
+    );
+    game.releasedDragons.add(visitor);
+    game.returningVisitors[visitor.id] = now.add(const Duration(hours: 1));
+    game.lastReturningDayKey = '2026-09-24';
+
+    await game.refreshForCurrentDate();
+
+    final displaced =
+        game.sanctuaryDragons.firstWhere((dragon) => dragon.id == 'displaced');
+    expect(displaced.roamsTower, isFalse);
+    final assignedToHearth = <Pet>[
+      ...game.ownedDragons.where((dragon) => dragon.roamsTower),
+      ...game.visitingDragons,
+    ].where((dragon) => dragon.currentFloorIndex == 0).toList();
+    expect(assignedToHearth, hasLength(3));
+    expect(assignedToHearth.map((dragon) => dragon.id), contains(visitor.id));
+    expect(game.towerDragons.map((dragon) => dragon.id), contains(visitor.id));
+
+    displaced
+      ..roamsTower = true
+      ..currentFloorIndex = 1
+      ..currentRoomId = 'crystal';
+    game.towerDragonAwayUntil[displaced.id] = now;
+    await game.refreshForCurrentDate();
+    expect(displaced.roamsTower, isTrue);
+    expect(
+      game.towerDragonAwayUntil[displaced.id],
+      now.add(const Duration(minutes: 1)),
+      reason: 'A due dragon must wait when a visitor occupies the final slot.',
+    );
+    expect(
+      <Pet>[
+        ...game.ownedDragons.where((dragon) =>
+            dragon.roamsTower && !game.isTowerDragonAway(dragon.id)),
+        ...game.visitingDragons,
+      ].where((dragon) => dragon.currentFloorIndex == 0),
+      hasLength(3),
+    );
+    game.dispose();
+  });
+
   test('refresh repairs an invited favorite with a stale Tower assignment',
       () async {
     final game = HouseholdProvider(random: Random(76));

@@ -18,9 +18,15 @@ const int infernalSpecialistExpertise = 400;
 const int ordinaryExpertiseBudget = 950;
 const int sinisterExpertiseBudget = 1100;
 const int masteryExpertiseBonus = 50;
+const int ascensionExpertiseGift = 10;
+const int masteryAscensionExpertiseGift = 5;
+const int masteryAscensionExpertiseGiftTotal =
+    masteryAscensionExpertiseGift * 3;
 const int maximumDragonSpark = 50;
-const int largestExpertiseBudget =
-    sinisterExpertiseBudget + masteryExpertiseBonus + maximumDragonSpark;
+const int largestExpertiseBudget = sinisterExpertiseBudget +
+    masteryExpertiseBonus +
+    masteryAscensionExpertiseGiftTotal +
+    maximumDragonSpark;
 const int dragonSchoolAttemptsPerLesson = 3;
 const int dragonSchoolLessonCount = 10;
 const int dragonSchoolMaximumAttempts =
@@ -46,6 +52,11 @@ int dragonExpertiseBudget({
   return (sinister ? sinisterExpertiseBudget : ordinaryExpertiseBudget) +
       (stage == DragonStage.ascended && evolutionPath == 'mastery'
           ? masteryExpertiseBonus
+          : 0) +
+      (stage == DragonStage.ascended
+          ? evolutionPath == 'mastery'
+              ? masteryAscensionExpertiseGiftTotal
+              : ascensionExpertiseGift
           : 0);
 }
 
@@ -66,6 +77,9 @@ const _trialKeys = {
   'cavernFlight',
   'ruinBreaker',
   'runeweaver',
+  'spiritAlignment',
+  'ruinGuard',
+  'runeOrbit',
   'witchlightWard',
   'hollyfrostGiftforge',
   'midnightChime',
@@ -210,7 +224,10 @@ class Pet implements TrialDragon {
     int? hatchSeed,
     String? lineageId,
     this.evolutionPath,
+    bool? ascensionExpertiseGiftGranted,
   })  : _storedDragonSpark = dragonSpark?.clamp(0, 50),
+        ascensionExpertiseGiftGranted =
+            ascensionExpertiseGiftGranted ?? stage == DragonStage.ascended,
         id = id ?? 'dragon-${DateTime.now().microsecondsSinceEpoch}',
         _sex = sex,
         highlightedExpertises = {...?highlightedExpertises},
@@ -297,6 +314,7 @@ class Pet implements TrialDragon {
   final String lineageId;
   @override
   String? evolutionPath;
+  bool ascensionExpertiseGiftGranted;
 
   static const hatchXpFirst = 100;
   static const hatchXpLater = 200;
@@ -561,8 +579,27 @@ class Pet implements TrialDragon {
               ? 'spirit'
               : leadingPath;
       stage = DragonStage.ascended;
+      _grantAscensionExpertiseGift();
     }
     stageStartedAt = now;
+  }
+
+  void _grantAscensionExpertiseGift() {
+    if (stage != DragonStage.ascended || ascensionExpertiseGiftGranted) return;
+    if (evolutionPath == 'mastery') {
+      for (final focus in TrainingFocus.values) {
+        training[focus.name] =
+            trainingFor(focus) + masteryAscensionExpertiseGift;
+      }
+    } else {
+      final focus = TrainingFocus.values
+          .where((candidate) => candidate.name == activeEvolutionPath)
+          .firstOrNull;
+      final awardedFocus = focus ?? TrainingFocus.spirit;
+      training[awardedFocus.name] =
+          trainingFor(awardedFocus) + ascensionExpertiseGift;
+    }
+    ascensionExpertiseGiftGranted = true;
   }
 
   Map<String, dynamic> toJson() => {
@@ -614,6 +651,7 @@ class Pet implements TrialDragon {
         'hatchSeed': hatchSeed,
         'lineageId': lineageId,
         'evolutionPath': evolutionPath,
+        'ascensionExpertiseGiftGranted': ascensionExpertiseGiftGranted,
       };
 
   factory Pet.fromJson(Map<String, dynamic> json) {
@@ -651,7 +689,7 @@ class Pet implements TrialDragon {
       'might' || 'arcana' || 'spirit' || 'mastery' => storedPath,
       _ => null,
     };
-    return Pet(
+    final pet = Pet(
       id: nonEmptyStringFromJson(json['id']) ?? 'legacy-$seed',
       name: stringFromJson(json['name'])?.trim() ?? '',
       sex: DragonSex.fromJson(json),
@@ -718,6 +756,10 @@ class Pet implements TrialDragon {
                   seed.remainder(standardDragonLineages.length)]
               .id,
       evolutionPath: migratedPath,
+      // Saves created before the Ascension gift had no marker. They are
+      // upgraded once below; new saves preserve the explicit marker.
+      ascensionExpertiseGiftGranted:
+          json['ascensionExpertiseGiftGranted'] == true,
       training: {
         'might': nonNegativeIntFromJson(
           rawTraining['might'] ?? oldTraining['earth'],
@@ -755,6 +797,8 @@ class Pet implements TrialDragon {
         fallback: 0,
       ),
     );
+    pet._grantAscensionExpertiseGift();
+    return pet;
   }
 
   static int _incubationSecondsFromJson(

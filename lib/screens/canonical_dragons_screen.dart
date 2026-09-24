@@ -711,6 +711,11 @@ Future<void> showCanonicalDragonDetails(BuildContext context, String id) async {
                                       dragon.trialBest('ruinBreaker'),
                                   runeweaverBest:
                                       dragon.trialBest('runeweaver'),
+                                  spiritAlignmentBest:
+                                      dragon.trialBest('spiritAlignment'),
+                                  ruinGuardBest: dragon.trialBest('ruinGuard'),
+                                  runeOrbitBest: dragon.trialBest('runeOrbit'),
+                                  showNewTrials: true,
                                 ),
                                 const Divider(height: 24),
                                 if (view.activeDragonId == id)

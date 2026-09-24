@@ -1409,6 +1409,10 @@ class _OwnedDragonsSheetState extends State<_OwnedDragonsSheet> {
                 cavernFlightBest: dragon.trialBest('cavernFlight'),
                 ruinBreakerBest: dragon.trialBest('ruinBreaker'),
                 runeweaverBest: dragon.trialBest('runeweaver'),
+                spiritAlignmentBest: dragon.trialBest('spiritAlignment'),
+                ruinGuardBest: dragon.trialBest('ruinGuard'),
+                runeOrbitBest: dragon.trialBest('runeOrbit'),
+                showNewTrials: true,
               ),
               const SizedBox(height: 10),
               Card(

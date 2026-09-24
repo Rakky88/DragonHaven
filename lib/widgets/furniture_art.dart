@@ -43,12 +43,19 @@ class FurnitureArt extends StatelessWidget {
       label: AppStrings.of(context).itemName(item),
       child: standalone == null
           ? _errorBuilder(context, StateError('Unknown furniture'), null)
-          : Image.asset(
-              standalone,
-              fit: fit,
-              filterQuality: FilterQuality.high,
-              cacheWidth: 512,
-              errorBuilder: _errorBuilder,
+          : FractionallySizedBox(
+              // Several wide cushions and high-backed daybeds use nearly the
+              // complete source canvas. A small shared safe area prevents the
+              // artwork touching a clipped card or room boundary at any size.
+              widthFactor: item.slot == ItemSlot.bed ? .94 : 1,
+              heightFactor: item.slot == ItemSlot.bed ? .94 : 1,
+              child: Image.asset(
+                standalone,
+                fit: fit,
+                filterQuality: FilterQuality.high,
+                cacheWidth: 512,
+                errorBuilder: _errorBuilder,
+              ),
             ),
     );
   }

@@ -52,6 +52,29 @@ import 'widgets/haven_lighting.dart';
 import 'widgets/seasonal_app_frame.dart';
 import 'widgets/shop_economy_scope.dart';
 
+@visibleForTesting
+Duration canonicalRefreshDelay({
+  required DateTime now,
+  required DateTime adventureRefreshAt,
+  required Iterable<DateTime> towerAwayUntil,
+  int expiredRetryAttempt = 0,
+}) {
+  final breaks = towerAwayUntil.toList(growable: false);
+  if (breaks.any((instant) => !instant.isAfter(now))) {
+    const retrySeconds = [2, 4, 8, 16, 30, 60];
+    final index = expiredRetryAttempt.clamp(0, retrySeconds.length - 1);
+    return Duration(seconds: retrySeconds[index]);
+  }
+  final future = <DateTime>[
+    adventureRefreshAt,
+    ...breaks,
+  ].where((instant) => instant.isAfter(now)).toList()
+    ..sort();
+  if (future.isEmpty) return const Duration(milliseconds: 1);
+  final delay = future.first.difference(now);
+  return delay > Duration.zero ? delay : const Duration(milliseconds: 1);
+}
+
 /// The ordinary five-tab app over confirmed account state. No device save is
 /// constructed or mutated here; all changes use durable server commands.
 class ServerDragonHavenApp extends StatefulWidget {
@@ -69,6 +92,7 @@ class _ServerDragonHavenAppState extends State<ServerDragonHavenApp>
   Timer? _clock, _refresh;
   CanonicalHatchScheduler? _hatchScheduler;
   String? _eventKey, _audioConfiguration;
+  int _towerRefreshRetryAttempt = 0;
 
   DateTime get _now =>
       (_observed?.serverTime ?? DateTime.now().toUtc()).add(_elapsed.elapsed);
@@ -108,11 +132,18 @@ class _ServerDragonHavenAppState extends State<ServerDragonHavenApp>
 
   void _scheduleRefresh() {
     _refresh?.cancel();
-    final refreshAt = nextAdventureOfferRefreshAt(AdventureKind.mini, _now)!;
-    final remaining = refreshAt.difference(_now);
-    _refresh = Timer(
-        remaining > Duration.zero ? remaining : const Duration(milliseconds: 1),
-        () async {
+    final view = context.read<CanonicalGameSession>().confirmedSnapshot;
+    final now = _now;
+    final breaks = view?.house.towerDragonAwayUntil.values ?? const [];
+    final expiredBreak = breaks.any((instant) => !instant.isAfter(now));
+    if (!expiredBreak) _towerRefreshRetryAttempt = 0;
+    final remaining = canonicalRefreshDelay(
+      now: now,
+      adventureRefreshAt: nextAdventureOfferRefreshAt(AdventureKind.mini, now)!,
+      towerAwayUntil: breaks,
+      expiredRetryAttempt: _towerRefreshRetryAttempt,
+    );
+    _refresh = Timer(remaining, () async {
       // Let an exclusive command that crossed the quarter-hour finish, so the
       // scheduled refill is not skipped for an entire cycle. Predictable
       // commands need no wait because refresh can join their durable queue.
@@ -124,8 +155,25 @@ class _ServerDragonHavenAppState extends State<ServerDragonHavenApp>
         await Future<void>.delayed(const Duration(milliseconds: 250));
       }
       await _advance();
-      if (mounted) _scheduleRefresh();
+      if (mounted) {
+        if (_hasExpiredTowerBreak && _towerRefreshRetryAttempt < 5) {
+          _towerRefreshRetryAttempt++;
+        }
+        _scheduleRefresh();
+      }
     });
+  }
+
+  bool get _hasExpiredTowerBreak {
+    final now = _now;
+    return context
+            .read<CanonicalGameSession>()
+            .confirmedSnapshot
+            ?.house
+            .towerDragonAwayUntil
+            .values
+            .any((instant) => !instant.isAfter(now)) ==
+        true;
   }
 
   Future<void> _advance() async {
@@ -219,6 +267,9 @@ class _ServerDragonHavenAppState extends State<ServerDragonHavenApp>
     if (!identical(confirmed, _observed)) {
       _observed = confirmed;
       _elapsed.reset();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _scheduleRefresh();
+      });
     }
     final windows = _windows(view);
     final event = appEventWindow(windows, _now);

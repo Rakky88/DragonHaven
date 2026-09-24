@@ -153,7 +153,7 @@ void main() {
       await tester.tap(find.byKey(const Key('about-logo-button')));
       await tester.pumpAndSettle();
       expect(find.text('About DragonHaven'), findsWidgets);
-      expect(find.textContaining('v0.06.08'), findsWidgets);
+      expect(find.textContaining('v0.06.09'), findsWidgets);
       Navigator.of(tester.element(find.byType(Scaffold).last)).pop();
       await tester.pumpAndSettle();
       await tester.tap(find.byKey(const Key('haven-menu-button')));

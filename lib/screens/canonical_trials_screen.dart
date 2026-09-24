@@ -216,24 +216,14 @@ class _TrialsState extends State<_Trials> {
                     ? () => _choose(context, offer)
                     : null,
                 onDismiss: session.canAct && !reserved
-                    ? () async {
-                        final confirmed = await confirmCanonicalAction(
-                            context,
-                            s.pick(
-                                'Dismiss this Trial?', 'Deze proef wegsturen?'),
-                            owner: view.ownerId,
-                            epoch: actions.epoch);
-                        if (confirmed && context.mounted) {
-                          await runShopAction(context, () async {
-                            await actions.execute(
-                                'dismiss_trial', {'offerId': offer.id});
-                          });
-                        }
+                    ? () {
+                        unawaited(runShopAction(context, () async {
+                          await actions
+                              .execute('dismiss_trial', {'offerId': offer.id});
+                        }));
                       }
                     : null),
-          if (view.trialOffers.isEmpty)
-            Text(s.pick('New Trials will appear here.',
-                'Hier verschijnen nieuwe proeven.')),
+          if (view.trialOffers.isEmpty) const _EmptyTrials(),
         ]);
   }
 
@@ -258,7 +248,12 @@ class _TrialsState extends State<_Trials> {
                   .where((d) =>
                       d.owned &&
                       d.stage != DragonStage.egg &&
-                      d.adventureId == null)
+                      d.adventureId == null &&
+                      dragonMeetsTrialFormRequirement(
+                        kind: offer.kind,
+                        stage: d.stage,
+                        activeEvolutionPath: d.activeEvolutionPath,
+                      ))
                   .toList()
                 ..sort((a, b) => a.displayName.compareTo(b.displayName));
               return SafeArea(
@@ -400,6 +395,42 @@ class _TrialsState extends State<_Trials> {
             MaterialPageRoute<TrialCompletion>(
                 builder: (_) => TrialGameScreen(
                     offerId: offer.id, dragonId: id, source: source))));
+  }
+}
+
+class _EmptyTrials extends StatelessWidget {
+  const _EmptyTrials();
+
+  @override
+  Widget build(BuildContext context) {
+    final strings = AppStrings.of(context);
+    return Card(
+      key: const Key('canonical-empty-trials'),
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          children: [
+            const GameIconSprite(GameIconKind.adventureActive, size: 96),
+            const SizedBox(height: 12),
+            Text(
+              strings.pick('The Trial gates are resting',
+                  'De poorten van de proeven rusten'),
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 17),
+            ),
+            const SizedBox(height: 5),
+            Text(
+              strings.pick(
+                'A new Trial appears at the next quarter-hour.',
+                'Op het volgende kwartier verschijnt een nieuwe proef.',
+              ),
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: AppColors.muted),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 
@@ -547,6 +578,11 @@ class _TrialOfferCard extends StatelessWidget {
         TrialKind.ruinBreaker =>
           'assets/images/ui/trials/trial_ruin_breaker.webp',
         TrialKind.runeweaver => 'assets/images/ui/trials/trial_runeweaver.webp',
+        TrialKind.spiritAlignment =>
+          'assets/images/ui/trials/trial_cavern_flight.webp',
+        TrialKind.ruinGuard =>
+          'assets/images/ui/trials/trial_ruin_breaker.webp',
+        TrialKind.runeOrbit => 'assets/images/ui/trials/trial_runeweaver.webp',
         TrialKind.witchlightWard =>
           'assets/images/events/halloween/trial_background.webp',
         TrialKind.hollyfrostGiftforge =>

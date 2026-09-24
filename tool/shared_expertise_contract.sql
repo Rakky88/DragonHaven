@@ -4,7 +4,7 @@ do $$
 declare keeper uuid:=gen_random_uuid(); partner uuid:=gen_random_uuid(); dragon_id uuid;
   pool jsonb; relic_count integer; pair_id uuid; result jsonb;
 begin
-  if private.dragon_expertise_maximum('ascended','mastery',true,'might')<>1200
+  if private.dragon_expertise_maximum('ascended','mastery',true,'might')<>1215
       or private.dragon_expertise_maximum('hatchling',null,false,'arcana')<>1000 then
     raise exception 'expertise_contract_transport_limits'; end if;
   if has_function_privilege('authenticated','public.invite_seasonal_pair_adventure_v68(text,text,integer,integer,integer)','execute')
@@ -21,26 +21,26 @@ begin
   perform set_config('request.jwt.claim.sub',keeper::text,true);
   dragon_id:=private.upsert_group_dragon(keeper,jsonb_build_object(
     'client_id','concentrated','name','Concentrated','lineage_id','sinisterra',
-    'stage','ascended','xp',3400,'might',1200,'arcana',0,'spirit',0,
+    'stage','ascended','xp',3400,'might',1215,'arcana',0,'spirit',0,
     'evolution_path','mastery','sinister',true));
-  if (select might from public.player_dragons where id=dragon_id)<>1200 then
+  if (select might from public.player_dragons where id=dragon_id)<>1215 then
     raise exception 'expertise_contract_concentrated_dragon'; end if;
   insert into public.social_showcases(user_id,favorite_dragon_might,
-    favorite_dragon_arcana,favorite_dragon_spirit) values(keeper,1200,0,0);
+    favorite_dragon_arcana,favorite_dragon_spirit) values(keeper,1215,0,0);
   insert into public.seasonal_pair_adventures(occurrence_key,creator_id,partner_id,
     creator_dragon_id,creator_might,creator_arcana,creator_spirit,simulated)
-    values('expertise-contract',keeper,partner,'concentrated',1200,0,0,true)
+    values('expertise-contract',keeper,partner,'concentrated',1215,0,0,true)
     returning id into pair_id;
   perform set_config('request.jwt.claim.sub',partner::text,true);
-  perform public.respond_seasonal_pair_adventure_v68(pair_id,true,'second',0,1200,0);
-  if (select partner_arcana from public.seasonal_pair_adventures where id=pair_id)<>1200 then
+  perform public.respond_seasonal_pair_adventure_v68(pair_id,true,'second',0,1215,0);
+  if (select partner_arcana from public.seasonal_pair_adventures where id=pair_id)<>1215 then
     raise exception 'expertise_contract_pair_concentration'; end if;
   begin
     update public.player_dragons set spirit=-1 where id=dragon_id;
     raise exception 'expertise_contract_negative_accepted';
   exception when check_violation then null; end;
   begin
-    update public.player_dragons set might=1201 where id=dragon_id;
+    update public.player_dragons set might=1216 where id=dragon_id;
     raise exception 'expertise_contract_oversized_accepted';
   exception when check_violation then null; end;
   pool:=private.economy_relic_drop_pool(keeper);

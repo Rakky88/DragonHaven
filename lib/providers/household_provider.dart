@@ -322,6 +322,13 @@ class HouseholdProvider extends ChangeNotifier {
   Set<int> damagedTowerFloors = {};
   Map<int, double> damagedTowerRepairFactors = {};
   Map<String, DateTime> returningVisitors = {};
+
+  /// Dragons temporarily sent outside by "Clear dragons".
+  ///
+  /// This is stored separately from returning visitors: those entries describe
+  /// released dragons visiting the Tower, while these identities remain owned
+  /// roaming dragons whose room place is reserved only after they return.
+  Map<String, DateTime> towerDragonAwayUntil = {};
   Map<String, DateTime> rareInteractionAt = {};
   String lastReturningDayKey = '';
   DateTime? scheduledReturningAt;
@@ -1352,6 +1359,19 @@ class HouseholdProvider extends ChangeNotifier {
       for (final entry in mapFromJson(data['returningVisitors']).entries)
         if (DateTime.tryParse(entry.value.toString()) case final time?)
           entry.key: time,
+    };
+    final knownTowerDragonIds = <String>{
+      if (!pet.isEgg) pet.id,
+      for (final dragon in sanctuaryDragons)
+        if (!dragon.isEgg) dragon.id,
+      for (final dragon in releasedDragons)
+        if (!dragon.isEgg) dragon.id,
+    };
+    towerDragonAwayUntil = {
+      for (final entry in mapFromJson(data['towerDragonAwayUntil']).entries)
+        if (knownTowerDragonIds.contains(entry.key))
+          if (DateTime.tryParse(entry.value.toString()) case final time?)
+            entry.key: time,
     };
     rareInteractionAt = {
       for (final entry in mapFromJson(data['rareInteractionAt']).entries)
@@ -3064,6 +3084,9 @@ class HouseholdProvider extends ChangeNotifier {
       ...trialOffers.map((offer) => '${offer.id}:${offer.kind.name}'),
       trialRefilledAt?.toIso8601String() ?? '',
     ].join('|');
+    final returningVisitorsChanged = _expireReturningVisitors();
+    final dailyReturningChanged = _processDailyReturningDragon();
+    final towerBreaksChanged = _restoreTowerDragonsFromBreak();
     final roamingAssignmentsChanged = _normalizeRoamingState();
     final streakChanged = _normalizeTrialStreakForDate(_clock());
     final changed = eventProgressChanged |
@@ -3074,8 +3097,9 @@ class HouseholdProvider extends ChangeNotifier {
         _registerCurrentStage() |
         _evolveReadyDragons(_clock()) |
         _refreshAdventureRuns() |
-        _expireReturningVisitors() |
-        _processDailyReturningDragon() |
+        returningVisitorsChanged |
+        dailyReturningChanged |
+        towerBreaksChanged |
         roamingAssignmentsChanged |
         streakChanged |
         roamIdleDragons();
@@ -3420,6 +3444,10 @@ class HouseholdProvider extends ChangeNotifier {
         },
         'returningVisitors': {
           for (final entry in returningVisitors.entries)
+            entry.key: entry.value.toIso8601String(),
+        },
+        'towerDragonAwayUntil': {
+          for (final entry in towerDragonAwayUntil.entries)
             entry.key: entry.value.toIso8601String(),
         },
         'rareInteractionAt': {

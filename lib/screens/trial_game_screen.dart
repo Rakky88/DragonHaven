@@ -26,6 +26,7 @@ import '../widgets/dragon_emote_picker.dart';
 import '../widgets/game_icon_sprite.dart';
 import '../widgets/trial_icon_sprite.dart';
 import 'seasonal_trial_game.dart';
+import 'standard_trial_game_widgets.dart';
 
 class TrialGameScreen extends StatefulWidget {
   const TrialGameScreen({
@@ -270,6 +271,39 @@ class _TrialGameScreenState extends State<TrialGameScreen>
         _RuinBreakerGame(offer: offer, dragon: dragon, controller: _controller),
       TrialKind.runeweaver =>
         _RuneweaverGame(offer: offer, dragon: dragon, controller: _controller),
+      TrialKind.spiritAlignment => SpiritAlignmentTrialGame(
+          offer: offer,
+          dragon: dragon,
+          controller: _controller,
+          onFinished: (score) => _finishTrial(
+            context,
+            offer: offer,
+            dragon: dragon,
+            score: score,
+          ),
+        ),
+      TrialKind.ruinGuard => RuinGuardTrialGame(
+          offer: offer,
+          dragon: dragon,
+          controller: _controller,
+          onFinished: (score) => _finishTrial(
+            context,
+            offer: offer,
+            dragon: dragon,
+            score: score,
+          ),
+        ),
+      TrialKind.runeOrbit => RuneOrbitTrialGame(
+          offer: offer,
+          dragon: dragon,
+          controller: _controller,
+          onFinished: (score) => _finishTrial(
+            context,
+            offer: offer,
+            dragon: dragon,
+            score: score,
+          ),
+        ),
       TrialKind.witchlightWard ||
       TrialKind.hollyfrostGiftforge ||
       TrialKind.midnightChime ||

@@ -12,6 +12,8 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'support/trial_rotation_random.dart';
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   setUpAll(() async {
@@ -72,7 +74,8 @@ void main() {
 
   test('birthday speed, help and input bounds remain playable', () {
     final plain = WishcakeTower(seed: 2);
-    final helped = WishcakeTower(seed: 2, might: 1000, arcana: 1000, spirit: 1000);
+    final helped =
+        WishcakeTower(seed: 2, might: 1000, arcana: 1000, spirit: 1000);
     expect(helped.baseWidth, closeTo(.484, .0001));
     expect(helped.perfectTolerance, closeTo(.0198, .00001));
     expect(helped.crossingSeconds(0),
@@ -86,10 +89,13 @@ void main() {
   });
 
   test(
-      'birthday preview fills slots, grants ordinary rewards once and preserves high score',
+      'birthday preview event rolls grant ordinary rewards once and preserve high score',
       () async {
     final now = DateTime.utc(2026, 9, 9, 12);
-    final game = HouseholdProvider(clock: () => now, persistenceEnabled: false)
+    final game = HouseholdProvider(
+        clock: () => now,
+        random: const EventCategoryRandom(),
+        persistenceEnabled: false)
       ..pet = Pet(
           id: 'birthday-dragon', stage: DragonStage.hatchling, firstEgg: false);
     addTearDown(game.dispose);

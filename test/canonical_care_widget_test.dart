@@ -327,6 +327,83 @@ void main() {
     await tester.pumpWidget(const SizedBox.shrink());
   });
 
+  testWidgets('room editor identifies furniture placed in another room',
+      (tester) async {
+    await setup(tester, const CanonicalHouseScreen(), prepare: (server) {
+      server.state['ownedItemIds'] = {
+        ...(server.state['ownedItemIds'] as List).cast<String>(),
+        'moss_cushion',
+        'cloud_basket',
+      }.toList();
+      server.state['housePlacements'] = <Map<String, dynamic>>[
+        {
+          'itemId': 'moss_cushion',
+          'roomId': 'garden',
+          'x': .48,
+          'y': .72,
+          'scale': 1.0,
+        },
+        {
+          'itemId': 'cloud_basket',
+          'roomId': 'hearth',
+          'x': .52,
+          'y': .74,
+          'scale': 1.0,
+        },
+      ];
+      server.state['equippedItemIds'] = <String, dynamic>{
+        'bed': 'cloud_basket',
+      };
+    });
+
+    final visit = find.byKey(const Key('canonical-visit-floor-0'));
+    await tester.scrollUntilVisible(visit, 200,
+        scrollable: find
+            .descendant(
+                of: find.byKey(const Key('canonical-tower-list')),
+                matching: find.byType(Scrollable))
+            .first);
+    await tester.tap(visit);
+    await tester.pump();
+    await settled(tester);
+
+    final edit = find.byKey(const Key('canonical-edit-floor-0'));
+    await tester.scrollUntilVisible(edit, 180,
+        scrollable: find
+            .descendant(
+                of: find
+                    .byKey(const PageStorageKey('canonical-floor-room-scroll')),
+                matching: find.byType(Scrollable))
+            .first);
+    await tester.tap(edit);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+
+    final elsewhere =
+        find.byKey(const Key('canonical-furniture-location-moss_cushion'));
+    await tester.scrollUntilVisible(elsewhere, 160,
+        scrollable: find
+            .descendant(
+                of: find.byKey(const Key('canonical-room-editor-list')),
+                matching: find.byType(Scrollable))
+            .first);
+    expect(tester.widget<Text>(elsewhere).data, startsWith('Geplaatst in '));
+    expect(
+        tester.widget<Text>(elsewhere).data, isNot('In deze kamer geplaatst'));
+
+    final here =
+        find.byKey(const Key('canonical-furniture-location-cloud_basket'));
+    await tester.scrollUntilVisible(here, 120,
+        scrollable: find
+            .descendant(
+                of: find.byKey(const Key('canonical-room-editor-list')),
+                matching: find.byType(Scrollable))
+            .first);
+    expect(tester.widget<Text>(here).data, 'In deze kamer geplaatst');
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
   testWidgets('active returning visitors appear in their former tower room',
       (tester) async {
     const visitorId = 'returning-visitor';

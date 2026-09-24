@@ -58,6 +58,7 @@ void main() {
     }
     for (final key in [
       'returningVisitors',
+      'towerDragonAwayUntil',
       'rareInteractionAt',
       'seasonalEventPreviewExpiresAt',
       'seasonalEventDismissedUntil'
@@ -83,6 +84,7 @@ void main() {
     expect(explicit['activities'][0]['createdAt'], expected);
     expect(explicit['pendingPresentations'][0]['sortAt'], expected);
     expect(explicit['returningVisitors']['source'], expected);
+    expect(explicit['towerDragonAwayUntil']['source'], expected);
     expect(explicit['rareInteractionAt']['source'], expected);
     expect(explicit['seasonalEventPreviewExpiresAt']['source'], expected);
     expect(explicit['longAdventureRefillDay'], state['longAdventureRefillDay']);

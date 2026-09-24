@@ -15,6 +15,33 @@ import 'haven_lighting.dart';
 
 const houseRoomWanderMoveDuration = Duration(milliseconds: 3600);
 
+/// Display footprint used by every Tower room view.
+///
+/// Beds are wider than the other furniture categories and get enough vertical
+/// room for high-backed daybeds. Keeping this in one helper lets the room and
+/// editor use the same proportional, edge-safe layout for the full catalog.
+Size furnitureRoomDisplaySize(ShopItem item) => switch (item.slot) {
+      ItemSlot.bed => const Size(96, 72),
+      ItemSlot.plant => const Size(54, 78),
+      ItemSlot.wall => const Size(52, 58),
+      ItemSlot.light => const Size(48, 56),
+    };
+
+Rect furnitureRoomPlacementRect({
+  required ShopItem item,
+  required HousePlacement placement,
+  required Size sceneSize,
+}) {
+  final base = furnitureRoomDisplaySize(item);
+  final width = min(sceneSize.width, base.width * placement.scale);
+  final height = min(sceneSize.height, base.height * placement.scale);
+  final maxLeft = max(0.0, sceneSize.width - width);
+  final maxTop = max(0.0, sceneSize.height - height);
+  final left = (placement.x * sceneSize.width - width / 2).clamp(0.0, maxLeft);
+  final top = (placement.y * sceneSize.height - height / 2).clamp(0.0, maxTop);
+  return Rect.fromLTWH(left.toDouble(), top.toDouble(), width, height);
+}
+
 @immutable
 class RoomDragonVisual {
   const RoomDragonVisual({
@@ -1267,20 +1294,17 @@ class _PositionedFurniture extends StatelessWidget {
   Widget build(BuildContext context) {
     final item = shopItemById(placement.itemId);
     if (item == null) return const SizedBox.shrink();
-    final baseSize = switch (item.slot) {
-      ItemSlot.bed => const Size(92, 58),
-      ItemSlot.plant => const Size(54, 78),
-      ItemSlot.wall => const Size(52, 58),
-      ItemSlot.light => const Size(48, 56),
-    };
-    final width = baseSize.width * placement.scale;
-    final height = baseSize.height * placement.scale;
+    final rect = furnitureRoomPlacementRect(
+      item: item,
+      placement: placement,
+      sceneSize: sceneSize,
+    );
     return Positioned(
       key: Key('placed-furniture-${item.id}'),
-      left: placement.x * sceneSize.width - width / 2,
-      top: placement.y * sceneSize.height - height / 2,
-      width: width,
-      height: height,
+      left: rect.left,
+      top: rect.top,
+      width: rect.width,
+      height: rect.height,
       child: GestureDetector(
         onTap: editable ? onTap : null,
         child: AnimatedContainer(

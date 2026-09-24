@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:dragon_haven/l10n/app_strings.dart';
 import 'package:dragon_haven/models/pet.dart';
+import 'package:dragon_haven/models/standard_trial_games.dart';
 import 'package:dragon_haven/models/trial.dart';
 import 'package:dragon_haven/providers/household_provider.dart';
 import 'package:dragon_haven/screens/trial_game_screen.dart';
@@ -131,6 +132,72 @@ void main() {
     expect(tester.takeException(), isNull);
     await tester.pump(const Duration(milliseconds: 600));
     await tester.pump(const Duration(milliseconds: 150));
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  testWidgets('Spirit Alignment exposes its two-tap shapes and speed',
+      (tester) async {
+    await pumpTrial(tester, TrialKind.spiritAlignment);
+    final board = find.byKey(const Key('spirit-alignment-game'));
+    expect(board, findsOneWidget);
+    expect(find.text('Align all three shapes'), findsOneWidget);
+    final arena = tester.getRect(find.byKey(const Key('spirit-logical-arena')));
+    final target = tester.getRect(find.byKey(const Key('spirit-target-shape')));
+    final player = tester.getRect(find.byKey(const Key('spirit-player-shape')));
+    expect(arena.width, closeTo(arena.height, .001));
+    expect(target.center.dx, closeTo(arena.center.dx, .001));
+    expect(target.center.dy, closeTo(arena.center.dy, .001));
+    expect(player.width,
+        closeTo(SpiritAlignmentGeometry.shapePixels(arena.width), .001));
+    expect(
+      (player.left - target.left) / player.width,
+      closeTo(SpiritAlignmentGeometry.offsetInShapeUnits(.14, .5), .001),
+    );
+    expect(
+      (player.top - target.top) / player.height,
+      closeTo(SpiritAlignmentGeometry.offsetInShapeUnits(.18, .5), .001),
+    );
+    await tester.tap(board);
+    await tester.pump(const Duration(milliseconds: 48));
+    expect(find.byKey(const Key('spirit-target-shape')), findsOneWidget);
+    expect(find.byKey(const Key('spirit-player-shape')), findsOneWidget);
+    expect(find.byKey(const Key('spirit-round-speed')), findsOneWidget);
+    await tester.tap(board);
+    await tester.pump(const Duration(milliseconds: 48));
+    expect(find.text('Tap to stop on the outline'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  testWidgets('Ruin Guard starts with three lanes and one-touch movement',
+      (tester) async {
+    await pumpTrial(tester, TrialKind.ruinGuard);
+    final board = find.byKey(const Key('ruin-guard-game'));
+    expect(board, findsOneWidget);
+    expect(find.text('Guard the ruins'), findsOneWidget);
+    await tester.tap(board);
+    await tester.pump(const Duration(milliseconds: 48));
+    expect(find.byKey(const Key('ruin-guard-lives')), findsOneWidget);
+    expect(find.byKey(const Key('ruin-guard-boulder')), findsOneWidget);
+    expect(find.byKey(const Key('ruin-guard-dragon')), findsOneWidget);
+    await tester.tap(board);
+    await tester.pump(const Duration(milliseconds: 180));
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  testWidgets('Rune Orbit shows a target and a single golden gate',
+      (tester) async {
+    await pumpTrial(tester, TrialKind.runeOrbit);
+    final board = find.byKey(const Key('rune-orbit-game'));
+    expect(board, findsOneWidget);
+    expect(find.text('Catch the rune'), findsOneWidget);
+    await tester.tap(board);
+    await tester.pump(const Duration(milliseconds: 520));
+    expect(find.byKey(const Key('rune-orbit-target')), findsOneWidget);
+    expect(find.byKey(const Key('rune-orbit-gate')), findsOneWidget);
+    expect(find.byKey(const Key('rune-orbit-lives')), findsOneWidget);
+    expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox.shrink());
   });
 

@@ -216,34 +216,46 @@ void main() {
     expect(game.pet.trainingFor(TrainingFocus.spirit), 32);
   });
 
-  test('after activation seasonal Trial is an equal fourth refill candidate',
+  test('event activation and later refills both use the equal fourth category',
       () {
-    final counts = <TrialKind, int>{
-      for (final kind in TrialKind.values) kind: 0
-    };
     final now = DateTime.utc(2026, 10, 25, 12);
-    for (var seed = 0; seed < 500; seed++) {
-      final game = HouseholdProvider(random: Random(seed), clock: () => now)
-        ..lastTrialEventActivationKey =
-            specialAdventureWindowsAt(now).single.key;
-      for (final offer in game.availableTrials) {
-        counts.update(offer.kind, (value) => value + 1);
+    for (final alreadyActivated in [false, true]) {
+      final counts = <TrialKind, int>{
+        for (final kind in TrialKind.values) kind: 0
+      };
+      for (var seed = 0; seed < 500; seed++) {
+        final game = HouseholdProvider(random: Random(seed), clock: () => now);
+        if (alreadyActivated) {
+          game.lastTrialEventActivationKey =
+              specialAdventureWindowsAt(now).single.key;
+        }
+        for (final offer in game.availableTrials) {
+          counts.update(offer.kind, (value) => value + 1);
+        }
+        game.dispose();
       }
-    }
-    final total = counts.values.fold<int>(0, (sum, count) => sum + count);
-    for (final kind in <TrialKind>[
-      ...standardTrialKinds,
-      TrialKind.witchlightWard,
-    ]) {
-      expect(counts[kind]! / total, inInclusiveRange(.20, .30),
-          reason: kind.name);
-    }
-    for (final kind in TrialKind.values.where(
-      (kind) =>
-          !standardTrialKinds.contains(kind) &&
-          kind != TrialKind.witchlightWard,
-    )) {
-      expect(counts[kind], 0, reason: kind.name);
+      final total = counts.values.fold<int>(0, (sum, count) => sum + count);
+      for (final kind in const <TrialKind>[
+        TrialKind.cavernFlight,
+        TrialKind.ruinBreaker,
+        TrialKind.runeweaver,
+        TrialKind.witchlightWard,
+      ]) {
+        expect(counts[kind]! / total, inInclusiveRange(.20, .30),
+            reason: '${kind.name}; alreadyActivated=$alreadyActivated');
+      }
+      for (final kind in TrialKind.values.where(
+        (kind) =>
+            !const <TrialKind>{
+              TrialKind.cavernFlight,
+              TrialKind.ruinBreaker,
+              TrialKind.runeweaver,
+            }.contains(kind) &&
+            kind != TrialKind.witchlightWard,
+      )) {
+        expect(counts[kind], 0,
+            reason: '${kind.name}; alreadyActivated=$alreadyActivated');
+      }
     }
   });
 
