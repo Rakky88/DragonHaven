@@ -149,6 +149,9 @@ function response(value: unknown, status = 200) {
   return new Response(JSON.stringify(value), { status, headers });
 }
 function error(code: string, status: number) { return response({ error: code }, status); }
+export function commandUnavailableResponse() {
+  return error("game_command_unavailable", 503);
+}
 
 export async function boundedJson(body: ReadableStream<Uint8Array> | null,
   maximum: number, timeoutMs = 8000): Promise<unknown> {
@@ -349,7 +352,7 @@ export async function handleCommand(request: Request, deps: Dependencies): Promi
     }
     // A timeout may have happened after commit. Never mark that intent failed
     // or invent a new request; retrying the same UUID recovers its receipt.
-    return error("game_command_unavailable", 503);
+    return commandUnavailableResponse();
   }
 }
 

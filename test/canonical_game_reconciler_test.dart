@@ -75,6 +75,7 @@ void main() {
     Future<CanonicalGameHttpReply> Function(CanonicalGameIntent)? send,
     Future<void> Function(CanonicalGameSnapshot)? display,
     Future<Object?> Function(String)? recover,
+    Duration workerRetryDelay = Duration.zero,
   }) =>
       CanonicalGameReconciler(
           intents: intents,
@@ -88,6 +89,7 @@ void main() {
           send: send ?? (_) async => _receipt(),
           recoverCommands: recover,
           newRecoveryId: () => _other,
+          workerRetryDelay: workerRetryDelay,
           applyDisplay: display ?? (snapshot) async => displays.add(snapshot));
 
   Future<void> corruptIntents() async {
@@ -335,6 +337,59 @@ void main() {
     expect(result!.replayed, isTrue);
     expect(displays.single.coins, _data['wallet']['coins']);
     expect(await intents.pending(_owner), isNull);
+  });
+
+  for (final retryable in <(int, String)>[
+    (503, 'game_command_unavailable'),
+    (409, 'game_command_busy'),
+  ]) {
+    test('worker ${retryable.$2} retries the same durable UUID once', () async {
+      await intents.prepare(_intent());
+      final requests = <String>[];
+      final result = await reconciler(send: (intent) async {
+        requests.add(intent.requestId);
+        if (requests.length == 1) {
+          return CanonicalGameHttpReply(retryable.$1, {'error': retryable.$2});
+        }
+        return _receipt(replayed: true);
+      }).resume(_owner);
+
+      expect(requests, [_request, _request]);
+      expect(result!.replayed, isTrue);
+      expect(displays, hasLength(1));
+      expect(await intents.pending(_owner), isNull);
+    });
+  }
+
+  test('transport failures are retained for later recovery without auto retry',
+      () async {
+    await intents.prepare(_intent());
+    var sends = 0;
+    await expectLater(
+        reconciler(send: (_) async {
+          sends++;
+          throw const CanonicalGameException('game_command_unavailable');
+        }).resume(_owner),
+        _error('game_command_unavailable'));
+
+    expect(sends, 1);
+    expect((await intents.pending(_owner))!.requestId, _request);
+  });
+
+  test('a repeated busy worker response is retried only once', () async {
+    await intents.prepare(_intent());
+    var sends = 0;
+    await expectLater(
+        reconciler(send: (intent) async {
+          sends++;
+          expect(intent.requestId, _request);
+          return const CanonicalGameHttpReply(
+              409, {'error': 'game_command_busy'});
+        }).resume(_owner),
+        _error('game_command_unavailable'));
+
+    expect(sends, 2);
+    expect((await intents.pending(_owner))!.requestId, _request);
   });
 
   test(

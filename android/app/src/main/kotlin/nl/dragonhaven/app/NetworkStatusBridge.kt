@@ -11,7 +11,7 @@ import android.os.Looper
 import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.EventChannel
 
-/** Connectivity loss closes gameplay immediately; only a server reply opens it. */
+/** Reports validated connectivity so the retained server session can reconcile on return. */
 class NetworkStatusBridge(context: Context, messenger: BinaryMessenger) : EventChannel.StreamHandler {
     private val manager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
     private val main = Handler(Looper.getMainLooper())

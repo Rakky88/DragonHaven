@@ -439,19 +439,26 @@ class _AccountStartupAppState extends State<AccountStartupApp>
             ChangeNotifierProvider.value(value: partners),
             ChangeNotifierProvider.value(value: online),
             ChangeNotifierProvider.value(value: rewardedAds),
-          ], child: ServerDragonHavenApp(auth: widget.auth)), quiesce: () {
-        unawaited(ownedOnline.stopLegacyOperations());
-      }, close: () async {
-        push?.dispose();
-        final stopOnline = ownedOnline.stopLegacyOperations();
-        await notifications?.close();
-        await stopOnline;
-        ownedOnline.dispose();
-        ownedGroups.dispose();
-        ownedPartners.dispose();
-        ownedRewardedAds.dispose();
-        await session.close();
-      });
+          ], child: ServerDragonHavenApp(auth: widget.auth)),
+          quiesce: () {
+            unawaited(ownedOnline.stopLegacyOperations());
+          },
+          setForeground: session.setForeground,
+          requiresReconnect: () => !session.fresh && !session.busy,
+          reconnect: () async {
+            await session.synchronize();
+          },
+          close: () async {
+            push?.dispose();
+            final stopOnline = ownedOnline.stopLegacyOperations();
+            await notifications?.close();
+            await stopOnline;
+            ownedOnline.dispose();
+            ownedGroups.dispose();
+            ownedPartners.dispose();
+            ownedRewardedAds.dispose();
+            await session.close();
+          });
     } on Object {
       push?.dispose();
       await notifications?.close();

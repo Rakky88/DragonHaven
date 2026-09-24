@@ -12,12 +12,22 @@ enum CanonicalBootstrapPhase { checking, signedOut, legacy, server, failed }
 /// hiding its widgets alone is not sufficient for an authority transition.
 class CanonicalGameplayLease<T> {
   CanonicalGameplayLease(this.value,
-      {required Future<void> Function() close, void Function()? quiesce})
+      {required Future<void> Function() close,
+      void Function()? quiesce,
+      Future<void> Function()? reconnect,
+      bool Function()? requiresReconnect,
+      void Function(bool foreground)? setForeground})
       : _close = close,
-        _quiesce = quiesce;
+        _quiesce = quiesce,
+        _reconnect = reconnect,
+        _requiresReconnect = requiresReconnect,
+        _setForeground = setForeground;
   final T value;
   final Future<void> Function() _close;
   final void Function()? _quiesce;
+  final Future<void> Function()? _reconnect;
+  final bool Function()? _requiresReconnect;
+  final void Function(bool foreground)? _setForeground;
   bool _quiesced = false;
   Future<void>? _closing;
 
@@ -30,6 +40,20 @@ class CanonicalGameplayLease<T> {
   Future<void> close() {
     quiesce();
     return _closing ??= Future<void>.sync(_close);
+  }
+
+  /// Reconciles the existing server-owned game without replacing its widget
+  /// tree, Navigator or account-scoped journals.
+  Future<void> reconnect() =>
+      _closing != null || _reconnect == null ? Future.value() : _reconnect!();
+  bool get supportsReconnect => _closing == null && _reconnect != null;
+  bool get requiresReconnect =>
+      _closing == null && (_requiresReconnect?.call() ?? false);
+
+  /// Pauses automatic work while Android is in the background. A retained
+  /// server lease still finishes any already-admitted durable command.
+  void setForeground(bool foreground) {
+    if (_closing == null) _setForeground?.call(foreground);
   }
 }
 
@@ -67,12 +91,17 @@ class CanonicalAccountBootstrap<T> extends ChangeNotifier {
   final Future<CanonicalAccountStatus> Function(String owner) readStatus;
   final Future<CanonicalAccountStatus> Function(String owner)? checkConnection;
   Future<void>? _heartbeat;
-  int _serverHeartbeatTransportFailures = 0;
+  Future<void>? _reconnect;
+  CanonicalGameplayLease<T>? _reconnectLease;
+  String? _reconnectOwner;
+  int? _reconnectEpoch;
+  int? _reconnectLifecycle;
 
   /// Polls a tiny authenticated status, never an inventory snapshot. Legacy
-  /// authority remains fail-closed. A live server root tolerates two
-  /// consecutive transport failures because its own commands still retain
-  /// server authority; the third failure retires it through [synchronize].
+  /// authority remains fail-closed. A live server root is never retired only
+  /// because this opportunistic probe timed out: its commands still require
+  /// the server, and replacing it would discard navigation and make a short
+  /// network handover look like an account restart.
   Future<void> verifyConnection() {
     if (_disposed ||
         !_foreground ||
@@ -99,22 +128,22 @@ class CanonicalAccountBootstrap<T> extends ChangeNotifier {
         final status =
             await checkConnection!(owner).timeout(const Duration(seconds: 5));
         if (!current()) return;
-        _serverHeartbeatTransportFailures = 0;
         if (status.ownerId != owner ||
             (status.phase == 'active') !=
                 (phase == CanonicalBootstrapPhase.server) ||
             status.migrationEnabled &&
                 phase == CanonicalBootstrapPhase.legacy) {
           await synchronize();
+        } else if (phase == CanonicalBootstrapPhase.server &&
+            _lease?.requiresReconnect == true) {
+          await reconnectGameplay();
         }
       } on Object catch (error) {
         if (!current()) return;
         if (phase == CanonicalBootstrapPhase.server &&
-            _isHeartbeatTransportFailure(error) &&
-            ++_serverHeartbeatTransportFailures <= 2) {
+            _isHeartbeatTransportFailure(error)) {
           return;
         }
-        _serverHeartbeatTransportFailures = 0;
         await synchronize();
       } finally {
         _heartbeat = null;
@@ -157,16 +186,128 @@ class CanonicalAccountBootstrap<T> extends ChangeNotifier {
               phase == CanonicalBootstrapPhase.server)
       ? _lease?.value
       : null;
+  bool get gameplayNavigationReady =>
+      gameplay != null &&
+      _reconnect == null &&
+      _lease?.requiresReconnect != true;
 
-  /// Backgrounding hides the old root immediately. Resume rechecks authority
-  /// after its writers drain, rather than resuming a possibly migrated save.
+  /// Server gameplay retains its Navigator while backgrounded and reconciles
+  /// the same fenced session on resume. Legacy gameplay still performs a full
+  /// authority recheck before it is shown again.
   Future<void> setForeground(bool foreground) {
     if (_disposed || _foreground == foreground) {
       return _pending ?? Future.value();
     }
     _foreground = foreground;
     _lifecycleEpoch++;
+    final retained = _lease;
+    if (_phase == CanonicalBootstrapPhase.server &&
+        retained != null &&
+        retained.supportsReconnect &&
+        currentOwner() == _owner &&
+        sessionEpoch() == _epoch) {
+      retained.setForeground(foreground);
+      // Keep the retained server root current as soon as the app resumes. Its
+      // session is still fenced by setForeground(true) until reconnect has
+      // confirmed a fresh snapshot, but retaining this lifecycle prevents the
+      // Navigator and the player's current screen from being rebuilt.
+      if (foreground) _resolvedLifecycle = _lifecycleEpoch;
+      notifyListeners();
+      if (!foreground) return Future.value();
+      return reconnectGameplay(revealRetainedLease: true);
+    }
     return synchronize();
+  }
+
+  /// Reconciles a retained server lease in place. This is used after Android
+  /// reports that validated connectivity returned and on foreground resume.
+  /// The gameplay session keeps mutations fenced until its durable intent and
+  /// absolute snapshot have been confirmed, so this cannot duplicate a spend.
+  Future<void> reconnectGameplay({bool revealRetainedLease = false}) {
+    if (_disposed || !_foreground) return Future.value();
+    final lease = _lease;
+    final owner = _owner;
+    final epoch = _epoch;
+    final lifecycle = _lifecycleEpoch;
+    final pending = _reconnect;
+    if (pending != null) {
+      if (identical(_reconnectLease, lease) &&
+          _reconnectOwner == owner &&
+          _reconnectEpoch == epoch &&
+          _reconnectLifecycle == lifecycle) {
+        return pending;
+      }
+      // A background/foreground transition can invalidate an in-flight
+      // reconnect without cancelling its durable transport. Queue one new
+      // reconciliation for the current lifecycle after that transport drains;
+      // otherwise the public phase can remain `checking` indefinitely.
+      return pending.then(
+          (_) => reconnectGameplay(revealRetainedLease: revealRetainedLease));
+    }
+    if (lease == null ||
+        _phase != CanonicalBootstrapPhase.server ||
+        owner == null ||
+        currentOwner() != owner ||
+        sessionEpoch() != epoch) {
+      return synchronize();
+    }
+    final completion = Completer<void>();
+    _reconnect = completion.future;
+    _reconnectLease = lease;
+    _reconnectOwner = owner;
+    _reconnectEpoch = epoch;
+    _reconnectLifecycle = lifecycle;
+    if (revealRetainedLease) notifyListeners();
+    unawaited(() async {
+      try {
+        await lease.reconnect();
+        if (_disposed ||
+            !_foreground ||
+            !identical(_lease, lease) ||
+            currentOwner() != owner ||
+            sessionEpoch() != epoch ||
+            _lifecycleEpoch != lifecycle) {
+          return;
+        }
+        _resolvedLifecycle = lifecycle;
+        _error = null;
+        notifyListeners();
+      } on Object catch (error) {
+        if (_disposed ||
+            !_foreground ||
+            !identical(_lease, lease) ||
+            currentOwner() != owner ||
+            sessionEpoch() != epoch ||
+            _lifecycleEpoch != lifecycle) {
+          return;
+        }
+        if (error is CanonicalGameException &&
+            (error.code == 'game_login_required' ||
+                error.code == 'game_account_changed' ||
+                error.code == 'privacy_confirmation_required')) {
+          // Authentication changed or a new privacy notice must be shown. The
+          // normal resolver removes the old root before handling either flow.
+          unawaited(synchronize());
+          return;
+        }
+        // The retained CanonicalGameSession exposes its cached snapshot but
+        // keeps `fresh == false`, so users keep their screen while all writes
+        // remain fenced until a later retry confirms the durable result.
+        _resolvedLifecycle = lifecycle;
+        notifyListeners();
+      } finally {
+        if (identical(_reconnect, completion.future)) {
+          _reconnect = null;
+          _reconnectLease = null;
+          _reconnectOwner = null;
+          _reconnectEpoch = null;
+          _reconnectLifecycle = null;
+          if (!_disposed && identical(_lease, lease)) notifyListeners();
+        }
+        if (!completion.isCompleted) completion.complete();
+      }
+    }());
+    return completion.future;
   }
 
   Future<void> synchronize() {
@@ -251,7 +392,6 @@ class CanonicalAccountBootstrap<T> extends ChangeNotifier {
       requireCurrent();
       _lease = opened;
       opened = null;
-      _serverHeartbeatTransportFailures = 0;
       _phase = server
           ? CanonicalBootstrapPhase.server
           : CanonicalBootstrapPhase.legacy;

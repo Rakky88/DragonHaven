@@ -438,6 +438,28 @@ void main() {
     expect(result.body, body);
   });
 
+  test('privacy 403 is not misclassified as an expired login', () async {
+    await _signIn(auth, _owner);
+    transport = CanonicalGameTransport.staging(auth, _config,
+        httpClientFactory: () => _TrackingClient((_) async => _response(
+            {'error': 'privacy_confirmation_required'},
+            status: 403)));
+
+    await expectLater(
+        transport!.read(_read), _error('privacy_confirmation_required'));
+    expect(transport!.currentOwner, _owner);
+    expect(transport!.sessionEpoch, 0);
+  });
+
+  test('unknown 403 remains a fixed authentication failure', () async {
+    await _signIn(auth, _owner);
+    transport = CanonicalGameTransport.staging(auth, _config,
+        httpClientFactory: () => _TrackingClient(
+            (_) async => _response({'message': 'private'}, status: 403)));
+
+    await expectLater(transport!.read(_read), _error('game_login_required'));
+  });
+
   test('recovery uses the same authenticated transport and fixed request UUID',
       () async {
     await _signIn(auth, _owner);

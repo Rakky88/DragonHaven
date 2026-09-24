@@ -48,6 +48,14 @@ const privacyPhraseTranslations = <String, List<String>>{
     'Li o aviso de privacidade.',
     'プライバシー通知を読みました。'
   ],
+  'Reconnect to review the updated privacy notice.': [
+    'Verbinde dich erneut, um den aktualisierten Datenschutzhinweis zu lesen.',
+    'Vuelve a conectarte para revisar el aviso de privacidad actualizado.',
+    'Reconnectez-vous pour consulter l’avis de confidentialité mis à jour.',
+    'Riconnettiti per consultare l’informativa sulla privacy aggiornata.',
+    'Volta a ligar-te para consultar o aviso de privacidade atualizado.',
+    '更新されたプライバシー通知を確認するには、再接続してください。'
+  ],
   'Share crash and performance diagnostics': [
     'Absturz- und Leistungsdiagnosen teilen',
     'Compartir diagnósticos de fallos y rendimiento',

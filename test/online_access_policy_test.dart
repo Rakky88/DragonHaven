@@ -63,8 +63,7 @@ void main() {
     await directory.delete(recursive: true);
   });
 
-  test(
-      'server heartbeat keeps two transport misses, resets after success, then retires on the third',
+  test('server heartbeat never evicts gameplay for transport-only misses',
       () async {
     final directory =
         await Directory.systemTemp.createTemp('server-heartbeat-');
@@ -100,8 +99,9 @@ void main() {
     expect(root.gameplay, 1);
 
     connected = false;
-    await root.verifyConnection();
-    await root.verifyConnection();
+    for (var attempt = 0; attempt < 8; attempt++) {
+      await root.verifyConnection();
+    }
     expect(root.gameplay, 1);
     expect(root.phase, CanonicalBootstrapPhase.server);
     expect(closes, 0);
@@ -111,24 +111,11 @@ void main() {
     expect(root.gameplay, 1);
     expect(closes, 0);
 
-    connected = false;
-    await root.verifyConnection();
-    await root.verifyConnection();
-    expect(root.gameplay, 1,
-        reason: 'a successful heartbeat must reset the failure streak');
-    expect(closes, 0);
-    await root.verifyConnection();
-    expect(root.gameplay, isNull);
-    expect(root.phase, CanonicalBootstrapPhase.failed);
-    expect(closes, 1);
-
-    connected = true;
-    await root.verifyConnection();
-    expect(root.gameplay, 2);
     expect(root.phase, CanonicalBootstrapPhase.server);
-    expect(opens, 2);
-    expect(closes, 1);
+    expect(opens, 1);
+    expect(closes, 0);
     await root.shutdown();
+    expect(closes, 1);
     root.dispose();
     await events.close();
     await directory.delete(recursive: true);

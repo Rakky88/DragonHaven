@@ -48,6 +48,9 @@ String gameConnectionMessage(AppStrings strings, String? code) =>
       'game_login_required' || 'game_account_changed' => strings.pick(
           'Sign in again to load your inventory.',
           'Log opnieuw in om je inventaris te laden.'),
+      'privacy_confirmation_required' => strings.pick(
+          'Reconnect to review the updated privacy notice.',
+          'Verbind opnieuw om de bijgewerkte privacyverklaring te bekijken.'),
       'game_engine_disabled' => strings.pick(
           'Game actions are temporarily paused. Your inventory is safe.',
           'Spelacties zijn tijdelijk gepauzeerd. Je inventaris is veilig.'),
@@ -99,9 +102,10 @@ class ShopEconomyBoundary extends StatelessWidget {
     final hasView = server.snapshot != null;
     // Keep confirmed content steady during ordinary refreshes and commands.
     // A failed refresh still exposes recovery; spending remains session-fenced.
-    final showStatus = !hasView || (!server.busy &&
-        (server.errorCode != null ||
-         server.snapshot?.mutationsEnabled == false));
+    final showStatus = !hasView ||
+        (!server.busy &&
+            (server.errorCode != null ||
+                server.snapshot?.mutationsEnabled == false));
     return Column(children: [
       if (showStatus)
         Padding(

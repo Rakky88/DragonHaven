@@ -335,8 +335,8 @@ void main() {
   });
 
   test('repository versions are derived without runtime credentials', () {
-    expect(discoverAppVersion(), 'v0.06.09');
+    expect(discoverAppVersion(), 'v0.06.10');
     // Source discovery follows the complete release migration set.
-    expect(discoverMigrationVersion(), '202609240097');
+    expect(discoverMigrationVersion(), '202609240098');
   });
 }

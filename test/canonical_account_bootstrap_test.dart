@@ -152,6 +152,196 @@ void main() {
     await finish(root);
   });
 
+  test('transport-only heartbeat failures never evict a server game', () async {
+    var opens = 0;
+    var closes = 0;
+    final root = make(
+        read: (id) async => status(id, active: true),
+        check: (_) async =>
+            throw const CanonicalGameException('game_command_unavailable'),
+        legacy: (_) async => throw StateError('unexpected legacy load'),
+        server: (_, __) async =>
+            CanonicalGameplayLease('server-${++opens}', close: () async {
+              closes++;
+            }));
+    await root.synchronize();
+
+    for (var attempt = 0; attempt < 8; attempt++) {
+      await root.verifyConnection();
+    }
+
+    expect(opens, 1);
+    expect(closes, 0);
+    expect(root.phase, CanonicalBootstrapPhase.server);
+    expect(root.gameplay, 'server-1');
+    await finish(root);
+    expect(closes, 1);
+  });
+
+  test('successful heartbeat reconciles a stale server lease in place',
+      () async {
+    var stale = true;
+    var reconnects = 0;
+    var closes = 0;
+    final root = make(
+        read: (id) async => status(id, active: true),
+        check: (id) async => status(id, active: true),
+        legacy: (_) async => throw StateError('unexpected legacy load'),
+        server: (_, __) async => CanonicalGameplayLease('server',
+            requiresReconnect: () => stale,
+            reconnect: () async {
+              reconnects++;
+              stale = false;
+            },
+            close: () async {
+              closes++;
+            }));
+    await root.synchronize();
+
+    await root.verifyConnection();
+
+    expect(reconnects, 1);
+    expect(root.gameplay, 'server');
+    expect(root.phase, CanonicalBootstrapPhase.server);
+    expect(closes, 0);
+    await finish(root);
+    expect(closes, 1);
+  });
+
+  test('server foreground resume reconciles the same lease in place', () async {
+    var reads = 0;
+    var opens = 0;
+    var closes = 0;
+    var reconnects = 0;
+    final foreground = <bool>[];
+    final root = make(
+        read: (id) async {
+          reads++;
+          return status(id, active: true);
+        },
+        legacy: (_) async => throw StateError('unexpected legacy load'),
+        server: (_, __) async => CanonicalGameplayLease(
+              'server-${++opens}',
+              setForeground: foreground.add,
+              reconnect: () async => reconnects++,
+              close: () async => closes++,
+            ));
+    await root.synchronize();
+
+    await root.setForeground(false);
+    expect(root.gameplay, isNull);
+    await root.setForeground(true);
+
+    expect(root.phase, CanonicalBootstrapPhase.server);
+    expect(root.gameplay, 'server-1');
+    expect(foreground, [false, true]);
+    expect(reconnects, 1);
+    expect(reads, 1);
+    expect(opens, 1);
+    expect(closes, 0);
+    await finish(root);
+    expect(closes, 1);
+  });
+
+  test('server resume reveals its retained root while reconnect is pending',
+      () async {
+    final reconnect = Completer<void>();
+    var fresh = true;
+    var opens = 0;
+    var closes = 0;
+    final root = make(
+        read: (id) async => status(id, active: true),
+        legacy: (_) async => throw StateError('unexpected legacy load'),
+        server: (_, __) async => CanonicalGameplayLease(
+              'server-${++opens}',
+              requiresReconnect: () => !fresh,
+              setForeground: (foreground) {
+                if (!foreground) fresh = false;
+              },
+              reconnect: () async {
+                await reconnect.future;
+                fresh = true;
+              },
+              close: () async => closes++,
+            ));
+    await root.synchronize();
+
+    await root.setForeground(false);
+    final resumed = root.setForeground(true);
+
+    expect(root.phase, CanonicalBootstrapPhase.server);
+    expect(root.gameplay, 'server-1');
+    expect(opens, 1);
+    expect(closes, 0);
+    reconnect.complete();
+    await resumed;
+    await finish(root);
+  });
+
+  test('resume queues a current reconnect behind an invalidated reconnect',
+      () async {
+    final first = Completer<void>();
+    final second = Completer<void>();
+    var reconnects = 0;
+    var fresh = false;
+    final root = make(
+        read: (id) async => status(id, active: true),
+        legacy: (_) async => throw StateError('unexpected legacy load'),
+        server: (_, __) async => CanonicalGameplayLease('server',
+            requiresReconnect: () => !fresh,
+            setForeground: (foreground) {
+              if (!foreground) fresh = false;
+            },
+            reconnect: () async {
+              reconnects++;
+              await (reconnects == 1 ? first.future : second.future);
+              fresh = true;
+            },
+            close: () async {}));
+    await root.synchronize();
+
+    final oldLifecycle = root.reconnectGameplay();
+    await Future<void>.delayed(Duration.zero);
+    expect(reconnects, 1);
+    await root.setForeground(false);
+    fresh = false;
+    final resumed = root.setForeground(true);
+    expect(root.gameplay, 'server');
+    first.complete();
+    await oldLifecycle;
+    await Future<void>.delayed(Duration.zero);
+    expect(reconnects, 2);
+    second.complete();
+    await resumed;
+
+    expect(root.phase, CanonicalBootstrapPhase.server);
+    expect(root.gameplay, 'server');
+    await finish(root);
+  });
+
+  test('failed in-place reconnect keeps cached server gameplay fenced',
+      () async {
+    var closes = 0;
+    final root = make(
+        read: (id) async => status(id, active: true),
+        legacy: (_) async => throw StateError('unexpected legacy load'),
+        server: (_, __) async => CanonicalGameplayLease('server',
+            reconnect: () async =>
+                throw const CanonicalGameException('game_snapshot_unavailable'),
+            close: () async {
+              closes++;
+            }));
+    await root.synchronize();
+
+    await root.reconnectGameplay();
+
+    expect(root.phase, CanonicalBootstrapPhase.server);
+    expect(root.gameplay, 'server');
+    expect(closes, 0);
+    await finish(root);
+    expect(closes, 1);
+  });
+
   test('unknown authority and signed out never silently load a local save',
       () async {
     var loads = 0;

@@ -314,10 +314,30 @@ class CanonicalGameTransport implements CanonicalGameConnection {
           body.add(part);
         }
         requireSession();
-        if (response.statusCode == 401 || response.statusCode == 403) {
+        final responseBytes = body.takeBytes();
+        if (response.statusCode == 401) {
           throw const CanonicalGameException('game_login_required');
         }
-        final decoded = jsonDecode(utf8.decode(body.takeBytes()));
+        late final Object? decoded;
+        try {
+          decoded = jsonDecode(utf8.decode(responseBytes));
+        } on Object {
+          if (response.statusCode == 403) {
+            throw const CanonicalGameException('game_login_required');
+          }
+          rethrow;
+        }
+        if (response.statusCode == 403) {
+          // The command worker also uses 403 for its exact, public privacy
+          // acknowledgement requirement. Do not misclassify that valid signed
+          // in account as an expired Auth session and tear down its game root.
+          if (decoded is Map<String, dynamic> &&
+              decoded.length == 1 &&
+              decoded['error'] == 'privacy_confirmation_required') {
+            throw const CanonicalGameException('privacy_confirmation_required');
+          }
+          throw const CanonicalGameException('game_login_required');
+        }
         if (decoded is! Map<String, dynamic>) {
           throw const CanonicalGameException('game_command_unavailable');
         }

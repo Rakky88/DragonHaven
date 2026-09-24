@@ -350,6 +350,17 @@ Deno.test("unknown errors remain private and transient without changing an inten
   }
 });
 
+Deno.test("an active identical lease stays transient and never evaluates or commits", async () => {
+  const {deps,calls,inputs} = setup({rpc: async(name,payload) => {
+    calls.push({name,payload}); throw new RpcFailure("game_command_busy");
+  }});
+  const result = await handleCommand(request(), deps);
+  assert(result.status === 409);
+  equal(await result.json(), {error:"game_command_busy"});
+  equal(calls.map((call) => call.name), ["begin_revisioned_game_command"]);
+  equal(inputs, []);
+});
+
 Deno.test("body reading enforces bytes and elapsed time even on streamed requests", async () => {
   for (const body of [
     new Response("x".repeat(100)).body,

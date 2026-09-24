@@ -279,7 +279,7 @@ class CanonicalGameSession extends ChangeNotifier {
         requireSession();
         _accept(value);
       }).resume(owner);
-    });
+    }, invalidateFresh: false);
   }
 
   void _cancelCommands(CanonicalGameException error) {
@@ -414,7 +414,8 @@ class CanonicalGameSession extends ChangeNotifier {
       Future<CanonicalGameReceipt?> Function(String, int, void Function())
           action,
       {CanonicalGameSnapshot? preview,
-      bool admitted = false}) {
+      bool admitted = false,
+      bool invalidateFresh = true}) {
     if (!_sameSession) _accountChanged();
     final owner = _owner;
     final epoch = _epoch;
@@ -433,7 +434,13 @@ class CanonicalGameSession extends ChangeNotifier {
       }
     }
 
-    if (!admitted) _fresh = false;
+    // An exclusive command may need an authoritative result before it can be
+    // predicted (for example opening a chest), but that does not make the
+    // already-confirmed inventory stale while the request is in flight. Keep
+    // the visible view steady and fence further mutations through [busy]. An
+    // unknown outcome still marks the session stale in the catch block below
+    // so its durable intent must be reconciled before play continues.
+    if (!admitted && invalidateFresh) _fresh = false;
     _errorCode = null;
     _operationKey = key;
     final completion = Completer<CanonicalGameReceipt?>();

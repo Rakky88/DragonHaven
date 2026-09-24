@@ -18,6 +18,7 @@ class NotificationDestinationListener extends StatefulWidget {
 class _NotificationDestinationListenerState
     extends State<NotificationDestinationListener> with WidgetsBindingObserver {
   late final StreamSubscription<HavenNotificationDestination> _events;
+  Listenable? _authorityChanges;
   bool _scheduled = false;
 
   @override
@@ -25,6 +26,17 @@ class _NotificationDestinationListenerState
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _events = HavenNotifications.navigationEvents.listen((_) => _schedule());
+    _schedule();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final changes = CanonicalAccountGate.gameplayAuthorityChanges(context);
+    if (identical(changes, _authorityChanges)) return;
+    _authorityChanges?.removeListener(_schedule);
+    _authorityChanges = changes;
+    _authorityChanges?.addListener(_schedule);
     _schedule();
   }
 
@@ -52,6 +64,7 @@ class _NotificationDestinationListenerState
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _authorityChanges?.removeListener(_schedule);
     unawaited(_events.cancel());
     super.dispose();
   }

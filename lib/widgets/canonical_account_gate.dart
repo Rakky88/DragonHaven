@@ -30,6 +30,11 @@ class CanonicalAccountGate<T> extends StatefulWidget {
           ?.isCurrent() ??
       true;
 
+  /// Lets account-scoped listeners retry work when foreground authority or
+  /// snapshot freshness changes without rebuilding the retained Navigator.
+  static Listenable? gameplayAuthorityChanges(BuildContext context) =>
+      context.getInheritedWidgetOfExactType<_GameplayAuthority>()?.changes;
+
   @override
   State<CanonicalAccountGate<T>> createState() =>
       _CanonicalAccountGateState<T>();
@@ -55,7 +60,11 @@ class _CanonicalAccountGateState<T> extends State<CanonicalAccountGate<T>>
       }
     });
     _bootstrap.addListener(_changed);
-    _heartbeat = Timer.periodic(const Duration(seconds: 10), (_) {
+    // This is an authority/status safety check, not an inventory refresh.
+    // Connectivity events and durable command recovery already react at once;
+    // polling once per minute avoids needless Auth/PostgREST load while play
+    // is healthy.
+    _heartbeat = Timer.periodic(const Duration(minutes: 1), (_) {
       if (_connected != false) unawaited(_bootstrap.verifyConnection());
     });
     if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
@@ -65,7 +74,12 @@ class _CanonicalAccountGateState<T> extends State<CanonicalAccountGate<T>>
         if (value is! bool || value == _connected) return;
         final previous = _connected;
         _connected = value;
-        if (!value || previous == false) unawaited(_bootstrap.synchronize());
+        // Android briefly drops NET_CAPABILITY_VALIDATED during ordinary
+        // Wi-Fi/mobile handovers. Keep the server-owned view and its durable
+        // journal; when connectivity returns, reconcile that same lease.
+        if (value && previous == false) {
+          unawaited(_bootstrap.reconnectGameplay());
+        }
       }, onError: (Object _) {
         // Desktop/tests have no native signal. Server verification remains required.
       });
@@ -109,15 +123,21 @@ class _CanonicalAccountGateState<T> extends State<CanonicalAccountGate<T>>
     return KeyedSubtree(
         key: ObjectKey(game),
         child: _GameplayAuthority(
-          isCurrent: () => mounted && identical(_bootstrap.gameplay, game),
+          isCurrent: () =>
+              mounted &&
+              identical(_bootstrap.gameplay, game) &&
+              _bootstrap.gameplayNavigationReady,
+          changes: _bootstrap,
           child: widget.gameplayBuilder(context, game),
         ));
   }
 }
 
 class _GameplayAuthority extends InheritedWidget {
-  const _GameplayAuthority({required this.isCurrent, required super.child});
+  const _GameplayAuthority(
+      {required this.isCurrent, required this.changes, required super.child});
   final bool Function() isCurrent;
+  final Listenable changes;
   @override
   bool updateShouldNotify(_GameplayAuthority oldWidget) => false;
 }

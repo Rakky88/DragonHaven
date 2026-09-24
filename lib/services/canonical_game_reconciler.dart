@@ -118,7 +118,8 @@ class CanonicalGameReconciler {
       required this.applyDisplay,
       this.recoverCommands,
       this.newRecoveryId = _newRecoveryId,
-      this.timeout = const Duration(seconds: 20)});
+      this.timeout = const Duration(seconds: 20),
+      this.workerRetryDelay = const Duration(milliseconds: 900)});
   final CanonicalGameIntentStore intents;
   final CanonicalGameSnapshotStore snapshots;
   final CanonicalGameReader reader;
@@ -129,6 +130,7 @@ class CanonicalGameReconciler {
   // the absolute detached display before returning. Never add receipt rewards.
   final Future<void> Function(CanonicalGameSnapshot) applyDisplay;
   final Duration timeout;
+  final Duration workerRetryDelay;
   final Future<Object?> Function(String requestId)? recoverCommands;
   final String Function() newRecoveryId;
   static String _newRecoveryId() => const Uuid().v4();
@@ -180,13 +182,27 @@ class CanonicalGameReconciler {
     // Repair the second journal copy, if needed, before any HTTP request.
     await intents.prepare(intent);
     requireSession();
-    final CanonicalGameHttpReply reply;
+    CanonicalGameHttpReply reply;
     try {
       reply = await send(intent).timeout(timeout);
     } on TimeoutException {
       throw const CanonicalGameException('game_command_unavailable');
     }
     requireSession();
+    if (_isRetryableWorkerReply(reply)) {
+      // The worker deliberately answers before the mobile transport deadline.
+      // Its lease can then be handed to this exact durable UUID shortly after;
+      // one bounded retry avoids making the player reconnect manually. Never
+      // retry a socket/transport exception here because delivery is unknown.
+      await Future<void>.delayed(workerRetryDelay);
+      requireSession();
+      try {
+        reply = await send(intent).timeout(timeout);
+      } on TimeoutException {
+        throw const CanonicalGameException('game_command_unavailable');
+      }
+      requireSession();
+    }
     final receipt = CanonicalGameReceipt.parse(reply, intent,
         expectedAuthority: reader.expectedAuthority);
     final cached = await snapshots.inspect(owner);
@@ -212,6 +228,13 @@ class CanonicalGameReconciler {
     await intents.acknowledge(owner, intent.requestId);
     requireSession();
     return receipt;
+  }
+
+  bool _isRetryableWorkerReply(CanonicalGameHttpReply reply) {
+    final body = reply.body;
+    if (body is! Map<String, dynamic> || body.length != 1) return false;
+    return reply.status == 503 && body['error'] == 'game_command_unavailable' ||
+        reply.status == 409 && body['error'] == 'game_command_busy';
   }
 
   Future<void> _recover(String owner, void Function() requireSession) async {

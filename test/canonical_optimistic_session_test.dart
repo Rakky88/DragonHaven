@@ -657,8 +657,47 @@ void main() {
     final pending =
         session.execute('open_chests', {'tier': 'wooden', 'count': 1});
     expect(session.snapshot, same(before));
+    expect(session.fresh, isTrue);
+    expect(session.busy, isTrue);
+    expect(session.canAct, isFalse);
     hold.complete();
     await pending;
+    expect(session.fresh, isTrue);
+    expect(session.busy, isFalse);
+  });
+
+  test('unknown exclusive outcome still fences play until durable recovery',
+      () async {
+    final before = session.snapshot!;
+    server.online = false;
+
+    await expectLater(
+        session.execute('open_chests', {'tier': 'wooden', 'count': 1}),
+        throwsA(isA<CanonicalGameException>()));
+
+    expect(session.snapshot, same(before));
+    expect(session.fresh, isFalse);
+    expect(session.canAct, isFalse);
+    server.online = true;
+
+    await session.synchronize();
+    expect(session.fresh, isTrue);
+    expect(session.canAct, isTrue);
+    expect(server.sent.map((intent) => intent.requestId).toSet(), hasLength(1));
+  });
+
+  test('definitive exclusive rejection keeps the confirmed session playable',
+      () async {
+    final before = session.snapshot!;
+
+    final receipt =
+        await session.execute('open_chests', {'tier': 'special', 'count': 1});
+
+    expect(receipt!.succeeded, isFalse);
+    expect(session.snapshot!.serverRevision, before.serverRevision);
+    expect(session.snapshot!.shop.chests, before.shop.chests);
+    expect(session.fresh, isTrue);
+    expect(session.canAct, isTrue);
   });
 
   test('language and dragon changes appear before the request and reconcile',

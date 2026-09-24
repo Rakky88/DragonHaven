@@ -21,6 +21,7 @@ void main() {
     final deliveries = <HavenNotificationDestination>[];
     Completer<void>? check;
     var offline = false;
+    var serverFresh = true;
     late CanonicalAccountBootstrap<Object> bootstrap;
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(
@@ -51,8 +52,20 @@ void main() {
                 throw StateError('No legacy game'),
             activate: (_, __, ___) async => throw StateError('No migration'),
             openLegacy: (_) async => throw StateError('No legacy game'),
-            openServer: (_, __) async =>
-                CanonicalGameplayLease(Object(), close: () async {}),
+            openServer: (_, __) async {
+              serverFresh = true;
+              return CanonicalGameplayLease(Object(),
+                  setForeground: (foreground) {
+                    if (!foreground) serverFresh = false;
+                  },
+                  requiresReconnect: () => !serverFresh,
+                  reconnect: () async {
+                    await check?.future;
+                    if (offline) throw StateError('Synthetic offline');
+                    serverFresh = true;
+                  },
+                  close: () async {});
+            },
           ),
           gameplayBuilder: (_, __) => MaterialApp(
               home: NotificationDestinationListener(
