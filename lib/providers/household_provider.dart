@@ -2644,6 +2644,9 @@ class HouseholdProvider extends ChangeNotifier {
     unawaited(HavenNotifications.cancel('egg-${egg.id}'));
     _applyGoldenHourSpectralBonus(egg, now);
     egg.hatch(now);
+    // Rarity metadata belongs to inspectable eggs. Once this identity becomes
+    // a dragon it must not survive in the canonical egg-only collection.
+    eggRarityRevealedIds.remove(dragonId);
     if (!identical(egg, pet)) {
       final previousActiveDragon = pet;
       egg

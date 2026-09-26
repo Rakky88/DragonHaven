@@ -116,6 +116,7 @@ extension EggAltarSystems on HouseholdProvider {
         throw const EggAltarException('altar_unavailable');
       }
     }
+
     if (altarRequiresAccount && ownerId == null) {
       throw const EggAltarException('altar_sign_in_required');
     }
@@ -340,6 +341,10 @@ extension EggAltarSystems on HouseholdProvider {
   void _applyAltarProtection() {
     eggStash.removeWhere((e) => eggAltar.returnedIds.contains(e.id));
     if (eggAltar.returnedIds.contains(incubatingEgg?.id)) incubatingEgg = null;
+    // Rarity discoveries only describe eggs that can still be inspected.
+    // Keeping a returned egg here makes the next canonical restore normalize
+    // the collection and therefore fail its exact asset comparison.
+    eggRarityRevealedIds.removeWhere(eggAltar.returnedIds.contains);
     for (final egg in eggStash) {
       egg.altarKnowledge = eggKnowledge(egg.id);
     }

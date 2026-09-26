@@ -2472,6 +2472,7 @@ extension DragonHavenSystems on HouseholdProvider {
     final before = eggStash.length;
     eggStash.removeWhere((egg) => egg.id == eggId);
     if (eggStash.length == before) return false;
+    eggRarityRevealedIds.remove(eggId);
     await _notifyAndSave();
     return true;
   }

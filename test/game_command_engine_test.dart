@@ -298,6 +298,7 @@ void main() {
     final state = _fixture();
     state['eggAltar']['ownerId'] = '11111111-1111-4111-8111-111111111111';
     const eggId = 'legacy-egg-1720000000000';
+    state['eggRarityRevealedIds'] = [eggId];
     final tagged =
         await _execute(state, 'tag_egg', {'eggId': eggId, 'tagged': true});
     await expectLater(
@@ -318,6 +319,7 @@ void main() {
     expect(returned['result']['essence'], inInclusiveRange(3, 5));
     expect(returned['result']['hearts'], inInclusiveRange(0, 1));
     expect(returned['state']['eggStash'], isEmpty);
+    expect(returned['state']['eggRarityRevealedIds'], isEmpty);
     final replay = await _execute(returned['state'], 'return_egg',
         {'eggId': eggId, 'sinisterConfirmed': true});
     expect(replay['state']['eggAltar']['wallet'],
@@ -367,7 +369,9 @@ void main() {
       'the server clock controls incubation and preserves the legacy egg identity',
       () async {
     const id = 'legacy-egg-1720000000000';
-    final activated = await _execute(_fixture(), 'activate_egg', {'eggId': id});
+    final source = _fixture();
+    source['eggRarityRevealedIds'] = [id];
+    final activated = await _execute(source, 'activate_egg', {'eggId': id});
     final saved = activated['state'] as Map<String, dynamic>;
     expect(saved['incubatingEgg']['stageStartedAt'], _now.toIso8601String());
     expect(saved['incubatingEgg']['needsUpdatedAt'], _now.toIso8601String());
@@ -379,5 +383,7 @@ void main() {
     expect(hatched['state']['pet']['id'], id);
     expect(hatched['state']['pet']['stage'], 'hatchling');
     expect(hatched['state']['incubatingEgg'], isNull);
+    expect(hatched['state']['eggRarityRevealedIds'], isEmpty);
+    expect((await _execute(hatched['state'], 'refresh'))['result'], true);
   });
 }
