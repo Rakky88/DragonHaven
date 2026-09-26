@@ -1,5 +1,42 @@
 # DragonHaven audit
 
+## Published release v0.06.10 / 10103 - 27 September 2026
+
+This release restores the detailed v0.05.40-era tower rooms and movement while
+retaining server-owned gameplay, room-type changes and current account work. It
+also repairs canonical command recovery: abandoned requests can be taken over
+after the worker response budget, late workers are fenced by a rotated lease
+token, the app makes one bounded identical-request retry and confirmed state
+stays usable through short connectivity or lifecycle changes.
+
+Final evolution now grants Expertise above the normal earned cap: +10 to the
+chosen Ascended specialization, or +5 to all three Expertises for Mastery. The
+three new specialist Trials join the normal rotation. Focus is selected first
+(equal Arcana/Spirit/Might odds, or equal quarters including the event focus
+during an active event); players who generally own the matching Ascended form
+or a Mastery dragon then receive an equal classic/specialist variant draw. Busy
+owned dragons unlock the draw, released dragons do not. Classic Trials still
+accept every eligible non-egg dragon. Specialist Trials accept only the
+matching Ascended form or Mastery and carry a visible `ASCENDED TRIAL` badge.
+The empty Trial state matches the restored presentation, dismissals are
+optimistic with rollback, and a silent durable refresh occurs at each overdue
+15-minute boundary without interrupting an active Trial or School session.
+
+Rewarded ads are live through server-side verification for the approved AdMob
+app and distinct Gems/Coins units: three completed rewards per currency per UTC
+day, granting 15 Gems or 150 Coins. The SSV handler verifies signed callbacks,
+deduplicates rewards and uses a 15-minute claim lifetime. Its final production
+source is the release tag; runtime activation retained zero historical claims.
+
+The signed APK is public at v0.06.10. Analysis is clean; 1,233 Flutter tests
+pass with one expected skip, Android app unit tests pass, all 35 command-worker
+tests pass, all 20 rewarded-SSV tests pass and all 14 rollout-helper tests pass.
+Staging and production both report 99 migrations, zero database-lint errors,
+healthy Auth/application endpoints and passing authenticated authority/replay
+smoke tests. Production deliberately retains minimum compatible build 10102 so
+v0.06.09 remains usable. Exact hashes, rollout evidence and permanent download
+links are recorded in `RELEASE_V0.06.10_VERIFICATION.md`.
+
 ## v0.05.40 ? 20 September 2026
 
 - All eleven trial assists now use actual expertise points and the requested

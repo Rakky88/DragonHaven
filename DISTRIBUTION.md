@@ -1,8 +1,15 @@
 # DragonHaven publiceren en updaten
 
-Laatste geverifieerde GitHub-release: **v0.05.34 / 10084**, 13 september 2026.
-De vaste APK-download, dezelfde ondertekening, 944 tests en productiehealth
-zijn gecontroleerd; zie [releasebewijs](RELEASE_V0.05.34_VERIFICATION.md).
+Laatste geverifieerde GitHub-release: **v0.06.10 / 10103**, 27 september 2026.
+De vaste APK-download, bestaande ondertekening, 1.233 Flutter-tests, 99
+productiemigraties, serverhealth en rewarded-ad SSV zijn gecontroleerd; zie
+[releasebewijs](RELEASE_V0.06.10_VERIFICATION.md). De APK is 582.089.071 bytes
+met SHA-256
+`4e93c34efcda09fd5e17065f04fb65c449cf57f0fb8c1b0f5be4ad0727943888`.
+
+- Release: `https://github.com/Rakky88/DragonHaven/releases/tag/v0.06.10`
+- Vaste download: `https://github.com/Rakky88/DragonHaven/releases/latest/download/DragonHaven.apk`
+- Geslaagde releaseworkflow: `https://github.com/Rakky88/DragonHaven/actions/runs/36275584345`
 
 Voor de complete Google Play/App Store-checklist, verantwoordelijkheden,
 productiebeveiliging en kostenramingen: [PUBLIC_LAUNCH.md](PUBLIC_LAUNCH.md).
