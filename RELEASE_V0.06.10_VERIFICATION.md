@@ -18,7 +18,7 @@ visible while an exclusive operation is awaiting confirmation.
 - Flutter analysis reports zero issues. The complete Flutter suite passes with
   1,233 tests and one expected skip; the native Android unit tests pass.
 - The worker typecheck and all 35 worker tests pass. The isolated migration
-  contract and all 12 rollout-helper tests pass.
+  contract and all 14 rollout-helper tests pass.
 - Focused engine tests prove that returning or hatching a rarity-revealed egg
   leaves a reloadable canonical save. The Mastery rotation suite proves all
   three specialist Trials can be generated from restored Mastery dragons. It
@@ -41,8 +41,10 @@ visible while an exclusive operation is awaiting confirmation.
   rollback; the recovered device subsequently completed normal commands.
 - The worker uses one 7.5-second upstream response budget. Production keeps the
   compatible minimum client build at `10102` so v0.06.09 remains usable.
-- Staging rehearsal, production migration parity, health checks, worker smoke
-  test and rollback evidence: pending final release validation.
+- The final ruleset passed its staging rehearsal against all 99 migrations,
+  zero database-lint errors, healthy Auth/application endpoints and the
+  authenticated initialization/replay/server-authority smoke. Production
+  rollout and rollback evidence remain pending until the public APK exists.
 
 ## Artifact and publication
 

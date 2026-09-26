@@ -423,8 +423,13 @@ class Rollout:
         release_version = _semantic_version((self.args.release_tag or "")[1:])
         if source_version is None or source_version != release_version:
             raise RolloutError("release_source_version_mismatch")
-        if int(match.group(2)) != self.args.minimum_client_build:
-            raise RolloutError("release_source_build_mismatch")
+        release_build = int(match.group(2))
+        # The compatibility floor may intentionally remain below the newly
+        # tagged client build so the preceding release can keep playing during
+        # a server-only ruleset rollout. It must never exceed the client that
+        # owns the tag, because that would publish an immediately blocked APK.
+        if self.args.minimum_client_build > release_build:
+            raise RolloutError("release_minimum_build_exceeds_source")
         tag_commit = self._run(
             ["git", "rev-list", "-n", "1", self.args.release_tag],
             "release_tag_resolve",

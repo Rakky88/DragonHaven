@@ -24,6 +24,30 @@ class GameRulesetRolloutTest(unittest.TestCase):
         self.assertIsNone(_semantic_version("v0.06.09"))
         self.assertIsNone(_semantic_version("0.6"))
 
+    def test_release_allows_a_compatible_floor_below_the_tagged_build(self):
+        with tempfile.TemporaryDirectory() as directory:
+            rollout = Rollout(self.production_args(Path(directory) / "evidence", 10102))
+            rollout.root = Path(directory)
+            (rollout.root / "pubspec.yaml").write_text(
+                "name: dragon_haven\nversion: 0.6.10+10103\n", "utf-8"
+            )
+            rollout._run = lambda command, label, cwd=None: "f" * 40 + "\n"
+            rollout._request = lambda *args, **kwargs: self.release_response()
+
+            rollout._verify_release()
+
+    def test_release_rejects_a_floor_above_the_tagged_build(self):
+        with tempfile.TemporaryDirectory() as directory:
+            rollout = Rollout(self.production_args(Path(directory) / "evidence", 10104))
+            rollout.root = Path(directory)
+            (rollout.root / "pubspec.yaml").write_text(
+                "name: dragon_haven\nversion: 0.6.10+10103\n", "utf-8"
+            )
+            with self.assertRaisesRegex(
+                RolloutError, "release_minimum_build_exceeds_source"
+            ):
+                rollout._verify_release()
+
     def test_extracts_final_cli_json(self):
         value = _json_from_output('notice\n{"migrations":[{"remote":"1"}]}\n')
         self.assertEqual(value, {"migrations": [{"remote": "1"}]})
@@ -261,6 +285,39 @@ class GameRulesetRolloutTest(unittest.TestCase):
             apk_sha256=None,
             github_repository="Rakky88/DragonHaven",
         )
+
+    @staticmethod
+    def production_args(evidence, minimum_client_build):
+        return argparse.Namespace(
+            environment="production",
+            mode="apply",
+            minimum_client_build=minimum_client_build,
+            evidence_dir=str(evidence),
+            supabase="supabase",
+            dart="dart",
+            deno="deno",
+            pwsh="pwsh",
+            expected_url=None,
+            expected_publishable_key=None,
+            release_tag="v0.06.10",
+            apk_sha256="a" * 64,
+            github_repository="Rakky88/DragonHaven",
+        )
+
+    @staticmethod
+    def release_response():
+        return {
+            "tag_name": "v0.06.10",
+            "draft": False,
+            "prerelease": False,
+            "assets": [
+                {
+                    "name": "DragonHaven.apk",
+                    "digest": "sha256:" + "a" * 64,
+                    "size": 1,
+                }
+            ],
+        }
 
 
 class FakeRollout(Rollout):
