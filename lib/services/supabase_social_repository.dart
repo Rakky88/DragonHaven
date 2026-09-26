@@ -520,6 +520,9 @@ class SupabaseSocialRepository
 
   @override
   Future<void> blockKeeper(String userId) async {
+    if (userId.isNotEmpty && userId == currentUserId) {
+      throw const SocialException('keeper_unavailable');
+    }
     await _rpc('block_keeper', params: {'p_keeper_id': userId});
   }
 

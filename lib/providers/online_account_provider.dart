@@ -862,14 +862,21 @@ class OnlineAccountProvider extends ChangeNotifier {
       }) ??
       false;
 
-  Future<bool> blockKeeper(String userId) async =>
-      await _run('friends.block', () async {
-        await _repository.blockKeeper(userId);
-        await _refreshData();
-        noticeCode = 'keeper_blocked';
-        return true;
-      }) ??
-      false;
+  Future<bool> blockKeeper(String userId) async {
+    if (userId.isNotEmpty && userId == currentUserId) {
+      errorCode = 'keeper_unavailable';
+      supportCode = null;
+      _notify();
+      return false;
+    }
+    return await _run('friends.block', () async {
+          await _repository.blockKeeper(userId);
+          await _refreshData();
+          noticeCode = 'keeper_blocked';
+          return true;
+        }) ??
+        false;
+  }
 
   Future<bool> unblockKeeper(String userId) async =>
       await _run('friends.unblock', () async {
@@ -1700,7 +1707,10 @@ class OnlineAccountProvider extends ChangeNotifier {
     profile = snapshot.profile;
     friends = snapshot.friends;
     requests = snapshot.requests;
-    blockedKeepers = snapshot.blockedKeepers;
+    final owner = currentUserId;
+    blockedKeepers = snapshot.blockedKeepers
+        .where((keeper) => owner == null || keeper.userId != owner)
+        .toList(growable: false);
     groupAdventureStatus = snapshot.groupAdventureStatus;
     groupLobbies = snapshot.groupLobbies;
     trades = snapshot.trades;

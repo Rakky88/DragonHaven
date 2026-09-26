@@ -558,6 +558,13 @@ Future<void> _showFriendProfile(
 }) async {
   final strings = AppStrings.of(context);
   final online = context.read<OnlineAccountProvider>();
+  // Treat identity as the authority here instead of trusting every caller to
+  // label our own profile correctly. The same profile can be reached from
+  // several social surfaces, and own-account actions must never expose the
+  // remove or block controls.
+  final isOwnProfile = ownProfile ||
+      (online.currentUserId?.isNotEmpty == true &&
+          online.currentUserId == friend.userId);
   await showModalBottomSheet<void>(
     context: context,
     showDragHandle: true,
@@ -566,7 +573,7 @@ Future<void> _showFriendProfile(
       child: FractionallySizedBox(
         heightFactor: .88,
         child: ListView(
-          key: Key(ownProfile
+          key: Key(isOwnProfile
               ? 'own-account-profile'
               : 'friend-profile-${friend.userId}'),
           padding: const EdgeInsets.fromLTRB(20, 4, 20, 28),
@@ -595,7 +602,7 @@ Future<void> _showFriendProfile(
                     fontWeight: FontWeight.w900,
                     letterSpacing: .8)),
             const SizedBox(height: 13),
-            if (!ownProfile && online.serverOwned)
+            if (!isOwnProfile && online.serverOwned)
               FilledButton.icon(
                   key: const Key('start-trade-button'),
                   onPressed: () => Navigator.of(sheetContext).push(
@@ -609,7 +616,7 @@ Future<void> _showFriendProfile(
                   icon:
                       const GameIconSprite(GameIconKind.friendsTrade, size: 28),
                   label: Text(strings.pick('Trade', 'Ruilen'))),
-            if (!ownProfile && !online.serverOwned)
+            if (!isOwnProfile && !online.serverOwned)
               Consumer<OnlineAccountProvider>(
                 builder: (context, liveOnline, _) {
                   final activeTrades = liveOnline.tradesWith(friend.userId);
@@ -661,9 +668,9 @@ Future<void> _showFriendProfile(
               icon: Icons.emoji_events_rounded,
               label: strings.pick('Achievements', 'Prestaties'),
               value:
-                  '${ownProfile ? SocialGameFacts.read(context).achievementIds.length : friend.achievementCount}',
+                  '${isOwnProfile ? SocialGameFacts.read(context).achievementIds.length : friend.achievementCount}',
             ),
-            if (!ownProfile) ...[
+            if (!isOwnProfile) ...[
               const SizedBox(height: 10),
               _FriendDraconomiconButton(
                 key: const Key('friend-draconomicon-button'),
@@ -700,7 +707,7 @@ Future<void> _showFriendProfile(
                 text: strings.pick('No favorite dragon selected.',
                     'Geen favoriete draak gekozen.'),
               ),
-            if (!ownProfile) ...[
+            if (!isOwnProfile) ...[
               const SizedBox(height: 22),
               OutlinedButton.icon(
                 key: const Key('remove-friend-button'),
@@ -762,7 +769,9 @@ Future<void> _showFriendProfile(
       ),
     ),
   );
-  if (!ownProfile && context.mounted) _showProviderMessage(context, online);
+  if (!isOwnProfile && context.mounted) {
+    _showProviderMessage(context, online);
+  }
 }
 
 class _FriendDraconomiconButton extends StatelessWidget {

@@ -2701,6 +2701,80 @@ void main() {
     game.dispose();
   });
 
+  test('self block is rejected before the repository and hidden in snapshots',
+      () async {
+    final game = HouseholdProvider(random: Random(701));
+    final repository = _FakeSocialRepository(
+      inventoryImported: true,
+      includeFriend: false,
+    );
+    repository.blockedRows.add(repository._profile);
+    final online = OnlineAccountProvider(
+      repository: repository,
+      inventorySnapshot: () => OnlineInventorySnapshot.fromGame(game),
+    );
+
+    await online.initialize();
+    expect(online.blockedKeepers, isEmpty,
+        reason: 'a malformed snapshot may never present our own account');
+
+    expect(await online.blockKeeper('my-user'), isFalse);
+    expect(repository.removeCount, 0,
+        reason: 'self block must not reach any repository mutation');
+    expect(online.errorCode, 'keeper_unavailable');
+
+    online.dispose();
+    game.dispose();
+  });
+
+  testWidgets('identity protects our profile even when a caller mislabels it',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(360, 800));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final game = HouseholdProvider(random: Random(702))
+      ..accountName = 'Rick'
+      ..onboardingComplete = true;
+    final repository = _FakeSocialRepository(
+      inventoryImported: true,
+      includeFriend: false,
+    );
+    repository.friendRows.add(repository._profile);
+    final online = OnlineAccountProvider(
+      repository: repository,
+      inventorySnapshot: () => OnlineInventorySnapshot.fromGame(game),
+    );
+    await online.initialize();
+    await tester.pumpWidget(MultiProvider(
+      providers: [
+        ChangeNotifierProvider.value(value: game),
+        ChangeNotifierProvider.value(value: online),
+      ],
+      child: const MaterialApp(home: Scaffold(body: FriendsScreen())),
+    ));
+    await tester.pump(const Duration(milliseconds: 350));
+    final mislabeledSelf = find.byKey(const Key('friend-my-user'));
+    await tester.scrollUntilVisible(
+      mislabeledSelf,
+      220,
+      scrollable: find.descendant(
+        of: find.byKey(const PageStorageKey('friends-scroll')),
+        matching: find.byType(Scrollable),
+      ),
+    );
+    await tester.tap(mislabeledSelf);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+
+    expect(find.byKey(const Key('own-account-profile')), findsOneWidget);
+    expect(find.byKey(const Key('remove-friend-button')), findsNothing);
+    expect(find.text('Block keeper'), findsNothing);
+    expect(find.byKey(const Key('start-trade-button')), findsNothing);
+
+    await tester.pumpWidget(const SizedBox());
+    online.dispose();
+    game.dispose();
+  });
+
   testWidgets(
       'friend profile shows favorite dragon and removal requires confirmation',
       (tester) async {

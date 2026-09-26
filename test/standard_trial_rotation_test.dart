@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 
+import 'package:dragon_haven/domain/server_entropy.dart';
 import 'package:dragon_haven/models/standard_trial_games.dart';
 import 'package:dragon_haven/models/pet.dart';
 import 'package:dragon_haven/models/trial.dart';
@@ -139,6 +140,48 @@ void main() {
       ));
     expect(unlockedAscendedTrialFocuses(game.ownedDragons), isEmpty);
     game.dispose();
+  });
+
+  test('serialized multiple Mastery dragons unlock all three added Trials', () {
+    final now = DateTime.utc(2026, 9, 26, 12);
+    final savedDragons = [
+      Pet(
+        id: 'mastery-one',
+        stage: DragonStage.ascended,
+        firstEgg: false,
+        evolutionPath: 'mastery',
+      ).toJson(),
+      Pet(
+        id: 'mastery-two',
+        stage: DragonStage.ascended,
+        firstEgg: false,
+        evolutionPath: 'mastery',
+      ).toJson(),
+    ];
+
+    final observed = <TrialKind>{};
+    for (var index = 1; index <= 64; index++) {
+      final seed = index.toRadixString(16).padLeft(64, '0');
+      final restored = HouseholdProvider(
+        initialize: false,
+        persistenceEnabled: false,
+        random: ServerEntropy(seed, stream: 'rewards'),
+        clock: () => now,
+        idGenerator: ServerEntropy(seed, stream: 'identities').uuid,
+      )
+        ..pet = Pet.fromJson(savedDragons.first)
+        ..sanctuaryDragons = [Pet.fromJson(savedDragons.last)]
+        ..trialOffers = []
+        ..trialRefilledAt = null;
+      expect(
+        unlockedAscendedTrialFocuses(restored.ownedDragons),
+        TrainingFocus.values.toSet(),
+      );
+      observed.addAll(restored.availableTrials.map((offer) => offer.kind));
+      restored.dispose();
+    }
+
+    expect(observed, containsAll(ascendedTrialKindByFocus.values));
   });
 
   test('two-stage rotation keeps focus odds independent of unlocked games', () {
