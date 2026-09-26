@@ -438,7 +438,7 @@ descending; existing recommendation/acquisition order breaks ties. Ordinary
 Adventures keep their single-focus display and ordering. Inspecting Expertise
 does not select or start a dragon. Duration formulas and rewards are unchanged.
 
-<!-- reference-source-fingerprint: d1da373b21b2695d -->
+<!-- reference-source-fingerprint: cc283d3164395191 -->
 
 Calendar hardening after v0.05.29: canonical commands normalize the database
 instant to UTC. Legacy offline play retains its local day. Long-adventure
@@ -1001,10 +1001,13 @@ ritual continuously charges, lifts, dissolves, releases motes, fades and rests;
 twelve overlapping light ribbons replace the mismatched old sprite crossfades.
 Rewards fade into a reserved space, keeping the dialog stable. Reduced motion
 shows the completed scene after a short transition.
-Inventory eggs can be tagged and untagged without a material cost. Tags, scan
-knowledge and returned IDs persist across saves, nest activation and authorized
-trades. A newer explicit tag revision wins over an older backup. The selection
-and the committing action both reject protected eggs.
+Inventory eggs can be tagged and untagged without a material cost. Tags and scan
+knowledge persist across saves while that egg remains inspectable, including
+nest activation. A rarity-display marker is removed when its egg is hatched,
+returned or sent in an authorized trade; the dragon identity and permanent
+returned-ID ledger remain intact. A newer explicit tag revision wins over an
+older backup. The selection and the committing action both reject protected
+eggs.
 
 Every Special-family egg is excluded, including legacy eggs with no specialEggId.
 Nest eggs and trade-reserved eggs are excluded. Sinisterra is Mythical and may be

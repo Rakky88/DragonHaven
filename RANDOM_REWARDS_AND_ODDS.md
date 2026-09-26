@@ -248,7 +248,7 @@ Ruleset: v0.05.29 published and verified; production schema 65, economy activati
 
 Source baseline: v0.05.16, with subsequent changes and dormant server rules below
 
-<!-- reference-source-fingerprint: 10a75fa96defd1a4 -->
+<!-- reference-source-fingerprint: 5cbe3ac9369e48ca -->
 
 Calendar hardening after v0.05.29: canonical commands normalize the database
 instant to UTC. Legacy offline play retains its local day. Long-adventure
@@ -580,7 +580,7 @@ The complete pool is:
 | Rosebound Egg | Always Rosevow | Exactly 14 hours | 5% base; 10% total if hatched during Golden Hour | Law and size; moral is always Good and known at hatch; personality seed |
 | Truecolor Egg | Always Spectrumplume | Exactly 18 hours | 5% base; 10% total if hatched during Golden Hour | Law and size; moral is always Good and known at hatch; personality seed |
 
-The family, rarity, alignments, size, initial Spectral roll, hatch duration, and personality seed are fixed when the egg is created. Opening the nest or restarting the app does not reroll them. An Astral Lens reveals the already-fixed rarity; it does not change it.
+The family, rarity, alignments, size, initial Spectral roll, hatch duration, and personality seed are fixed when the egg is created. Opening the nest or restarting the app does not reroll them. An Astral Lens reveals the already-fixed rarity; it does not change it. The egg-only rarity display marker is discarded after that egg hatches, is returned or is sent in a trade; this cleanup does not reroll or alter the underlying identity.
 
 Starter-Egg tapping changes only the remaining incubation time. It never changes the dragon inside.
 

@@ -56,6 +56,7 @@ import 'widgets/shop_economy_scope.dart';
 Duration canonicalRefreshDelay({
   required DateTime now,
   required DateTime adventureRefreshAt,
+  required DateTime trialRefreshAt,
   required Iterable<DateTime> towerAwayUntil,
   int expiredRetryAttempt = 0,
 }) {
@@ -67,6 +68,7 @@ Duration canonicalRefreshDelay({
   }
   final future = <DateTime>[
     adventureRefreshAt,
+    trialRefreshAt,
     ...breaks,
   ].where((instant) => instant.isAfter(now)).toList()
     ..sort();
@@ -89,10 +91,16 @@ class _ServerDragonHavenAppState extends State<ServerDragonHavenApp>
   final _branding = EventBrandingService();
   final _elapsed = Stopwatch()..start();
   CanonicalGameSnapshot? _observed;
-  Timer? _clock, _refresh;
+  Timer? _clock, _refresh, _refreshRetry;
   CanonicalHatchScheduler? _hatchScheduler;
   String? _eventKey, _audioConfiguration;
   int _towerRefreshRetryAttempt = 0;
+  int _scheduledRefreshRetryAttempt = 0;
+  late final CanonicalGameSession _session;
+  bool _scheduledRefreshDue = false;
+  bool _scheduledRefreshInFlight = false;
+  String? _scheduledRefreshOwner;
+  int? _scheduledRefreshEpoch;
 
   DateTime get _now =>
       (_observed?.serverTime ?? DateTime.now().toUtc()).add(_elapsed.elapsed);
@@ -110,8 +118,9 @@ class _ServerDragonHavenAppState extends State<ServerDragonHavenApp>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _hatchScheduler =
-        CanonicalHatchScheduler(context.read<CanonicalGameSession>());
+    _session = context.read<CanonicalGameSession>();
+    _session.addListener(_sessionChanged);
+    _hatchScheduler = CanonicalHatchScheduler(_session);
     unawaited(HavenAudio.setAppInForeground(true));
     _clock = Timer.periodic(const Duration(seconds: 1), (_) {
       final view = context.read<CanonicalGameSession>().snapshot;
@@ -124,15 +133,99 @@ class _ServerDragonHavenAppState extends State<ServerDragonHavenApp>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       unawaited(() async {
-        await _advance();
+        _queueOverdueRefresh();
+        await _advanceScheduledRefresh();
         if (mounted) _scheduleRefresh();
       }());
     });
   }
 
+  DateTime _nextTrialRefreshAt(DateTime now) =>
+      DateTime.fromMillisecondsSinceEpoch(
+        (now.millisecondsSinceEpoch ~/ 900000 + 1) * 900000,
+        isUtc: now.isUtc,
+      );
+
+  DateTime _currentTrialRefreshBoundary(DateTime now) =>
+      DateTime.fromMillisecondsSinceEpoch(
+        (now.millisecondsSinceEpoch ~/ 900000) * 900000,
+        isUtc: now.isUtc,
+      );
+
+  DateTime? _trialRefilledAt(CanonicalGameSnapshot view) {
+    final raw = view.data['trials']['trialRefilledAt'];
+    return raw is String ? DateTime.tryParse(raw) : null;
+  }
+
+  bool _trialsAreOverdue(CanonicalGameSnapshot view, DateTime now) {
+    final refilledAt = _trialRefilledAt(view);
+    return refilledAt == null ||
+        _currentTrialRefreshBoundary(now).isAfter(refilledAt);
+  }
+
+  void _queueRefreshForCurrentSession() {
+    final owner = _session.connection.currentOwner;
+    if (owner == null) return;
+    final epoch = _session.connection.sessionEpoch;
+    if (_scheduledRefreshDue &&
+        _scheduledRefreshOwner == owner &&
+        _scheduledRefreshEpoch == epoch) {
+      return;
+    }
+    _scheduledRefreshDue = true;
+    _scheduledRefreshOwner = owner;
+    _scheduledRefreshEpoch = epoch;
+  }
+
+  void _queueOverdueRefresh() {
+    final view = _session.confirmedSnapshot;
+    if (view == null) return;
+    if (_trialsAreOverdue(view, _now) || _hasExpiredTowerBreak) {
+      _queueRefreshForCurrentSession();
+    }
+  }
+
+  bool get _scheduledRefreshStillScoped {
+    return _scheduledRefreshDue &&
+        _scheduledRefreshOwner == _session.connection.currentOwner &&
+        _scheduledRefreshEpoch == _session.connection.sessionEpoch;
+  }
+
+  void _sessionChanged() {
+    if (!mounted) return;
+    if (_scheduledRefreshDue && !_scheduledRefreshStillScoped) {
+      _scheduledRefreshDue = false;
+      _scheduledRefreshOwner = null;
+      _scheduledRefreshEpoch = null;
+    }
+    // A command that kept the app busy across a boundary can finish after the
+    // original timer callback. Recheck the confirmed boundary on that session
+    // transition instead of waiting for another fifteen-minute timer.
+    _queueOverdueRefresh();
+    if (_scheduledRefreshDue && _session.canAct && !_scheduledRefreshInFlight) {
+      unawaited(_advanceScheduledRefresh());
+    }
+  }
+
+  void _scheduleRefreshRetry() {
+    if (!mounted ||
+        !_scheduledRefreshStillScoped ||
+        _refreshRetry?.isActive == true) {
+      return;
+    }
+    const seconds = [2, 4, 8, 16, 30, 60];
+    final index = _scheduledRefreshRetryAttempt.clamp(0, seconds.length - 1);
+    _scheduledRefreshRetryAttempt++;
+    _refreshRetry = Timer(Duration(seconds: seconds[index]), () {
+      if (mounted && _session.canAct) {
+        unawaited(_advanceScheduledRefresh());
+      }
+    });
+  }
+
   void _scheduleRefresh() {
     _refresh?.cancel();
-    final view = context.read<CanonicalGameSession>().confirmedSnapshot;
+    final view = _session.confirmedSnapshot;
     final now = _now;
     final breaks = view?.house.towerDragonAwayUntil.values ?? const [];
     final expiredBreak = breaks.any((instant) => !instant.isAfter(now));
@@ -140,21 +233,13 @@ class _ServerDragonHavenAppState extends State<ServerDragonHavenApp>
     final remaining = canonicalRefreshDelay(
       now: now,
       adventureRefreshAt: nextAdventureOfferRefreshAt(AdventureKind.mini, now)!,
+      trialRefreshAt: _nextTrialRefreshAt(now),
       towerAwayUntil: breaks,
       expiredRetryAttempt: _towerRefreshRetryAttempt,
     );
     _refresh = Timer(remaining, () async {
-      // Let an exclusive command that crossed the quarter-hour finish, so the
-      // scheduled refill is not skipped for an entire cycle. Predictable
-      // commands need no wait because refresh can join their durable queue.
-      final wait = Stopwatch()..start();
-      while (mounted &&
-          context.read<CanonicalGameSession>().busy &&
-          !context.read<CanonicalGameSession>().canAct &&
-          wait.elapsed < const Duration(seconds: 30)) {
-        await Future<void>.delayed(const Duration(milliseconds: 250));
-      }
-      await _advance();
+      _queueRefreshForCurrentSession();
+      await _advanceScheduledRefresh();
       if (mounted) {
         if (_hasExpiredTowerBreak && _towerRefreshRetryAttempt < 5) {
           _towerRefreshRetryAttempt++;
@@ -166,31 +251,44 @@ class _ServerDragonHavenAppState extends State<ServerDragonHavenApp>
 
   bool get _hasExpiredTowerBreak {
     final now = _now;
-    return context
-            .read<CanonicalGameSession>()
-            .confirmedSnapshot
-            ?.house
-            .towerDragonAwayUntil
-            .values
+    return _session.confirmedSnapshot?.house.towerDragonAwayUntil.values
             .any((instant) => !instant.isAfter(now)) ==
         true;
   }
 
-  Future<void> _advance() async {
-    final session = context.read<CanonicalGameSession>();
-    final view = session.confirmedSnapshot;
-    // A predictable refresh may safely join the existing optimistic queue.
-    // Only an exclusive command should postpone this automatic work.
-    if (!session.canAct || view == null || !view.profile.onboardingComplete) {
+  Future<void> _advanceScheduledRefresh() async {
+    if (_scheduledRefreshInFlight || !_scheduledRefreshStillScoped) return;
+    final view = _session.confirmedSnapshot;
+    // Predictable refreshes may join the durable optimistic queue. An
+    // exclusive command, background transition or stale session leaves this
+    // single boundary request pending until the session next becomes usable.
+    if (!_session.canAct ||
+        view == null ||
+        !view.profile.onboardingComplete ||
+        view.trialAttempt != null ||
+        view.schoolAttempt != null) {
       return;
     }
+    final owner = _scheduledRefreshOwner;
+    final epoch = _scheduledRefreshEpoch;
+    _scheduledRefreshInFlight = true;
     try {
-      if (view.trialAttempt == null && view.schoolAttempt == null) {
-        await CanonicalGameActions(session).execute('refresh', const {});
+      await CanonicalGameActions(_session).execute('refresh', const {});
+      if (mounted &&
+          owner == _session.connection.currentOwner &&
+          epoch == _session.connection.sessionEpoch) {
+        _scheduledRefreshDue = false;
+        _scheduledRefreshOwner = null;
+        _scheduledRefreshEpoch = null;
+        _scheduledRefreshRetryAttempt = 0;
+        _refreshRetry?.cancel();
       }
       if (mounted) await context.read<CanonicalGroups?>()?.refresh();
     } on CanonicalGameException {
       // The account gate and session recovery own connection errors.
+      _scheduleRefreshRetry();
+    } finally {
+      _scheduledRefreshInFlight = false;
     }
   }
 
@@ -214,7 +312,8 @@ class _ServerDragonHavenAppState extends State<ServerDragonHavenApp>
       await session.synchronize();
       if (mounted) {
         await context.read<CanonicalRewardedAds?>()?.resumed();
-        await _advance();
+        _queueOverdueRefresh();
+        await _advanceScheduledRefresh();
         _scheduleRefresh();
       }
     } on CanonicalGameException {
@@ -225,8 +324,10 @@ class _ServerDragonHavenAppState extends State<ServerDragonHavenApp>
   @override
   void dispose() {
     _hatchScheduler?.dispose();
+    _session.removeListener(_sessionChanged);
     _clock?.cancel();
     _refresh?.cancel();
+    _refreshRetry?.cancel();
     _elapsed.stop();
     WidgetsBinding.instance.removeObserver(this);
     unawaited(HavenAudio.setAppInForeground(false));
@@ -304,7 +405,10 @@ class _ServerDragonHavenAppState extends State<ServerDragonHavenApp>
                       runShopAction(context, () async {
                         await CanonicalGameActions(session)
                             .completeOnboarding(name);
-                        if (mounted) await _advance();
+                        if (mounted) {
+                          _queueOverdueRefresh();
+                          await _advanceScheduledRefresh();
+                        }
                       }))),
     );
   }

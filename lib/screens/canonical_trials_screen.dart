@@ -689,6 +689,37 @@ class _TrialOfferCard extends StatelessWidget {
                       ],
                     ),
                   ),
+                  if (ascendedTrialFocus(offer.kind) != null)
+                    Positioned(
+                      left: 10,
+                      top: 10,
+                      child: Container(
+                        key: Key('ascended-trial-label-${offer.id}'),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 9,
+                          vertical: 5,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF6D466),
+                          borderRadius: BorderRadius.circular(99),
+                          boxShadow: const [
+                            BoxShadow(
+                              color: Color(0x55000000),
+                              blurRadius: 5,
+                            ),
+                          ],
+                        ),
+                        child: Text(
+                          strings.pick('ASCENDED TRIAL', 'ASCENDED PROEF'),
+                          style: const TextStyle(
+                            color: Color(0xFF30204F),
+                            fontSize: 9,
+                            letterSpacing: .4,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ),
+                    ),
                   if (offer.specialEventKey?.contains(':preview:') == true)
                     Positioned(
                       left: 10,

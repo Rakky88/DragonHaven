@@ -2,6 +2,14 @@
 ///
 /// The list order is German, Spanish, French, Italian, Portuguese and Japanese.
 const trialPhraseTranslations = <String, List<String>>{
+  'ASCENDED TRIAL': [
+    'ASCENDED-PRÜFUNG',
+    'PRUEBA ASCENDIDA',
+    'ÉPREUVE ASCENDÉE',
+    'PROVA ASCESA',
+    'PROVA ASCENDIDA',
+    'アセンデッド試練'
+  ],
   "Finish your Trial first.": [
     "Beende zuerst deine Prüfung.",
     "Termina primero tu prueba.",

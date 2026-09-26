@@ -9,6 +9,7 @@ void main() {
       canonicalRefreshDelay(
         now: now,
         adventureRefreshAt: now.add(const Duration(minutes: 15)),
+        trialRefreshAt: now.add(const Duration(minutes: 15)),
         towerAwayUntil: [now.add(const Duration(minutes: 4))],
       ),
       const Duration(minutes: 4),
@@ -23,6 +24,7 @@ void main() {
       canonicalRefreshDelay(
         now: now,
         adventureRefreshAt: now.add(const Duration(minutes: 15)),
+        trialRefreshAt: now.add(const Duration(minutes: 15)),
         towerAwayUntil: expired,
       ),
       const Duration(seconds: 2),
@@ -31,10 +33,26 @@ void main() {
       canonicalRefreshDelay(
         now: now,
         adventureRefreshAt: now.add(const Duration(minutes: 15)),
+        trialRefreshAt: now.add(const Duration(minutes: 15)),
         towerAwayUntil: expired,
         expiredRetryAttempt: 99,
       ),
       const Duration(seconds: 60),
+    );
+  });
+
+  test('Trial deadline remains independent from slower Adventure refreshes',
+      () {
+    final now = DateTime.utc(2026, 9, 24, 12);
+
+    expect(
+      canonicalRefreshDelay(
+        now: now,
+        adventureRefreshAt: now.add(const Duration(hours: 1)),
+        trialRefreshAt: now.add(const Duration(minutes: 15)),
+        towerAwayUntil: const [],
+      ),
+      const Duration(minutes: 15),
     );
   });
 }

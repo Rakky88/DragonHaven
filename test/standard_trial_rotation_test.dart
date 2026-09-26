@@ -142,6 +142,66 @@ void main() {
     game.dispose();
   });
 
+  test(
+      'an owned specialist on an Adventure unlocks its half split while classics accept a Hatchling',
+      () {
+    final game = HouseholdProvider(initialize: false, persistenceEnabled: false)
+      ..pet = Pet(
+        id: 'ordinary-hatchling',
+        stage: DragonStage.hatchling,
+        firstEgg: false,
+      )
+      ..sanctuaryDragons = [
+        Pet(
+          id: 'busy-spirit-specialist',
+          stage: DragonStage.ascended,
+          firstEgg: false,
+          evolutionPath: TrainingFocus.spirit.name,
+          activeAdventureId: 'active-adventure',
+        ),
+      ];
+    final unlocked = unlockedAscendedTrialFocuses(game.ownedDragons);
+    expect(unlocked, {TrainingFocus.spirit});
+
+    final random = Random(260926);
+    var classicSpirit = 0;
+    var ascendedSpirit = 0;
+    for (var draw = 0; draw < 120000; draw++) {
+      switch (chooseTrialOfferKind(
+        random,
+        unlockedAscendedFocuses: unlocked,
+      )) {
+        case TrialKind.cavernFlight:
+          classicSpirit++;
+        case TrialKind.spiritAlignment:
+          ascendedSpirit++;
+        default:
+          break;
+      }
+    }
+    expect(
+      ascendedSpirit / (classicSpirit + ascendedSpirit),
+      inInclusiveRange(.49, .51),
+    );
+    expect(
+      dragonMeetsTrialFormRequirement(
+        kind: TrialKind.cavernFlight,
+        stage: game.pet.stage,
+        activeEvolutionPath: game.pet.activeEvolutionPath,
+      ),
+      isTrue,
+    );
+    expect(
+      dragonMeetsTrialFormRequirement(
+        kind: TrialKind.spiritAlignment,
+        stage: game.pet.stage,
+        activeEvolutionPath: game.pet.activeEvolutionPath,
+      ),
+      isFalse,
+    );
+    game.dispose();
+  });
+
   test('serialized multiple Mastery dragons unlock all three added Trials', () {
     final now = DateTime.utc(2026, 9, 26, 12);
     final savedDragons = [
