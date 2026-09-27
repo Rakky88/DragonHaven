@@ -1,23 +1,63 @@
 # DragonHaven audit
 
-## v0.06.11 release preparation ? 27 September 2026
+## v0.06.11 published ? 27 September 2026
 
-App display/Android version advances to 0.06.11, build 10104. This release
-includes the previously prepared rewarded-ad recovery, Adventure/ranking
-presentation and three Trial refinements documented below. Migration 100's
-rewarded-ad transaction validation is already deployed to production. The
-updated shared worker must be deployed before APK publication, retaining
-minimum client build 10102 and legacy Spirit Alignment checkpoints.
+Published `v0.06.11`, Android build **10104**, from
+`b2ab4e264f6061938ac3d1f24e9a22cd63aa63e6`. The permanent latest APK URL
+returns HTTP 200 and GitHub's asset size and SHA-256 match the signed local
+artifact. Package `nl.dragonhaven.app`, display/manifest version `0.06.11`,
+all three Android ABIs, production rewarded-ad IDs and the existing release
+certificate were verified. No player data or protected local staging files
+were changed by the release process.
 
-The rollout helper now supports a prepublication compatibility deployment.
-It requires a clean, pushed candidate commit, matching local tag/version,
-the existing public APK digest, unchanged client floor, and successful staging
-proof for the exact source, schema, compiled ruleset and Edge parser. Automatic
-rollback, authenticated synthetic smoke, cleanup and postflight remain active.
-This lets the server understand the new optional capability before the new APK
-is distributed. The protected local staging workspace is excluded throughout.
+- Release: https://github.com/Rakky88/DragonHaven/releases/tag/v0.06.11
+- Asset: `DragonHaven.apk`, **583,552,121 bytes**.
+- SHA-256: `62499b4ce96a2aa3578a6c5c98a348eafdfe90693a784affc337991fe1534020`.
+- Certificate SHA-256: `477c5a5d7453384ca756265e77af97d5a002a907177ccd2d9065a9bec3414942`.
 
-Release validation and deployment evidence will be recorded after completion.
+Validation passed: **1,280 Flutter tests**, one intentional opt-in skip,
+clean Flutter analysis, **56 Edge tests**, **13 Android unit tests**, **23
+rollout-helper tests** and three MIDI tests with all 75 tracks verified.
+Two existing asynchronous widget tests now await actual persistence receipts
+instead of short polling windows. Living-reference verification and the public
+release-note privacy scan passed. Thirteen screenshots of the actual Trial
+widgets were reviewed on an isolated Android emulator: contact/shatter/miss,
+Orbit success/miss, Spirit countdown/bonus/continued play/timeout/restart,
+including 320-pixel layouts, enlarged German text and reduced motion. No Flutter
+errors occurred. Live Google ad availability on the owner's physical phone was
+not retested during this release.
+
+Production schema remains at migration **100**. Its transaction-ID regex fix
+was already active; staging was brought to the same schema before rehearsal.
+The shared worker was promoted before APK publication using a clean, pushed
+candidate, matching local tag/version, the previous public APK digest, an
+unchanged minimum client build **10102**, and successful staging proof for the
+exact source, schema, compiled ruleset and Edge parser. Authenticated synthetic
+initialization, replay and server-authority checks passed with automatic
+rollback protection; rollback was not needed. Synthetic users were removed.
+Gameplay and migration remain enabled; shadow switches remain disabled.
+
+- Shared ruleset: `f2c5ab4a6b69adb339d06821e5bfc62fe2335a7e204c87e1cfb5686e2554b7ab`.
+- Game worker bundle: `403039f677813dbcb4d2cf565ce245e30704ef5b4436fdc73532e2d449232b11`.
+- Worker metadata version **16**, runtime ruleset revision **5**.
+- SSV metadata version **17**, source `b2ab4e264f6061938ac3d1f24e9a22cd63aa63e6`.
+
+Only the SSV source-revision environment value was advanced after verifying
+that all three callback source files and its bundle were byte-identical to the
+previous deployment. Setup tokens, ad-unit secrets, reward amounts and issuance
+settings were preserved. The project-secret refresh advanced the game worker's
+metadata version without changing its code or runtime row. Final mandatory
+SSV-aware production preflight at **10:43:37 UTC** passed: 100 matching
+migrations, zero database lint errors, Auth/settings/app/SSV HTTP 200, zero
+synthetic users and six existing canonical accounts. The initial supplementary
+GitHub AAB workflow reached its provenance check before that refresh and was
+rerun afterwards; the independently built and verified APK is published.
+
+Local evidence: `.tools/release72/{staging-v0611-final-1,production-v0611-final-1,
+ssv-provenance-v0611}`, `artifact-verification.json`, `published-verification.json`,
+`build/release11-*` validation logs and `build/release11-review/` screenshots.
+The following implementation notes were prepared before publication and are
+retained as the change history for this release.
 
 ## Unreleased timed Spirit Alignment — 27 September 2026
 
