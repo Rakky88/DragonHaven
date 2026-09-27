@@ -1,5 +1,44 @@
 # DragonHaven audit
 
+## v0.06.12 published and deployed - 27 September 2026
+
+Published v0.06.12 / Android build 10105 from
+`2decc3d0901dbefd4111791214644c2194c2aa08`. The signed `nl.dragonhaven.app`
+APK is 583,584,893 bytes; SHA-256
+`fea844b7580a588951b3acd81b1c8382c755c18c1d9a17360c8ee6f2e0343af1`.
+GitHub's asset digest and size match; the permanent latest download returns 200.
+Release: https://github.com/Rakky88/DragonHaven/releases/tag/v0.06.12 .
+
+Validation: 1,329 Flutter tests passed with one intentional opt-in skip,
+13 Android unit tests, 56 Edge tests, 28 rollout-helper tests, clean Flutter
+analysis and shared VM/Deno ruleset parity. Migration 101 passed local SQL
+contracts and rollback-only rehearsals before staging and production application.
+All 101 migration versions match; database lint reports zero errors and Auth,
+application and rewarded-ad health checks return 200. An initial CLI pooler
+authentication timeout occurred during dry-run only; retry succeeded before
+the migration was applied. No player data was rewritten by the migration.
+
+The exact worker passed staging before production activation. The verified APK
+was publicly downloadable before requiring build 10105. Production gameplay is
+enabled with ruleset revision 6 and SHA-256
+`7f3d64e90b65515cb1497219f6808ba791aee302ad5a98edad8a3b2d0b33d3fe`.
+Authenticated initialization, idempotent replay and state reads pass. Build
+10104 is rejected before reads or mutations (Edge 426; SQL upgrade-required),
+without changing state or creating intents. Test accounts were removed and
+no rollout-tagged accounts remain. Identical SSV source was redeployed with
+the release commit provenance; SSV version 19 and bundle hash are verified.
+
+Visual review exercised actual production widgets in an isolated emulator app:
+21 scenarios, six visible ranking choices at 320px, 160% text/reduced motion,
+Spirit containment and bonus time for all three shapes, 60 increasingly fast
+Orbit matches, and altar/shop Quill ordering. Actual Android swipe/tap checks
+also passed with no captured Flutter errors. Rewarded-ad handoff tests pass;
+the reported physical handset compositor issue still needs a handset playback
+check. No physical phone was connected for this release.
+
+Evidence is retained under `.tools/release12/` and `.tools/release12-review/`.
+The preparation sections below are historical evidence for this release.
+
 ## v0.06.12 release preparation - 27 September 2026
 
 Candidate display/package version 0.06.12, Android build 10105. This release
