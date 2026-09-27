@@ -1,5 +1,24 @@
 # DragonHaven audit
 
+## v0.06.14 release preparation - 27 September 2026
+
+Candidate display/package version 0.06.14, Android build 10107. This release
+combines the prepared Keeper progression and Spirit Alignment changes below.
+Dragons can reach level 50 without changing their evolution path, excess XP
+from level-50 dragons advances a Keeper account from level 1 through 40, and
+each reached Keeper level creates its exactly-once Level Chest. Spirit
+Alignment version 4 awards five bonus seconds only after three consecutive
+100% placements while restored older attempts retain their original rules.
+
+The release requires migration 104 and the matching game-worker bundle. Both
+are staged and verified before production deployment. Production deployment
+preserves the existing minimum supported client build and uses the guarded
+ruleset rollout, including runtime ownership checks, synthetic command smoke
+tests and automatic restoration of the previous worker and runtime state if a
+verification fails. The public release is published only after the signed APK,
+production migration set, database lint, Auth, application endpoint, rewarded
+ad callback contract and active ruleset all pass their release checks.
+
 ## Spirit Alignment streak bonus and score reset - 27 September 2026
 
 Prepared locally after v0.06.13; no app release or production game-worker
