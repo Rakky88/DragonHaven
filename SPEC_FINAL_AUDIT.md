@@ -1,5 +1,46 @@
 # DragonHaven audit
 
+## Server efficiency follow-up deployed - 27 September 2026
+
+After publishing v0.06.12, migration 102 was committed in
+`5b430d3e22f93f0a0e44e51177248101774c0346` and applied to staging, then
+production. Exact migration SHA-256:
+`cb9adf9fac95e5ebed5c03b8512aa03c4e777ace5b483eed7099483b5d8b4bbc`.
+It reduces redundant dragon/showcase projection writes without changing game
+rules, rewards, item balances, schemas exposed to clients, or APK version.
+
+The actual old and new projection functions were compared in a local PostgreSQL
+fixture: an unrelated revision with 27 dragons previously made 54 dragon and
+three showcase updates; it now makes zero updates to those two tables. Wallet
+and private projection revision writes remain mandatory. Null-safe predicates
+cover every projected field. Favorite replacement clears the former unique slot
+first; release/restore retains historical UUIDs. Actual changes still update
+timestamps. Online presence uses its separate unchanged profile field.
+
+Independent review and contract tests cover changed names/XP, all six Trial
+scores, achievement/dragon counts, favorites including no favorite, release and
+restore, spectral/name fallback, exact replay, wrong hash/revision/state,
+transaction rollback, service-role checks and unchanged function ACLs. The
+fixture includes the Auth new-user bootstrap trigger. The same rollback-only
+contract passed on the full staging schema; its counting triggers and synthetic
+account were removed by rollback. It was not run on production because those
+temporary triggers require table locks.
+
+Both environments passed a short DDL-only rollback rehearsal before applying
+the migration. The deployed function privileges, game runtime switches, ruleset
+revision/hash and worker remained unchanged. Production now has all 102
+migrations, zero database lint errors, and healthy Auth/application/SSV checks.
+A separate production synthetic account passed authenticated initialization,
+read, actual refresh mutation and replay with the same committed result; old
+builds remain fenced. It was removed, leaving zero rollout-tagged accounts.
+
+Evidence: `.tools/release12/staging-projection102-contract.log`,
+`production-projection102-apply/result.json`,
+`projection102-production-postflight.txt`, and
+`projection102-authenticated-smoke-final/result.json` under the same evidence
+root. `SERVER_EFFICIENCY.md` records the baseline, scope and follow-up priorities.
+This demonstrates fewer row writes, not a measured latency or billing reduction.
+
 ## v0.06.12 published and deployed - 27 September 2026
 
 Published v0.06.12 / Android build 10105 from

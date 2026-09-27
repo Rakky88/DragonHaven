@@ -28,21 +28,27 @@ action. With N owned dragons, this makes 2N dragon-row updates. Three separate
 projection writers also update the showcase for basic details, Ascended Trial
 scores, and collection counts regardless of whether those values changed.
 
-Migration 102 is intended to:
+Migration 102 is deployed on staging and production. It now:
 
-- Retire only dragons absent from the new canonical collection; preserve their
+- Retires only dragons absent from the new canonical collection; preserves their
   historical UUIDs and restore the same identity when they return.
-- Clear an old favorite before setting a replacement, preserving the unique
+- Clears an old favorite before setting a replacement, preserving the unique
   favorite constraint regardless of resident order.
-- Update existing dragon rows only when projected fields differ.
-- Update each showcase projection only when its owned fields differ.
+- Updates existing dragon rows only when projected fields differ.
+- Updates each showcase projection only when its owned fields differ.
 
 Canonical state, wallet revision, projection revision/hash, authorization,
 atomic commit, idempotent receipt, and request recovery checks must still run.
 An unchanged social projection must not weaken any of those checks.
 
-Deployment and measured contract-test results are recorded in
-`SPEC_FINAL_AUDIT.md` after validation. Reduced row writes are not a promise of
+The same 27-dragon fixture measured 54 dragon updates plus three showcase updates
+before the change, and zero updates to those tables afterward for an unrelated
+canonical revision. Wallet and projection-revision writes still occur. Both the
+local contract and the full staging-schema contract pass, including changes to
+all six scores, favoriting, release/restore, service checks and exact replay.
+
+Production deployment and postflight results are recorded in
+`SPEC_FINAL_AUDIT.md`. Reduced row writes are not a promise of
 an equal reduction in request latency or the Supabase bill: authentication,
 network latency, rule evaluation, index checks, and retained bookkeeping remain.
 
