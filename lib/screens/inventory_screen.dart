@@ -651,7 +651,8 @@ class _ChestInventoryTab extends StatelessWidget {
     final specialChests = specialChestCatalog.values
         .where((definition) => game.specialChestCount(definition.id) > 0)
         .toList(growable: false);
-    if (tiers.isEmpty && specialChests.isEmpty) {
+    final keeperLevelChests = game.pendingKeeperLevelRewardLevels;
+    if (tiers.isEmpty && specialChests.isEmpty && keeperLevelChests.isEmpty) {
       return _EmptyState(
           kind: GameIconKind.inventoryChests,
           text: strings.pick('Adventure rewards are stored here.',
@@ -661,6 +662,8 @@ class _ChestInventoryTab extends StatelessWidget {
       key: const PageStorageKey('inventory-chests-scroll'),
       padding: const EdgeInsets.fromLTRB(14, 14, 14, 32),
       children: [
+        for (final level in keeperLevelChests)
+          _keeperLevelChestCard(context, game, strings, level),
         for (final tier in tiers.takeWhile((tier) =>
             chestOrder.indexOf(tier) < chestOrder.indexOf(ChestTier.special)))
           _chestCard(context, game, strings, tier),
@@ -715,6 +718,51 @@ class _ChestInventoryTab extends StatelessWidget {
       onOpen: () => _openSpecialChest(context, definition),
       onOpenTen: () => _openSpecialChest(context, definition, quantity: 10),
     );
+  }
+
+  Widget _keeperLevelChestCard(
+    BuildContext context,
+    HouseholdProvider game,
+    AppStrings strings,
+    int level,
+  ) {
+    final label =
+        strings.pick('Keeper Level $level Chest', 'Hoederniveau $level-kist');
+    return _InventoryChestCard(
+      key: ValueKey('keeper-level-chest-$level'),
+      assetPath: ChestTier.special.assetPath,
+      color: Color(ChestTier.special.colorValue),
+      title: label,
+      count: 1,
+      openKey: Key('inventory-open-keeper-level-$level'),
+      openTenKey: Key('inventory-open-ten-keeper-level-$level'),
+      canOpen: true,
+      canOpenTen: false,
+      onOpen: () => _openKeeperLevelChest(context, level, label),
+      onOpenTen: () {},
+    );
+  }
+
+  Future<void> _openKeeperLevelChest(
+      BuildContext context, int level, String label) async {
+    final navigator = Navigator.of(context);
+    final game = context.read<HouseholdProvider>();
+    game.beginPresentationDeferral();
+    try {
+      await showChestReveal(
+        navigator.context,
+        ChestTier.special,
+        displayName: label,
+        openChest: () async {
+          final reward = await game.openKeeperLevelChest(level);
+          return reward == null ? null : ChestRewardBundle.single(reward);
+        },
+        onOpen: () => HavenAudio.play(HavenSound.chestSpecial),
+      );
+    } finally {
+      await Future<void>.delayed(const Duration(milliseconds: 350));
+      game.endPresentationDeferral();
+    }
   }
 
   Future<void> _openChest(

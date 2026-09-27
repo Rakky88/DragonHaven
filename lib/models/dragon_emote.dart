@@ -1,9 +1,11 @@
 import '../l10n/ui_phrase_translations.dart';
+import 'keeper_level.dart';
 
 enum DragonEmoteSource {
   chest,
   trial,
   seasonal,
+  keeperLevel,
   cozyPack,
   infernalPack,
   celestialPack;
@@ -12,6 +14,7 @@ enum DragonEmoteSource {
         DragonEmoteSource.chest => 'chest',
         DragonEmoteSource.trial => 'trial',
         DragonEmoteSource.seasonal => 'seasonal',
+        DragonEmoteSource.keeperLevel => 'keeper_level',
         DragonEmoteSource.cozyPack => 'cozy',
         DragonEmoteSource.infernalPack => 'infernal',
         DragonEmoteSource.celestialPack => 'celestial',
@@ -22,6 +25,7 @@ enum DragonEmoteSource {
         DragonEmoteSource.trial ||
         DragonEmoteSource.seasonal =>
           false,
+        DragonEmoteSource.keeperLevel => false,
         _ => true,
       };
 }
@@ -33,6 +37,7 @@ class DragonEmoteDefinition {
     required this.nameEn,
     required this.nameNl,
     required this.source,
+    this.keeperLevel,
   });
 
   final String id;
@@ -40,10 +45,14 @@ class DragonEmoteDefinition {
   final String nameEn;
   final String nameNl;
   final DragonEmoteSource source;
+  final int? keeperLevel;
 
   String get assetPath => source == DragonEmoteSource.seasonal
       ? 'assets/images/events/$assetName'
-      : 'assets/images/emotes/${source.assetFolder}/$assetName.png';
+      : source == DragonEmoteSource.keeperLevel
+          ? ''
+          : 'assets/images/emotes/${source.assetFolder}/$assetName.png';
+  bool get usesBundledAsset => assetPath.isNotEmpty;
 
   String label(String languageCode) => languageCode == 'nl'
       ? nameNl
@@ -1081,10 +1090,23 @@ const _seasonalPodiumEmotes = <DragonEmoteDefinition>[
   ),
 ];
 
-const allDragonEmotes = <DragonEmoteDefinition>[
+final keeperLevelDragonEmotes = List<DragonEmoteDefinition>.unmodifiable([
+  for (var level = 2; level <= maximumKeeperLevel; level++)
+    DragonEmoteDefinition(
+      id: keeperLevelEmoteId(level),
+      assetName: _chestEmotes[level - 2].assetName,
+      nameEn: 'Keeper Level $level',
+      nameNl: 'Hoederniveau $level',
+      source: DragonEmoteSource.keeperLevel,
+      keeperLevel: level,
+    ),
+]);
+
+final allDragonEmotes = <DragonEmoteDefinition>[
   ..._chestEmotes,
   ..._trialEmotes,
   ..._seasonalPodiumEmotes,
+  ...keeperLevelDragonEmotes,
   ..._cozyPackEmotes,
   ..._infernalPackEmotes,
   ..._celestialPackEmotes,

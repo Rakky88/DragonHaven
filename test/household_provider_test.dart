@@ -1299,9 +1299,9 @@ void main() {
     expect(game.pet.activeAdventureId, 'legacy-group-run');
   });
 
-  test('the achievement catalog has 40 unique humorous milestones', () {
-    expect(achievementCatalog, hasLength(40));
-    expect(achievementCatalog.map((entry) => entry.id).toSet(), hasLength(40));
+  test('the achievement catalog has 41 unique humorous milestones', () {
+    expect(achievementCatalog, hasLength(41));
+    expect(achievementCatalog.map((entry) => entry.id).toSet(), hasLength(41));
     expect(achievementCatalog.every((entry) => entry.target > 0), isTrue);
     expect(
         achievementCatalog.every((entry) =>

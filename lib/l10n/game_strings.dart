@@ -1177,6 +1177,14 @@ const _achievementTranslations = <String, Map<String, List<String>>>{
     ],
     'ja': ['ドラゴンアカデミー中退', '卒業証書を得ずに公式30回の挑戦をすべて終える。'],
   },
+  'keeper_level_40': {
+    'de': ['Hüter des höchsten Havens', 'Erreiche Hüterlevel 40.'],
+    'es': ['Guardián del Refugio más Alto', 'Alcanza el nivel 40 de Guardián.'],
+    'fr': ['Gardien du Havre suprême', 'Atteignez le niveau de Gardien 40.'],
+    'it': ['Custode del Rifugio più Alto', 'Raggiungi il livello Custode 40.'],
+    'pt': ['Guardião do Refúgio Mais Alto', 'Alcance o nível 40 de Guardião.'],
+    'ja': ['最高峰のヘイヴンの守り手', 'キーパーレベル40に到達する。'],
+  },
   'dragon_school_valedictorian': {
     'de': [
       'Jahrgangsbester',

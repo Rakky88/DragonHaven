@@ -41,6 +41,59 @@ class ServerAccountScreen extends StatelessWidget {
           trailing: const Icon(Icons.edit_outlined),
           onTap: session.canAct ? () => _name(context) : null,
         ),
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(children: [
+                  const Icon(Icons.auto_awesome_rounded,
+                      color: Color(0xFFD6A92E)),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      s.pick(
+                        'Keeper Level ${view.profile.keeperLevel}',
+                        'Hoederniveau ${view.profile.keeperLevel}',
+                      ),
+                      style: const TextStyle(
+                          fontSize: 17, fontWeight: FontWeight.w900),
+                    ),
+                  ),
+                  if (view.profile.pendingKeeperLevelRewardLevels.isNotEmpty)
+                    Badge.count(
+                      count: view.profile.pendingKeeperLevelRewardLevels.length,
+                      child: const Icon(Icons.inventory_2_rounded),
+                    ),
+                ]),
+                const SizedBox(height: 10),
+                LinearProgressIndicator(
+                  value: view.profile.keeperProgress,
+                  minHeight: 9,
+                  borderRadius: BorderRadius.circular(99),
+                ),
+                const SizedBox(height: 7),
+                Text(
+                  view.profile.keeperLevel >= 40
+                      ? s.pick(
+                          'Maximum level reached', 'Maximaal niveau bereikt')
+                      : '${view.profile.keeperXp - view.profile.keeperLevelFloorXp} / '
+                          '${view.profile.keeperNextLevelXp - view.profile.keeperLevelFloorXp} XP',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+                if (view.profile.pendingKeeperLevelRewardLevels.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 6),
+                    child: Text(s.pick(
+                      'A Level Chest is waiting in Inventory.',
+                      'Er staat een Levelkist klaar in Inventaris.',
+                    )),
+                  ),
+              ],
+            ),
+          ),
+        ),
         ListTile(
           leading: const Icon(Icons.face_retouching_natural),
           title: Text(s.pick('Portrait, title and decorations',

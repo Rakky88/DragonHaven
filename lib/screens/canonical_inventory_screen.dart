@@ -94,6 +94,9 @@ class _InventoryContents extends StatelessWidget {
             ListView(
                 padding: const EdgeInsets.fromLTRB(14, 14, 14, 32),
                 children: [
+                  for (final level
+                      in view.profile.pendingKeeperLevelRewardLevels)
+                    _KeeperLevelChestRow(level: level),
                   for (final tier
                       in ChestTier.values.where((t) => t != ChestTier.special))
                     if ((view.shop.chests[tier.name] ?? 0) > 0)
@@ -114,7 +117,8 @@ class _InventoryContents extends StatelessWidget {
                           count: entry.value,
                           label: strings.pick('Chest', 'Kist')),
                   if (view.shop.chests.values.every((n) => n == 0) &&
-                      view.shop.specialChests.values.every((n) => n == 0))
+                      view.shop.specialChests.values.every((n) => n == 0) &&
+                      view.profile.pendingKeeperLevelRewardLevels.isEmpty)
                     RestoredCollectionEmpty(
                         icon: GameIconKind.inventoryChests,
                         text: strings.pick('Your chests will appear here.',
@@ -177,6 +181,39 @@ class _InventoryContents extends StatelessWidget {
             const _FurnitureInventoryTab(),
           ])),
         ]));
+  }
+}
+
+class _KeeperLevelChestRow extends StatelessWidget {
+  const _KeeperLevelChestRow({required this.level});
+
+  final int level;
+
+  @override
+  Widget build(BuildContext context) {
+    final session = context.watch<CanonicalGameSession>();
+    final strings = AppStrings.of(context);
+    final label =
+        strings.pick('Keeper Level $level Chest', 'Hoederniveau $level-kist');
+    return RestoredChestCard(
+      assetPath: ChestTier.special.assetPath,
+      color: Color(ChestTier.special.colorValue),
+      title: label,
+      count: 1,
+      openKey: Key('canonical-open-keeper-level-$level'),
+      openTenKey: Key('canonical-open-ten-keeper-level-$level'),
+      canOpen: session.canAct,
+      canOpenTen: false,
+      onOpen: () => showChestReveal(
+        context,
+        ChestTier.special,
+        displayName: label,
+        onOpen: () => HavenAudio.play(HavenSound.chestSpecial),
+        openChest: () =>
+            CanonicalGameActions(session).openKeeperLevelChest(level),
+      ),
+      onOpenTen: () {},
+    );
   }
 }
 

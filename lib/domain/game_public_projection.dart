@@ -148,6 +148,9 @@ abstract final class GamePublicProjection {
         'collection': {
           'onboardingComplete': game.onboardingComplete,
           'tutorialCompleted': game.tutorialCompleted,
+          'keeperXp': game.keeperXp,
+          'keeperLevel': game.keeperLevel,
+          'pendingKeeperLevelRewardLevels': game.pendingKeeperLevelRewardLevels,
           'preferences': AccountPreferences.fromState(exported),
           'achievementProgress': {
             for (final achievement in achievementCatalog)

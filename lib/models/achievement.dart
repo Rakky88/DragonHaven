@@ -404,4 +404,13 @@ const achievementCatalog = <AchievementDefinition>[
       category: AchievementCategory.master,
       secret: true,
       badge: 'light_across_the_lagoon.png'),
+  AchievementDefinition(
+      id: 'keeper_level_40',
+      titleEn: 'Keeper of the Highest Haven',
+      titleNl: 'Hoeder van de Hoogste Haven',
+      descriptionEn: 'Reach Keeper Level 40.',
+      descriptionNl: 'Bereik Hoederniveau 40.',
+      target: 40,
+      category: AchievementCategory.master,
+      badge: 'keeper_level_40.png'),
 ];

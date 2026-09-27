@@ -9,6 +9,7 @@ import '../models/supporter_pack.dart';
 import '../providers/online_account_provider.dart';
 import '../theme/app_theme.dart';
 import 'profile_portrait_sprite.dart';
+import 'keeper_cosmetic_art.dart';
 
 class KeeperPortrait extends StatelessWidget {
   const KeeperPortrait({
@@ -111,12 +112,19 @@ class KeeperPortrait extends StatelessWidget {
                 if (frame != null)
                   Positioned.fill(
                     child: IgnorePointer(
-                      child: Image.asset(
-                        frame.assetPath,
-                        key: Key('keeper-portrait-frame-${frame.id}'),
-                        fit: BoxFit.contain,
-                        errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-                      ),
+                      child: frame.isGeneratedKeeperLevelFrame
+                          ? KeeperFrameArt(
+                              frame: frame,
+                              size: compositionDiameter,
+                              key: Key('keeper-portrait-frame-${frame.id}'),
+                            )
+                          : Image.asset(
+                              frame.assetPath,
+                              key: Key('keeper-portrait-frame-${frame.id}'),
+                              fit: BoxFit.contain,
+                              errorBuilder: (_, __, ___) =>
+                                  const SizedBox.shrink(),
+                            ),
                     ),
                   ),
                 if (badge != null)
@@ -126,16 +134,22 @@ class KeeperPortrait extends StatelessWidget {
                     child: SizedBox.square(
                       key: Key('keeper-portrait-badge-anchor-${badge.id}'),
                       dimension: radius * .82,
-                      child: Image.asset(
-                        badge.assetPath,
-                        key: Key('keeper-portrait-badge-${badge.id}'),
-                        fit: BoxFit.contain,
-                        errorBuilder: (_, __, ___) => Icon(
-                          Icons.shield_rounded,
-                          color:
-                              AppColors.eventColor(context, AppColors.twilight),
-                        ),
-                      ),
+                      child: badge.isGeneratedKeeperLevelBadge
+                          ? KeeperBadgeArt(
+                              badge: badge,
+                              size: radius * .82,
+                              key: Key('keeper-portrait-badge-${badge.id}'),
+                            )
+                          : Image.asset(
+                              badge.assetPath,
+                              key: Key('keeper-portrait-badge-${badge.id}'),
+                              fit: BoxFit.contain,
+                              errorBuilder: (_, __, ___) => Icon(
+                                Icons.shield_rounded,
+                                color: AppColors.eventColor(
+                                    context, AppColors.twilight),
+                              ),
+                            ),
                     ),
                   ),
               ],

@@ -1,3 +1,22 @@
+## Keeper Level Chests - 27 September 2026 (prepared, non-event)
+
+Keeper levels 2 through 40 each unlock one exactly-once Level Chest in
+Inventory. Every chest contains its level-specific chat emote, its current
+level badge, one guaranteed relic and one egg. A later level badge replaces the
+earlier level badge without removing unrelated badges. Level 40 additionally
+grants the unique Keeper frame and unlocks the level-40 achievement.
+
+The egg has a direct 25% Mythical chance. The remaining 75% uses the standard
+non-Mythical mix, producing final chances of 18.75% Common, 22.50% Uncommon,
+18.75% Rare, 11.25% Very Rare and 3.75% Legendary. It cannot be a Special Event
+or Sinister egg and independently has the normal 5% Spectral chance. The relic
+is guaranteed from the existing weighted ordinary pool after already-owned
+unique relics are excluded; Nameweaver's Quill has no separate Level Chest
+roll. `RANDOM_REWARDS_AND_ODDS.md` contains the full ticket breakdown.
+
+Level Chests are permanent account-progression rewards and are not tied to any
+Special Event, event calendar, event points target or Special Adventure.
+
 ## Standard Trial scoring and acceleration - 27 September 2026 (prepared)
 
 New ordinary Spirit Alignment v3 scores the portion of a smaller shape inside
@@ -500,7 +519,7 @@ descending; existing recommendation/acquisition order breaks ties. Ordinary
 Adventures keep their single-focus display and ordering. Inspecting Expertise
 does not select or start a dragon. Duration formulas and rewards are unchanged.
 
-<!-- reference-source-fingerprint: 12ec06d4c3866f6c -->
+<!-- reference-source-fingerprint: 027a7c5530b678f1 -->
 
 Calendar hardening after v0.05.29: canonical commands normalize the database
 instant to UTC. Legacy offline play retains its local day. Long-adventure

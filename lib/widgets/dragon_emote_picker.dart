@@ -15,22 +15,75 @@ class DragonEmoteSprite extends StatelessWidget {
   final double size;
 
   @override
-  Widget build(BuildContext context) => Image.asset(
-        emote.assetPath,
-        key: Key('dragon-emote-sprite-${emote.id}'),
-        width: size,
-        height: size,
-        fit: BoxFit.contain,
-        filterQuality: FilterQuality.high,
-        semanticLabel: emote.label(AppStrings.of(context).languageCode),
-        errorBuilder: (_, __, ___) => SizedBox.square(
+  Widget build(BuildContext context) {
+    final level = emote.keeperLevel;
+    if (level != null) {
+      return Semantics(
+        image: true,
+        label: emote.label(AppStrings.of(context).languageCode),
+        child: SizedBox.square(
+          key: Key('dragon-emote-sprite-${emote.id}'),
           dimension: size,
-          child: Icon(
-            Icons.emoji_emotions_rounded,
-            color: AppColors.eventColor(context, AppColors.twilight),
-          ),
+          child: Stack(children: [
+            Positioned.fill(
+              child: Image.asset(
+                'assets/images/emotes/chest/${emote.assetName}.png',
+                fit: BoxFit.contain,
+                filterQuality: FilterQuality.high,
+              ),
+            ),
+            Positioned(
+              right: 0,
+              bottom: 0,
+              child: Container(
+                width: size * .36,
+                height: size * .36,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFFFFD968), Color(0xFF6A48AA)],
+                  ),
+                  border: Border.all(color: Colors.white, width: size * .025),
+                  boxShadow: const [
+                    BoxShadow(color: Color(0x66381967), blurRadius: 4),
+                  ],
+                ),
+                child: Text(
+                  '$level',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: size * (level >= 10 ? .14 : .17),
+                    fontWeight: FontWeight.w900,
+                    height: 1,
+                    shadows: const [
+                      Shadow(color: Color(0xAA28174D), blurRadius: 2),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ]),
         ),
       );
+    }
+    return Image.asset(
+      emote.assetPath,
+      key: Key('dragon-emote-sprite-${emote.id}'),
+      width: size,
+      height: size,
+      fit: BoxFit.contain,
+      filterQuality: FilterQuality.high,
+      semanticLabel: emote.label(AppStrings.of(context).languageCode),
+      errorBuilder: (_, __, ___) => SizedBox.square(
+        dimension: size,
+        child: Icon(
+          Icons.emoji_emotions_rounded,
+          color: AppColors.eventColor(context, AppColors.twilight),
+        ),
+      ),
+    );
+  }
 }
 
 Future<DragonEmoteDefinition?> showDragonEmotePicker(

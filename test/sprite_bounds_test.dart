@@ -250,14 +250,16 @@ void main() {
 
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  test('all 161 dragon chat emotes are transparent contained app sprites',
+  test('all bitmap dragon chat emotes are transparent contained app sprites',
       () async {
-    expect(allDragonEmotes, hasLength(161));
+    final assetEmotes =
+        allDragonEmotes.where((emote) => emote.usesBundledAsset).toList();
+    expect(allDragonEmotes, hasLength(200));
     expect(
-      allDragonEmotes.map((emote) => emote.assetPath).toSet(),
+      assetEmotes.map((emote) => emote.assetPath).toSet(),
       hasLength(161),
     );
-    for (final emote in allDragonEmotes) {
+    for (final emote in assetEmotes) {
       final image = await _decode(emote.assetPath);
       final generated = emote.assetPath.contains('/sunwake/') ||
           emote.assetPath.contains('/harvestmoon/');
@@ -290,8 +292,11 @@ void main() {
       () async {
     for (final achievement in achievementCatalog) {
       final image = await _decode(achievement.badgeAsset);
-      final generated = {'light_across_the_lagoon', 'beneath_the_harvest_moon'}
-          .contains(achievement.id);
+      final generated = {
+        'light_across_the_lagoon',
+        'beneath_the_harvest_moon',
+        'keeper_level_40',
+      }.contains(achievement.id);
       expect(image.width, generated ? 1254 : 256,
           reason: achievement.badgeAsset);
       expect(image.height, generated ? 1254 : 256,

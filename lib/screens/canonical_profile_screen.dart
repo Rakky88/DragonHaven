@@ -10,6 +10,7 @@ import '../services/canonical_game_session.dart';
 import '../widgets/canonical_game_controls.dart';
 import '../widgets/online_account_access.dart';
 import '../widgets/profile_portrait_sprite.dart';
+import '../widgets/keeper_cosmetic_art.dart';
 import '../widgets/shop_economy_scope.dart';
 
 class CanonicalProfileScreen extends StatelessWidget {
@@ -106,7 +107,7 @@ class _ProfileContents extends StatelessWidget {
                   choice(
                       'badge',
                       id,
-                      Image.asset(badge.assetPath),
+                      KeeperBadgeArt(badge: badge, size: 56),
                       s.pick(badge.nameEn, badge.nameNl),
                       () => actions.selectBadge(id))
             ]),
@@ -118,7 +119,7 @@ class _ProfileContents extends StatelessWidget {
                   choice(
                       'frame',
                       id,
-                      Image.asset(frame.assetPath),
+                      KeeperFrameArt(frame: frame, size: 56),
                       s.pick(frame.nameEn, frame.nameNl),
                       () => actions.selectFrame(id))
             ]),

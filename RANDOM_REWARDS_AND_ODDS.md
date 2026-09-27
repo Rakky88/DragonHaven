@@ -1,3 +1,42 @@
+## Keeper levels and Level Chests - 27 September 2026 (prepared)
+
+Dragons retain their existing first nine XP floors and can continue to level
+50. Once a dragon reaches the level-50 floor, further XP goes to the Keeper;
+XP beyond the floor in the award that reaches level 50 also goes to the Keeper.
+Keeper level 2 requires 50,000 XP. Each following level requires 150% of the
+previous step, rounded up, through level 40. The cumulative level-40 floor is
+737,156,841,577 XP. Evolution requirements and timing do not change.
+
+Every reached Keeper level from 2 through 40 unlocks one non-tradeable Level
+Chest, claimable exactly once. It always contains that level's unique chat
+emote and current-level badge, one egg and one relic. The newest level badge
+replaces any earlier level badge; unrelated earned badges remain owned. The
+level-40 chest also contains the unique level-40 profile frame. These fixed
+cosmetics do not consume a random roll.
+
+The Level Chest egg uses this exact rarity distribution:
+
+| Egg rarity | Final chance |
+| --- | ---: |
+| Common | 18.75% |
+| Uncommon | 22.50% |
+| Rare | 18.75% |
+| Very Rare | 11.25% |
+| Legendary | 3.75% |
+| Mythical | 25.00% |
+
+The lineage is uniform within the rolled rarity. Special Event and Sinister
+lineages are excluded. The egg independently has the standard 1-in-20 (5%)
+Spectral chance; this level reward does not use the Golden Hour bonus.
+
+The guaranteed relic uses the ordinary 65-ticket relic pool: each of the six
+ordinary relics has 10 tickets, while Spark Astrolabe and each of the four
+equipable brooches has 1. A unique item already obtained is removed from future
+Level Chest pools, reducing the denominator; ordinary relics stay repeatable.
+Nameweaver's Quill is not in this guaranteed pool because it remains an
+independent ordinary-chest roll. There is no empty outcome and no additional
+Quill roll for a Level Chest.
+
 ## Relic balance and Altar catalogue - 27 September 2026 (prepared)
 
 Ordinary weighted-pool relic gates are now Gold 5%, Dragon 10%, Mythical 20%,
@@ -266,7 +305,7 @@ Ruleset: v0.05.29 published and verified; production schema 65, economy activati
 
 Source baseline: v0.05.16, with subsequent changes and dormant server rules below
 
-<!-- reference-source-fingerprint: dfbbf2dbd08fd00c -->
+<!-- reference-source-fingerprint: b0f6af64ba666a3d -->
 
 Calendar hardening after v0.05.29: canonical commands normalize the database
 instant to UTC. Legacy offline play retains its local day. Long-adventure

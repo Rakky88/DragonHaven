@@ -360,6 +360,11 @@ abstract final class GameCommandEngine {
         case 'open_special_chests':
           result = _bundle(await game.openSpecialChests(args.text('catalogId'),
               count: args.integer('count', min: 1, max: 10)));
+        case 'open_keeper_level_chest':
+          final level = args.integer('level', min: 2, max: 40);
+          final reward = await game.openKeeperLevelChest(level);
+          result =
+              reward == null ? null : _bundle(ChestRewardBundle.single(reward));
         case 'use_relic':
           result = (await game.useRelic(
                   args.enumValue('relic', MysticRelic.values),
@@ -672,6 +677,8 @@ abstract final class GameCommandEngine {
                 'titleFound': reward.titleFound?.id,
                 'musicTrackFound': reward.musicTrackFound?.id,
                 'emoteFound': reward.emoteFound?.id,
+                'badgeFound': reward.badgeFound?.id,
+                'frameFound': reward.frameFound?.id,
               }
           ],
         };

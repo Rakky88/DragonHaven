@@ -10,10 +10,12 @@ import '../models/dragon_emote.dart';
 import '../models/mystic_relic.dart';
 import '../models/music_track.dart';
 import '../models/profile_portrait.dart';
+import '../models/supporter_pack.dart';
 import '../services/audio_service.dart';
 import 'game_icon_sprite.dart';
 import 'dragon_emote_picker.dart';
 import 'profile_portrait_sprite.dart';
+import 'keeper_cosmetic_art.dart';
 
 Future<void> showChestReveal(
   BuildContext context,
@@ -214,6 +216,10 @@ class _ChestRevealState extends State<_ChestReveal>
         ),
       for (final emote in bundle.emotes)
         _EmoteReward(emote: emote, strings: strings),
+      for (final badge in bundle.badges)
+        _KeeperBadgeReward(badge: badge, strings: strings),
+      for (final frame in bundle.frames)
+        _KeeperFrameReward(frame: frame, strings: strings),
     ];
   }
 
@@ -745,6 +751,85 @@ class _EmoteReward extends StatelessWidget {
             ),
           ],
         ),
+      );
+}
+
+class _KeeperBadgeReward extends StatelessWidget {
+  const _KeeperBadgeReward({required this.badge, required this.strings});
+
+  final KeeperBadgeDefinition badge;
+  final AppStrings strings;
+
+  @override
+  Widget build(BuildContext context) => _KeeperCosmeticReward(
+        key: Key('chest-badge-reward-${badge.id}'),
+        art: KeeperBadgeArt(badge: badge, size: 48),
+        title: strings.languageCode == 'nl' ? badge.nameNl : badge.nameEn,
+        subtitle: strings.pick('New Keeper badge', 'Nieuwe Hoederbadge'),
+      );
+}
+
+class _KeeperFrameReward extends StatelessWidget {
+  const _KeeperFrameReward({required this.frame, required this.strings});
+
+  final KeeperFrameDefinition frame;
+  final AppStrings strings;
+
+  @override
+  Widget build(BuildContext context) => _KeeperCosmeticReward(
+        key: Key('chest-frame-reward-${frame.id}'),
+        art: KeeperFrameArt(frame: frame, size: 48),
+        title: strings.languageCode == 'nl' ? frame.nameNl : frame.nameEn,
+        subtitle: strings.pick('New Keeper frame', 'Nieuwe Hoederlijst'),
+      );
+}
+
+class _KeeperCosmeticReward extends StatelessWidget {
+  const _KeeperCosmeticReward({
+    super.key,
+    required this.art,
+    required this.title,
+    required this.subtitle,
+  });
+
+  final Widget art;
+  final String title;
+  final String subtitle;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        constraints: const BoxConstraints(maxWidth: 220),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFFFFF2C7), Color(0xFFE9DEFF)],
+          ),
+          borderRadius: BorderRadius.circular(15),
+          border: Border.all(color: const Color(0x66FFE08A)),
+        ),
+        child: Row(mainAxisSize: MainAxisSize.min, children: [
+          art,
+          const SizedBox(width: 8),
+          Flexible(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontWeight: FontWeight.w900)),
+                Text(subtitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                        color: Color(0xFF6D657D),
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700)),
+              ],
+            ),
+          ),
+        ]),
       );
 }
 

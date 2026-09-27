@@ -5,6 +5,7 @@ import '../models/trial_dragon.dart';
 import 'dart:convert';
 
 import '../models/house.dart';
+import '../models/keeper_level.dart';
 import '../models/dragon_school.dart';
 import '../models/adventure.dart';
 import '../models/event_progress.dart';
@@ -1251,6 +1252,24 @@ class CanonicalProfileView {
     name = data['accountName'] is String ? data['accountName'] as String : '';
     onboardingComplete = data['onboardingComplete'] == true;
     tutorialCompleted = data['tutorialCompleted'] == true;
+    final parsedKeeperXp = data['keeperXp'] ?? 0;
+    final parsedKeeperLevel = data['keeperLevel'] ?? 1;
+    final parsedPendingLevels =
+        data['pendingKeeperLevelRewardLevels'] ?? const <int>[];
+    if (parsedKeeperXp is! int ||
+        parsedKeeperXp < 0 ||
+        parsedKeeperXp > keeperLevelThresholds.last ||
+        parsedKeeperLevel is! int ||
+        parsedKeeperLevel != keeperLevelAtXp(parsedKeeperXp) ||
+        parsedPendingLevels is! List ||
+        parsedPendingLevels.any((value) =>
+            value is! int || value < 2 || value > parsedKeeperLevel)) {
+      throw const CanonicalGameException('game_snapshot_invalid');
+    }
+    keeperXp = parsedKeeperXp;
+    keeperLevel = parsedKeeperLevel;
+    pendingKeeperLevelRewardLevels =
+        List<int>.unmodifiable(parsedPendingLevels.cast<int>());
     final rawPreferences = data['preferences'];
     try {
       preferences = AccountPreferences.fromState(
@@ -1277,6 +1296,12 @@ class CanonicalProfileView {
   late final String name;
   late final bool onboardingComplete;
   late final bool tutorialCompleted;
+  late final int keeperXp;
+  late final int keeperLevel;
+  late final List<int> pendingKeeperLevelRewardLevels;
+  int get keeperLevelFloorXp => keeperLevelFloor(keeperXp);
+  int get keeperNextLevelXp => keeperNextLevelTarget(keeperXp);
+  double get keeperProgress => keeperLevelProgressAtXp(keeperXp);
   late final Map<String, dynamic> preferences;
   final _selected = <String, String?>{};
   Set<String> owned(String kind) => _owned[kind] ?? const {};

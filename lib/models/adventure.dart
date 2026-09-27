@@ -740,7 +740,9 @@ abstract final class AdventureCatalog {
         requirements: AdventureRequirements(
           players: players,
           combinedLevel: index % 4 == 0
-              ? (8 + index % 20).clamp(0, players * Pet.levelThresholds.length)
+              // Dragon levels can now continue beyond Ascension, but the
+              // existing Group Adventure rotation keeps its released balance.
+              ? (8 + index % 20).clamp(0, players * 9)
               : 0,
           focus: index % 3 == 0 ? focus : null,
           combinedStat: index % 3 == 0 ? 50 + index % 150 : 0,

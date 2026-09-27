@@ -28,7 +28,8 @@ void main() {
         item.assetPath,
         item.openedAssetPath,
       ],
-      for (final item in allDragonEmotes) item.assetPath,
+      for (final item in allDragonEmotes)
+        if (item.usesBundledAsset) item.assetPath,
       for (final item in dragonSchoolGames) ...[
         item.iconAsset,
         item.backgroundAsset,

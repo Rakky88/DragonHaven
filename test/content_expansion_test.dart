@@ -206,8 +206,8 @@ void main() {
   });
 
   test('all achievements are bilingual and uniquely identified', () {
-    expect(achievementCatalog, hasLength(40));
-    expect(achievementCatalog.map((entry) => entry.id).toSet(), hasLength(40));
+    expect(achievementCatalog, hasLength(41));
+    expect(achievementCatalog.map((entry) => entry.id).toSet(), hasLength(41));
     expect(
         achievementCatalog.every((entry) =>
             entry.titleEn.isNotEmpty &&

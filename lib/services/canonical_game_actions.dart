@@ -10,6 +10,7 @@ import '../models/mystic_relic.dart';
 import '../models/egg_altar.dart';
 import '../models/profile_portrait.dart';
 import '../models/pet.dart';
+import '../models/supporter_pack.dart';
 import 'canonical_game_session.dart';
 import 'canonical_game_snapshot.dart';
 
@@ -59,6 +60,20 @@ class CanonicalGameActions {
     if (result == null) return null;
     return decodeChestRewards(result,
         tier: tier, count: count, specialChestId: specialChestId);
+  }
+
+  Future<ChestRewardBundle> openKeeperLevelChest(int level) async {
+    final specialId = 'keeper_level_$level';
+    final result = await execute('open_keeper_level_chest', {'level': level});
+    if (result == null) {
+      throw const CanonicalGameException('game_action_unavailable');
+    }
+    return decodeChestRewards(
+      result,
+      tier: ChestTier.special,
+      count: 1,
+      specialChestId: specialId,
+    );
   }
 
   Future<void> _boolean(String action, Map<String, dynamic> payload,
@@ -481,6 +496,8 @@ ChestRewardBundle decodeChestRewards(Object? value,
           musicTrackFound:
               catalog(raw['musicTrackFound'], (id) => musicTracksById[id]),
           emoteFound: catalog(raw['emoteFound'], dragonEmoteById),
+          badgeFound: catalog(raw['badgeFound'], keeperBadgeById),
+          frameFound: catalog(raw['frameFound'], keeperFrameById),
         ),
   ]);
 }

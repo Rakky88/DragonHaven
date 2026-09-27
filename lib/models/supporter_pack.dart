@@ -1,15 +1,20 @@
+import 'keeper_level.dart';
+
 class KeeperBadgeDefinition {
   const KeeperBadgeDefinition({
     required this.id,
     required this.nameEn,
     required this.nameNl,
     required this.assetPath,
+    this.keeperLevel,
   });
 
   final String id;
   final String nameEn;
   final String nameNl;
   final String assetPath;
+  final int? keeperLevel;
+  bool get isGeneratedKeeperLevelBadge => keeperLevel != null;
 }
 
 class KeeperFrameDefinition {
@@ -18,12 +23,15 @@ class KeeperFrameDefinition {
     required this.nameEn,
     required this.nameNl,
     required this.assetPath,
+    this.keeperLevel,
   });
 
   final String id;
   final String nameEn;
   final String nameNl;
   final String assetPath;
+  final int? keeperLevel;
+  bool get isGeneratedKeeperLevelFrame => keeperLevel != null;
 }
 
 const supporterBadge = KeeperBadgeDefinition(
@@ -47,9 +55,21 @@ const supporterFrame = KeeperFrameDefinition(
   assetPath: 'assets/images/supporter/supporter_frame.png',
 );
 
-const allKeeperBadges = <KeeperBadgeDefinition>[
+final keeperLevelBadges = List<KeeperBadgeDefinition>.unmodifiable([
+  for (var level = 2; level <= maximumKeeperLevel; level++)
+    KeeperBadgeDefinition(
+      id: keeperLevelBadgeId(level),
+      nameEn: 'Keeper Level $level Badge',
+      nameNl: 'Hoederniveau $level-badge',
+      assetPath: '',
+      keeperLevel: level,
+    ),
+]);
+
+final allKeeperBadges = <KeeperBadgeDefinition>[
   supporterBadge,
   heartboundPairBadge,
+  ...keeperLevelBadges,
 ];
 
 KeeperBadgeDefinition? keeperBadgeById(String? id) {
@@ -60,8 +80,17 @@ KeeperBadgeDefinition? keeperBadgeById(String? id) {
   return null;
 }
 
+const keeperLevel40Frame = KeeperFrameDefinition(
+  id: keeperLevel40FrameId,
+  nameEn: 'Keeper Level 40 Frame',
+  nameNl: 'Hoederniveau 40-lijst',
+  assetPath: '',
+  keeperLevel: 40,
+);
+
 const allKeeperFrames = <KeeperFrameDefinition>[
   supporterFrame,
+  keeperLevel40Frame,
 ];
 
 KeeperFrameDefinition? keeperFrameById(String? id) {

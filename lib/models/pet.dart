@@ -348,17 +348,20 @@ class Pet implements TrialDragon {
         DragonStage.ascended => 'homeGuardian',
       };
 
-  static const levelThresholds = [
-    0,
-    150,
-    350,
-    650,
-    1000,
-    1450,
-    1950,
-    2600,
-    3400
-  ];
+  /// Cumulative XP floors for dragon levels 1 through 50. The first nine
+  /// levels preserve the original progression and evolution timing. From
+  /// level 10 onward, each step costs 200 XP more than the preceding step.
+  static final List<int> levelThresholds = List<int>.unmodifiable(() {
+    final values = <int>[0, 150, 350, 650, 1000, 1450, 1950, 2600, 3400];
+    var threshold = values.last;
+    var step = 800;
+    for (var level = 10; level <= 50; level++) {
+      step += 200;
+      threshold += step;
+      values.add(threshold);
+    }
+    return values;
+  }());
   int get level {
     return levelAtXp(xp);
   }

@@ -27,6 +27,7 @@ import '../models/dragon_lineage.dart';
 import '../models/dragon_school.dart';
 import '../models/game_presentation.dart';
 import '../models/house.dart';
+import '../models/keeper_level.dart';
 import '../models/mystic_relic.dart';
 import '../models/music_track.dart';
 import '../models/pet.dart';
@@ -195,6 +196,8 @@ class HouseholdProvider extends ChangeNotifier {
 
   String languageCode = 'en';
   String accountName = '';
+  int keeperXp = 0;
+  Set<int> claimedKeeperLevelRewardLevels = {};
   bool onboardingComplete = false;
   bool musicEnabled = true;
   HavenMusicStyle musicStyle = HavenMusicStyle.classic;
@@ -291,6 +294,15 @@ class HouseholdProvider extends ChangeNotifier {
   int totalReleasedReturns = 0;
   int totalSinisterAdventuresCompleted = 0;
   int favoriteChanges = 0;
+
+  int get keeperLevel => keeperLevelAtXp(keeperXp);
+  int get keeperLevelFloorXp => keeperLevelFloor(keeperXp);
+  int get keeperNextLevelXp => keeperNextLevelTarget(keeperXp);
+  double get keeperLevelProgress => keeperLevelProgressAtXp(keeperXp);
+  List<int> get pendingKeeperLevelRewardLevels => List<int>.unmodifiable([
+        for (var level = 2; level <= keeperLevel; level++)
+          if (!claimedKeeperLevelRewardLevels.contains(level)) level,
+      ]);
 
   List<AdventureRun> adventureRuns = [];
   List<TrialOffer> trialOffers = [];
@@ -909,6 +921,16 @@ class HouseholdProvider extends ChangeNotifier {
     languageCode =
         supportedLanguages.contains(storedLanguage) ? storedLanguage! : 'en';
     accountName = stringFromJson(data['accountName'])?.trim() ?? '';
+    keeperXp = nonNegativeIntFromJson(data['keeperXp'], fallback: 0)
+        .clamp(0, keeperLevelThresholds.last);
+    claimedKeeperLevelRewardLevels =
+        (data['claimedKeeperLevelRewardLevels'] is List
+                ? data['claimedKeeperLevelRewardLevels'] as List
+                : const <Object>[])
+            .whereType<num>()
+            .map((value) => value.toInt())
+            .where((level) => level >= 2 && level <= maximumKeeperLevel)
+            .toSet();
     onboardingComplete = data['onboardingComplete'] is bool
         ? data['onboardingComplete'] as bool
         : true;
@@ -1154,7 +1176,7 @@ class HouseholdProvider extends ChangeNotifier {
         : null;
     final hasStoredFrameSelection = data.containsKey('selectedFrameId');
     ownedFrameIds = stringSetFromJson(data['ownedFrameIds'])
-      ..retainAll({supporterFrame.id});
+      ..retainAll(allKeeperFrames.map((frame) => frame.id));
     selectedFrameId = ownedFrameIds.contains(data['selectedFrameId'])
         ? stringFromJson(data['selectedFrameId'])
         : null;
@@ -1888,8 +1910,33 @@ class HouseholdProvider extends ChangeNotifier {
     final normalized = baseXp.clamp(0, 100000000).toInt();
     final granted =
         isTwinstarEquippedOn(dragon.id) ? normalized * 2 : normalized;
-    dragon.xp += granted;
+    final maximumDragonXp = Pet.levelThresholds.last;
+    final historicalOverflow = max(0, dragon.xp - maximumDragonXp);
+    if (historicalOverflow > 0) {
+      dragon.xp = maximumDragonXp;
+      _grantKeeperXp(historicalOverflow);
+    }
+    final dragonCapacity = max(0, maximumDragonXp - dragon.xp);
+    final dragonXp = min(granted, dragonCapacity);
+    dragon.xp += dragonXp;
+    _grantKeeperXp(granted - dragonXp);
     return granted;
+  }
+
+  void _grantKeeperXp(int amount) {
+    if (amount <= 0 || keeperLevel >= maximumKeeperLevel) return;
+    final previousLevel = keeperLevel;
+    keeperXp = min(keeperLevelThresholds.last, keeperXp + amount);
+    final nextLevel = keeperLevel;
+    for (var level = previousLevel + 1; level <= nextLevel; level++) {
+      _addActivity(
+        message: 'Keeper Level $level reached. A Level Chest is ready.',
+        type: ActivityType.milestone,
+        code: ActivityCode.bonusFound,
+        subject: 'keeper-level-$level',
+        xp: amount,
+      );
+    }
   }
 
   String? equippedDragonIdFor(MysticRelic relic) =>
@@ -2306,6 +2353,64 @@ class HouseholdProvider extends ChangeNotifier {
 
   Future<ChestReward?> openSpecialChest(String specialChestId) =>
       _openSpecialChest(specialChestId: specialChestId, persist: true);
+
+  Future<ChestReward?> openKeeperLevelChest(int level) async {
+    if (level < 2 ||
+        level > keeperLevel ||
+        claimedKeeperLevelRewardLevels.contains(level)) {
+      return null;
+    }
+    final emote = dragonEmoteById(keeperLevelEmoteId(level));
+    final badge = keeperBadgeById(keeperLevelBadgeId(level));
+    if (emote == null || badge == null) return null;
+    final eligibleRelics = mysticRelicDropPool(excluded: obtainedUniqueRelics);
+    if (eligibleRelics.isEmpty) return null;
+    final relic = eligibleRelics[_random.nextInt(eligibleRelics.length)];
+    final egg = _createKeeperLevelEgg();
+
+    claimedKeeperLevelRewardLevels.add(level);
+    eggStash.add(egg);
+    _grantRelic(relic);
+    ownedDragonEmoteIds.add(emote.id);
+    final previousKeeperBadgeLevel = ownedBadgeIds
+        .map(keeperBadgeById)
+        .whereType<KeeperBadgeDefinition>()
+        .map((owned) => owned.keeperLevel ?? 0)
+        .fold<int>(0, max);
+    if (level >= previousKeeperBadgeLevel) {
+      ownedBadgeIds.removeWhere(isKeeperLevelBadgeId);
+      ownedBadgeIds.add(badge.id);
+      if (selectedBadgeId == null ||
+          selectedBadgeId?.startsWith('keeper_level_badge_') == true) {
+        selectedBadgeId = badge.id;
+      }
+    } else {
+      selectedBadgeId ??= keeperLevelBadgeId(previousKeeperBadgeLevel);
+    }
+    if (level == maximumKeeperLevel) {
+      ownedFrameIds.add(keeperLevel40FrameId);
+    }
+    totalChestsOpened++;
+    _addActivity(
+      message: 'Keeper Level $level Chest opened.',
+      type: ActivityType.discovery,
+      code: ActivityCode.chestOpened,
+      subject: 'keeper-level-$level',
+    );
+    _evaluateAchievements();
+    await _notifyAndSave();
+    return ChestReward(
+      tier: ChestTier.special,
+      coins: 0,
+      gems: 0,
+      eggFound: true,
+      specialChestId: 'keeper_level_$level',
+      relicFound: relic,
+      emoteFound: emote,
+      badgeFound: badge,
+      frameFound: level == maximumKeeperLevel ? keeperLevel40Frame : null,
+    );
+  }
 
   Future<ChestRewardBundle?> openSpecialChests(
     String specialChestId, {
@@ -2889,6 +2994,7 @@ class HouseholdProvider extends ChangeNotifier {
                 .any((dragon) => dragon.lineage.rarity == DragonRarity.mythical)
             ? 1
             : 0,
+        'keeper_level_40' => keeperLevel,
         'trial_might_s_plus' => trialGradeForScore(TrialKind.ruinBreaker,
                     accountTrialBest(TrialKind.ruinBreaker)) ==
                 TrialGrade.sPlus
@@ -3165,6 +3271,41 @@ class HouseholdProvider extends ChangeNotifier {
     );
   }
 
+  DragonEgg _createKeeperLevelEgg() {
+    final mythical = _random.nextDouble() < .25;
+    late final DragonRarity rarity;
+    if (mythical) {
+      rarity = DragonRarity.mythical;
+    } else {
+      final roll = _random.nextDouble();
+      rarity = roll < .25
+          ? DragonRarity.common
+          : roll < .55
+              ? DragonRarity.uncommon
+              : roll < .80
+                  ? DragonRarity.rare
+                  : roll < .95
+                      ? DragonRarity.veryRare
+                      : DragonRarity.legendary;
+    }
+    final candidates = standardDragonLineages
+        .where((lineage) => lineage.rarity == rarity)
+        .toList(growable: false);
+    final lineage = candidates[_random.nextInt(candidates.length)];
+    return DragonEgg(
+      id: _newId(),
+      lineageId: lineage.id,
+      acquiredAt: _clock(),
+      hatchSeed: _random.nextInt(0x80000000),
+      prismatic: _random.nextInt(spectralEggBaseRollSides) == 0,
+      lawAxis: LawAxis.values[_random.nextInt(LawAxis.values.length)],
+      moralAxis: MoralAxis.values[_random.nextInt(MoralAxis.values.length)],
+      sizeFactor: _dragonSizeFromRoll(_random.nextDouble()),
+      incubationMinutes: (48 + _random.nextInt(289)) * 6,
+      sinister: false,
+    );
+  }
+
   DragonEgg _createSpecialEgg([String specialEggId = 'golden_wings_egg_v1']) {
     final definition = specialEggById(specialEggId) ??
         specialEggCatalog['golden_wings_egg_v1']!;
@@ -3347,6 +3488,9 @@ class HouseholdProvider extends ChangeNotifier {
         'schemaVersion': _schemaVersion,
         'languageCode': languageCode,
         'accountName': accountName,
+        'keeperXp': keeperXp,
+        'claimedKeeperLevelRewardLevels':
+            claimedKeeperLevelRewardLevels.toList()..sort(),
         'onboardingComplete': onboardingComplete,
         'musicEnabled': musicEnabled,
         'musicStyle': musicStyle.name,

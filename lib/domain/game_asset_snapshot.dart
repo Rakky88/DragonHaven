@@ -231,6 +231,9 @@ class GameAssetSnapshot {
             }).toList()
           : state[key]);
     }
+    _assets['keeperXp'] = _canonical(state['keeperXp'] ?? 0);
+    _assets['claimedKeeperLevelRewardLevels'] =
+        _canonical(state['claimedKeeperLevelRewardLevels'] ?? const <int>[]);
     // Older saves predate the three Expertise brooches. Their empty equipment
     // fields have the same meaning after restoration; retain the Twin marker.
     if (!state.containsKey('uniqueRelicsEverObtained')) {

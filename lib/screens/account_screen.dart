@@ -17,6 +17,7 @@ import '../theme/app_theme.dart';
 import '../widgets/game_icon_sprite.dart';
 import '../widgets/online_account_access.dart';
 import '../widgets/profile_portrait_sprite.dart';
+import '../widgets/keeper_cosmetic_art.dart';
 
 enum _CloudConflictChoice { viewCloud, keepLocal, replaceCloud }
 
@@ -1412,12 +1413,7 @@ class AccountScreen extends StatelessWidget {
                                 dimension: 54,
                                 child: Icon(Icons.shield_outlined),
                               )
-                            : Image.asset(
-                                badge.assetPath,
-                                width: 54,
-                                height: 54,
-                                fit: BoxFit.contain,
-                              ),
+                            : KeeperBadgeArt(badge: badge, size: 54),
                         title: Text(
                           badge == null
                               ? strings.pick(

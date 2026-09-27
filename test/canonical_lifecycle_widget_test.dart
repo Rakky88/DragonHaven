@@ -6,6 +6,7 @@ import 'dart:ui' as ui;
 import 'package:dragon_haven/screens/canonical_inventory_screen.dart';
 import 'package:dragon_haven/screens/canonical_eggs.dart';
 import 'package:dragon_haven/models/egg_altar.dart';
+import 'package:dragon_haven/models/keeper_level.dart';
 import 'package:dragon_haven/models/mystic_relic.dart';
 import 'package:dragon_haven/screens/canonical_dragons_screen.dart';
 import 'package:dragon_haven/screens/canonical_adventures_screen.dart';
@@ -171,6 +172,19 @@ void main() {
       image.dispose();
     });
   }
+
+  testWidgets('earned Keeper Level Chest is visible in canonical inventory',
+      (tester) async {
+    await setup(tester, const CanonicalInventoryScreen(), prepare: (server) {
+      server.state['keeperXp'] = keeperLevelThresholds[1];
+      server.state['claimedKeeperLevelRewardLevels'] = <int>[];
+    });
+
+    expect(find.text('Keeper Level 2 Chest'), findsOneWidget);
+    expect(key('canonical-open-keeper-level-2'), findsOneWidget);
+    expect(session.snapshot!.profile.pendingKeeperLevelRewardLevels, [2]);
+    expect(tester.takeException(), isNull);
+  });
 
   testWidgets(
       'egg details reveal no hidden identity; tag and incubation use the durable session',

@@ -61,6 +61,7 @@ abstract final class GameCommandSchema {
     'purchase_relic': {'relic'},
     'open_chests': {'tier', 'count'},
     'open_special_chests': {'catalogId', 'count'},
+    'open_keeper_level_chest': {'level'},
     'use_relic': {'relic', 'dragonId'},
     'use_astral_lens': {'eggId'},
     'tag_egg': {'eggId', 'tagged'},

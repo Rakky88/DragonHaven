@@ -3,6 +3,7 @@ import 'profile_portrait.dart';
 import 'account_title.dart';
 import 'music_track.dart';
 import 'dragon_emote.dart';
+import 'supporter_pack.dart';
 
 const portraitChestGemPrice = 100;
 const titleChestCoinPrice = 500;
@@ -37,6 +38,8 @@ class ChestReward {
     this.titleFound,
     this.musicTrackFound,
     this.emoteFound,
+    this.badgeFound,
+    this.frameFound,
   });
   final ChestTier tier;
   final int coins;
@@ -56,6 +59,8 @@ class ChestReward {
   final AccountTitle? titleFound;
   final MusicTrack? musicTrackFound;
   final DragonEmoteDefinition? emoteFound;
+  final KeeperBadgeDefinition? badgeFound;
+  final KeeperFrameDefinition? frameFound;
 }
 
 class ChestRewardBundle {
@@ -100,6 +105,14 @@ class ChestRewardBundle {
   List<DragonEmoteDefinition> get emotes => rewards
       .map((reward) => reward.emoteFound)
       .whereType<DragonEmoteDefinition>()
+      .toList(growable: false);
+  List<KeeperBadgeDefinition> get badges => rewards
+      .map((reward) => reward.badgeFound)
+      .whereType<KeeperBadgeDefinition>()
+      .toList(growable: false);
+  List<KeeperFrameDefinition> get frames => rewards
+      .map((reward) => reward.frameFound)
+      .whereType<KeeperFrameDefinition>()
       .toList(growable: false);
 }
 

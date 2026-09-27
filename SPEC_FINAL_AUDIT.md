@@ -1,5 +1,40 @@
 # DragonHaven audit
 
+## Keeper account progression prepared - 27 September 2026
+
+Prepared locally after v0.06.13; no release, migration or production worker
+deployment has been performed for this section. Dragons can progress to level
+50 while all existing evolution thresholds and choices stay unchanged. Dragon
+XP above the level-50 threshold flows directly into a separate Keeper account
+level, starting at level 1 and capped at level 40. The first level step costs
+50,000 XP and each following step is the previous requirement multiplied by
+1.5 and rounded up. Existing dragon XP beyond the new cap is recovered into the
+Keeper total the next time that dragon earns XP.
+
+Each reached Keeper level from 2 through 40 creates one exactly-once Level
+Chest. It contains a distinct level emote, an egg with an exact independent 25%
+Mythical chance, the badge for that level and one guaranteed eligible relic.
+Opening a newer badge replaces the lower Keeper-level badge; opening older
+pending chests later cannot downgrade it. Level 40 also grants a unique frame
+and the Keeper Level 40 achievement. The inventory shows all pending chests and
+the account screen shows level, XP progress and pending reward count. All new
+state uses backward-compatible defaults for existing cloud saves.
+
+Migration 104 is prepared to align server-side public dragon levels with the
+same 50-level XP curve. It also extends the tightly bounded public-profile
+cosmetic allow-list to the earned Keeper badges and level-40 frame, preventing
+a valid selected reward from blocking a later canonical state commit. The
+existing supporter and Heartbound cosmetics remain accepted. The migration is
+not deployed.
+
+Validation includes clean Flutter analysis and the complete Flutter suite:
+1,337 tests passed with one intentional opt-in skip. It covers exact app/server
+threshold comparison, XP-overflow, one-time chest, reward serialization, badge
+ordering, level-40 frame/achievement, cosmetic assets and synchronized living
+reference documentation.
+The generated server rules bundle is 1,320,096 bytes with SHA-256
+`91679b113f27485b68bd5a9026e4097816f85758fbadb4238314f5db49176d75`.
+
 ## v0.06.13 published - 27 September 2026
 
 Release `v0.06.13` was published from exact commit
