@@ -1,5 +1,53 @@
 // German, Spanish, French, Italian, Portuguese, Japanese.
 const eggAltarPhraseTranslations = <String, List<String>>{
+  "Nameweaver's Quill": [
+    "Namensweberfeder",
+    "Pluma del tejedor de nombres",
+    "Plume du tisseur de noms",
+    "Piuma del tessitore di nomi",
+    "Pena do tecelão de nomes",
+    "名織りの羽根ペン"
+  ],
+  'Gives one dragon a new name. Consumed when the name is changed.': [
+    'Gibt einem Drachen einen neuen Namen. Wird bei der Namensänderung verbraucht.',
+    'Da un nuevo nombre a un dragón. Se consume al cambiar el nombre.',
+    'Donne un nouveau nom à un dragon. Consommée lors du changement de nom.',
+    'Dà un nuovo nome a un drago. Si consuma quando il nome viene cambiato.',
+    'Dá um novo nome a um dragão. É consumida ao mudar o nome.',
+    'ドラゴン1体に新しい名前を付けます。名前を変更すると消費されます。'
+  ],
+  'Reveal moral alignment for an egg or dragon.': [
+    'Enthüllt die moralische Gesinnung eines Eis oder Drachen.',
+    'Revela el alineamiento moral de un huevo o dragón.',
+    'Révèle l’alignement moral d’un œuf ou d’un dragon.',
+    'Rivela l’allineamento morale di un uovo o di un drago.',
+    'Revela o alinhamento moral de um ovo ou dragão.',
+    '卵またはドラゴンの道徳的な性質を明らかにします。'
+  ],
+  'Reveal order alignment for an egg or dragon.': [
+    'Enthüllt die Ordnungsgesinnung eines Eis oder Drachen.',
+    'Revela el alineamiento de orden de un huevo o dragón.',
+    'Révèle l’affinité pour l’ordre d’un œuf ou d’un dragon.',
+    'Rivela l’allineamento all’ordine di un uovo o di un drago.',
+    'Revela o alinhamento de ordem de um ovo ou dragão.',
+    '卵またはドラゴンの秩序に対する性質を明らかにします。'
+  ],
+  'Reveal personality for an egg or dragon.': [
+    'Enthüllt die Persönlichkeit eines Eis oder Drachen.',
+    'Revela la personalidad de un huevo o dragón.',
+    'Révèle la personnalité d’un œuf ou d’un dragon.',
+    'Rivela la personalità di un uovo o di un drago.',
+    'Revela a personalidade de um ovo ou dragão.',
+    '卵またはドラゴンの性格を明らかにします。'
+  ],
+  'Use one relic on this dragon?': [
+    'Ein Relikt für diesen Drachen verwenden?',
+    '¿Usar una reliquia en este dragón?',
+    'Utiliser une relique sur ce dragon ?',
+    'Usare una reliquia su questo drago?',
+    'Usar uma relíquia neste dragão?',
+    'このドラゴンに遺物を1個使いますか？'
+  ],
   "7-day constellation": [
     "7-Tage-Konstellation",
     "Constelación de 7 días",

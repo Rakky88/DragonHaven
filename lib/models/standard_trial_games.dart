@@ -15,6 +15,10 @@ abstract final class SpiritAlignmentGeometry {
   static const double shapeExtent = .18;
   static const double travelExtent = 1 - shapeExtent;
   static const double snapTolerance = .004;
+  // The gold outline is painted outside the target boundary. The smaller
+  // player shape (including its inner highlight) must fit inside that boundary.
+  static const double playerScale = .86;
+  static const double outlineWidth = .05;
 
   static double arenaPosition(double normalized, double arenaExtent) =>
       normalized * arenaExtent * travelExtent;
@@ -32,8 +36,10 @@ class SpiritAlignmentGame {
       {required int seed,
       required int spirit,
       TrialRandom? random,
+      bool containedScoring = true,
       this.timed = true})
       : _random = random ?? TrialRandom(seed),
+        containedScoring = timed && containedScoring,
         _assist = 1 - cavernFlightHitboxScale(spirit);
 
   static const initialTimeMs = 60000;
@@ -41,6 +47,7 @@ class SpiritAlignmentGame {
   final TrialRandom _random;
   final double _assist;
   final bool timed;
+  final bool containedScoring;
   int milliseconds = 0, round = 1, shapeIndex = 0, score = 0;
   int perfectPlacements = 0;
   int phaseStartedAt = 0;
@@ -84,9 +91,11 @@ class SpiritAlignmentGame {
     required double playerY,
     double targetX = .5,
     double targetY = .5,
+    bool containedScoring = true,
   }) {
     final dx = SpiritAlignmentGeometry.offsetInShapeUnits(playerX, targetX);
     final dy = SpiritAlignmentGeometry.offsetInShapeUnits(playerY, targetY);
+    if (containedScoring) return _containedPercent(shape, dx, dy);
     if (dx.abs() <= 1e-10 && dy.abs() <= 1e-10) return 100;
     final fraction = switch (shape) {
       SpiritAlignmentShape.square =>
@@ -99,6 +108,62 @@ class SpiritAlignmentGame {
     return (fraction * 100).round().clamp(0, 99);
   }
 
+  static int _containedPercent(
+      SpiritAlignmentShape shape, double dx, double dy) {
+    const scale = SpiritAlignmentGeometry.playerScale;
+    const radius = scale / 2;
+    const margin = .5 - radius;
+    final distance = sqrt(dx * dx + dy * dy);
+    final contained = switch (shape) {
+      SpiritAlignmentShape.square =>
+        dx.abs() <= margin + 1e-12 && dy.abs() <= margin + 1e-12,
+      SpiritAlignmentShape.circle => distance <= margin + 1e-12,
+      SpiritAlignmentShape.triangle => _trianglePoints(dx, dy, scale).every(
+          (point) => List.generate(
+              3,
+              (edge) => _insideTriangleEdge(point, _targetTriangle[edge],
+                  _targetTriangle[(edge + 1) % 3])).every((inside) => inside)),
+    };
+    if (contained) return 100;
+    final fraction = switch (shape) {
+      SpiritAlignmentShape.square =>
+        max(0.0, min(.5, dx + radius) - max(-.5, dx - radius)) *
+            max(0.0, min(.5, dy + radius) - max(-.5, dy - radius)) /
+            (scale * scale),
+      SpiritAlignmentShape.circle => _insetCircleOverlap(distance, radius),
+      SpiritAlignmentShape.triangle => _triangleOverlap(dx, dy, scale: scale),
+    };
+    // Almost-contained shapes may round up, but only containment earns 100%
+    // (and its bonus time). The border itself is outside the scoring area.
+    return (fraction * 100).round().clamp(0, 99);
+  }
+
+  static double _insetCircleOverlap(double distance, double radius) {
+    const targetRadius = .5;
+    if (distance >= targetRadius + radius) return 0;
+    final squaredDistance = distance * distance;
+    final playerSector = acos(
+        ((squaredDistance + radius * radius - targetRadius * targetRadius) /
+                (2 * distance * radius))
+            .clamp(-1.0, 1.0));
+    final targetSector = acos(
+        ((squaredDistance + targetRadius * targetRadius - radius * radius) /
+                (2 * distance * targetRadius))
+            .clamp(-1.0, 1.0));
+    final triangle = .5 *
+        sqrt(max(
+            0.0,
+            (-distance + radius + targetRadius) *
+                (distance + radius - targetRadius) *
+                (distance - radius + targetRadius) *
+                (distance + radius + targetRadius)));
+    return ((radius * radius * playerSector +
+                targetRadius * targetRadius * targetSector -
+                triangle) /
+            (pi * radius * radius))
+        .clamp(0, 1);
+  }
+
   static double _circleOverlap(double dx, double dy) {
     final distance = sqrt(dx * dx + dy * dy);
     if (distance >= 1) return 0;
@@ -108,15 +173,25 @@ class SpiritAlignmentGame {
     return (area / (pi * radius * radius)).clamp(0, 1);
   }
 
-  static double _triangleOverlap(double dx, double dy) {
-    const target = <_AlignmentPoint>[
-      (x: .5, y: 0),
-      (x: 1, y: 1),
-      (x: 0, y: 1),
-    ];
-    var intersection = <_AlignmentPoint>[
-      for (final point in target) (x: point.x + dx, y: point.y + dy),
-    ];
+  static const _targetTriangle = <_AlignmentPoint>[
+    (x: .5, y: 0),
+    (x: 1, y: 1),
+    (x: 0, y: 1),
+  ];
+
+  static List<_AlignmentPoint> _trianglePoints(
+          double dx, double dy, double scale) =>
+      [
+        for (final point in _targetTriangle)
+          (
+            x: .5 + (point.x - .5) * scale + dx,
+            y: .5 + (point.y - .5) * scale + dy
+          ),
+      ];
+
+  static double _triangleOverlap(double dx, double dy, {double scale = 1}) {
+    const target = _targetTriangle;
+    var intersection = _trianglePoints(dx, dy, scale);
     for (var edge = 0;
         edge < target.length && intersection.isNotEmpty;
         edge++) {
@@ -139,7 +214,7 @@ class SpiritAlignmentGame {
         start = end;
       }
     }
-    return (_polygonArea(intersection) / .5).clamp(0, 1);
+    return (_polygonArea(intersection) / (.5 * scale * scale)).clamp(0, 1);
   }
 
   static bool _insideTriangleEdge(
@@ -233,6 +308,7 @@ class SpiritAlignmentGame {
       playerY: lockedY,
       targetX: targetX,
       targetY: targetY,
+      containedScoring: containedScoring,
     );
     roundOverlaps.add(overlap);
     score += overlap;
@@ -243,7 +319,11 @@ class SpiritAlignmentGame {
   }
 
   Map<String, dynamic> checkpoint() => {
-        'version': timed ? 2 : 1,
+        'version': containedScoring
+            ? 3
+            : timed
+                ? 2
+                : 1,
         if (timed) 'perfectPlacements': perfectPlacements,
         'random': _random.state,
         'milliseconds': milliseconds,
@@ -262,12 +342,18 @@ class SpiritAlignmentGame {
 
   factory SpiritAlignmentGame.fromCheckpoint(Map<String, dynamic> state,
       {required int spirit}) {
-    if (state['version'] != 1 && state['version'] != 2) {
+    if (state['version'] != 1 &&
+        state['version'] != 2 &&
+        state['version'] != 3) {
       throw const FormatException('spirit_alignment_checkpoint_invalid');
     }
     final random = TrialRandom(state['random'] as int);
     final game = SpiritAlignmentGame(
-        seed: 1, spirit: spirit, random: random, timed: state['version'] == 2);
+        seed: 1,
+        spirit: spirit,
+        random: random,
+        timed: state['version'] != 1,
+        containedScoring: state['version'] == 3);
     random.state = state['random'] as int;
     game.milliseconds = state['milliseconds'] as int;
     game.round = state['round'] as int;
@@ -413,19 +499,36 @@ class RuinGuardGame {
 /// Five runes orbit a golden gate. Tap anywhere to capture the rune currently
 /// in the gate and match it to the target shown in the center.
 class RuneOrbitGame {
-  RuneOrbitGame({required int seed, required this.arcana, TrialRandom? random})
+  RuneOrbitGame(
+      {required int seed,
+      required this.arcana,
+      this.uncappedSpeed = true,
+      TrialRandom? random})
       : _random = random ?? TrialRandom(seed);
 
   final TrialRandom _random;
   final int arcana;
+  final bool uncappedSpeed;
   int milliseconds = 0, rounds = 0, misses = 0, targetRune = 0;
   int roundStartedAt = 500;
   int? nextRoundAt = 500;
   bool ended = false;
 
-  int get visibleMs => (720 * (1 + max(0, arcana) / 10000) / pow(1.045, rounds))
-      .round()
-      .clamp(260, 800);
+  double get visibleMs {
+    final initialMs = 720 * (1 + max(0, arcana) / 10000);
+    if (!uncappedSpeed) {
+      // Existing server checkpoints must keep their original tap windows.
+      return (initialMs / pow(1.045, rounds))
+          .round()
+          .clamp(260, 800)
+          .toDouble();
+    }
+    // Limit only the starting assistance. Every match then increases angular
+    // speed by 4.5%, even after the old 260 ms minimum or below a millisecond.
+    // Keep fractional timing so rounding cannot introduce a speed plateau.
+    return min(800.0, initialMs) / pow(1.045, rounds);
+  }
+
   bool get accepting => !ended && nextRoundAt == null;
   int get gateRune => ((milliseconds - roundStartedAt) ~/ visibleMs) % 5;
 
@@ -454,7 +557,7 @@ class RuneOrbitGame {
   }
 
   Map<String, dynamic> checkpoint() => {
-        'version': 1,
+        'version': uncappedSpeed ? 2 : 1,
         'random': _random.state,
         'milliseconds': milliseconds,
         'rounds': rounds,
@@ -467,11 +570,15 @@ class RuneOrbitGame {
 
   factory RuneOrbitGame.fromCheckpoint(Map<String, dynamic> state,
       {required int arcana}) {
-    if (state['version'] != 1) {
+    if (state['version'] != 1 && state['version'] != 2) {
       throw const FormatException('rune_orbit_checkpoint_invalid');
     }
     final random = TrialRandom(state['random'] as int);
-    final game = RuneOrbitGame(seed: 1, arcana: arcana, random: random);
+    final game = RuneOrbitGame(
+        seed: 1,
+        arcana: arcana,
+        uncappedSpeed: state['version'] == 2,
+        random: random);
     random.state = state['random'] as int;
     game.milliseconds = state['milliseconds'] as int;
     game.rounds = state['rounds'] as int;

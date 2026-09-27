@@ -74,7 +74,10 @@ class CanonicalGameIntent {
       RegExp(r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$')
           .hasMatch(value);
   static bool _argument(String action, String key, Object? value) {
-    if (key == 'spiritAlignmentVersion') return value is int && value == 2;
+    if (key == 'spiritAlignmentVersion') {
+      return value is int && (value == 2 || value == 3);
+    }
+    if (key == 'runeOrbitVersion') return value is int && value == 2;
     if (key == 'inputs') {
       return value is String &&
           value.length <= 3200 &&

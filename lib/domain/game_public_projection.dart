@@ -400,6 +400,16 @@ abstract final class GamePublicProjection {
       'rarity': known.rarity || known.lineage ? egg.lineage.rarity.name : null,
       'lawAxis': known.order ? egg.lawAxis.name : null,
       'moralAxis': known.moral ? egg.moralAxis.name : null,
+      // Emit only an actual discovery: existing projections keep their exact
+      // shape, and hidden deterministic personality/seed data stays private.
+      if (known.personality)
+        'personalityTraitIds': List<String>.of((egg.activate(
+                coins: 0,
+                gems: 0,
+                activatedAt:
+                    DateTime.fromMillisecondsSinceEpoch(0, isUtc: true))
+              ..revealPersonality())
+            .personalityTraitIds),
     };
   }
 

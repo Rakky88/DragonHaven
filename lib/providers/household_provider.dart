@@ -1961,6 +1961,7 @@ class HouseholdProvider extends ChangeNotifier {
         MysticRelic.soulbloomBrooch =>
           equippedRelicFor(dragon.id) == relic,
         MysticRelic.astralLens ||
+        MysticRelic.nameweaversQuill ||
         MysticRelic.chronoshard ||
         MysticRelic.wayfinderSigil =>
           false,
@@ -2035,6 +2036,7 @@ class HouseholdProvider extends ChangeNotifier {
         dragon.revealPersonality();
         break;
       case MysticRelic.astralLens:
+      case MysticRelic.nameweaversQuill:
       case MysticRelic.chronoshard:
       case MysticRelic.wayfinderSigil:
       case MysticRelic.twinstarBrooch:
@@ -2060,17 +2062,18 @@ class HouseholdProvider extends ChangeNotifier {
     if (!relic.isShopAvailable) {
       return MysticRelicPurchaseResult.notAvailable;
     }
-    if (pet.gems < relicShopGemPrice) {
+    final price = relic.gemPrice;
+    if (pet.gems < price) {
       return MysticRelicPurchaseResult.insufficientGems;
     }
-    pet.gems -= relicShopGemPrice;
+    pet.gems -= price;
     _grantRelic(relic, untradeable: true);
     _addActivity(
-      message: 'A ${relic.nameEn} was purchased for $relicShopGemPrice gems.',
+      message: 'A ${relic.nameEn} was purchased for $price gems.',
       type: ActivityType.purchase,
       code: ActivityCode.bonusFound,
       subject: relic.name,
-      gems: -relicShopGemPrice,
+      gems: -price,
     );
     await _notifyAndSave();
     return MysticRelicPurchaseResult.purchased;
@@ -2408,6 +2411,8 @@ class HouseholdProvider extends ChangeNotifier {
     final eggChance = eggDropChance(tier);
     final eggFound = _random.nextDouble() < eggChance;
     final relicFound = _rollRelicDrop(tier);
+    final quillChance = nameweaversQuillDropChance(tier);
+    final quillFound = quillChance > 0 && _random.nextDouble() < quillChance;
     final emoteFound = _rollUniqueDragonEmote(
       DragonEmoteSource.chest,
       _chestEmoteDropChance(tier),
@@ -2423,6 +2428,7 @@ class HouseholdProvider extends ChangeNotifier {
     if (relicFound != null) {
       _grantRelic(relicFound);
     }
+    if (quillFound) _grantRelic(MysticRelic.nameweaversQuill);
     _addActivity(
       message: '${tier.name} chest opened.',
       type: ActivityType.discovery,
@@ -2440,6 +2446,7 @@ class HouseholdProvider extends ChangeNotifier {
         eggFound: eggFound,
         sinisterEgg: foundEgg?.sinister ?? false,
         relicFound: relicFound,
+        additionalRelics: [if (quillFound) MysticRelic.nameweaversQuill],
         emoteFound: emoteFound);
   }
 
@@ -2583,15 +2590,24 @@ class HouseholdProvider extends ChangeNotifier {
 
   double relicDropChance(ChestTier tier) => switch (tier) {
         ChestTier.wooden || ChestTier.silver => 0.0,
-        ChestTier.gold => .01,
-        ChestTier.dragon => .02,
-        ChestTier.mythical => .04,
+        ChestTier.gold => .05,
+        ChestTier.dragon => .10,
+        ChestTier.mythical => .20,
         ChestTier.sinister => 1.0,
         ChestTier.special ||
         ChestTier.portrait ||
         ChestTier.title ||
         ChestTier.music =>
           0.0,
+      };
+
+  double nameweaversQuillDropChance(ChestTier tier) => switch (tier) {
+        ChestTier.wooden => .01,
+        ChestTier.silver => .02,
+        ChestTier.gold => .04,
+        ChestTier.dragon => .08,
+        ChestTier.mythical => .16,
+        _ => 0,
       };
 
   MysticRelic? _rollRelicDrop(ChestTier tier) {

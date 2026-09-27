@@ -217,8 +217,8 @@ void main() {
     final wrong = (game.targetRune + 1) % 5;
     // Cross the background-save threshold on every run, independent of the
     // server-generated target, before selecting the same wrong rune two laps on.
-    await harness.advanceTo(
-        tester, game.roundStartedAt + (wrong + 10) * game.visibleMs + 100);
+    await harness.advanceTo(tester,
+        (game.roundStartedAt + (wrong + 10) * game.visibleMs + 100).ceil());
     expect(
         harness.server.sent
             .where((intent) => intent.action == 'checkpoint_trial'),
@@ -244,7 +244,7 @@ void main() {
     await harness.advanceTo(tester, game.nextRoundAt!);
     final target = game.targetRune;
     await harness.advanceTo(
-        tester, game.roundStartedAt + target * game.visibleMs + 100);
+        tester, (game.roundStartedAt + target * game.visibleMs + 100).ceil());
     await tester.pump(const Duration(milliseconds: 420));
     final matchAt = harness.elapsed;
     await tester.tap(board);
@@ -285,7 +285,8 @@ void main() {
       (tester) async {
     final harness = await setup(tester);
     final game = harness.controller.model.orbit!;
-    await harness.advanceTo(tester, game.roundStartedAt + game.visibleMs - 1);
+    await harness.advanceTo(
+        tester, (game.roundStartedAt + game.visibleMs).ceil() - 1);
     expect(game.gateRune, 0);
     // The previous rendered/controller sample still names rune zero. The input
     // clock has crossed into rune one; one atomic advance must pick rune one.
@@ -316,7 +317,7 @@ void main() {
     final game = harness.controller.model.orbit!;
     final wrong = (game.targetRune + 1) % 5;
     await harness.advanceTo(
-        tester, game.roundStartedAt + wrong * game.visibleMs + 100);
+        tester, (game.roundStartedAt + wrong * game.visibleMs + 100).ceil());
     await tester.tap(find.byKey(const Key('rune-orbit-game')));
     await tester.pump();
     final flash = find.byKey(const Key('rune-orbit-feedback-flash'));

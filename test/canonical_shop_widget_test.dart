@@ -3,8 +3,10 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:ui' as ui;
 
+import 'package:dragon_haven/config/rewarded_ads_config.dart';
 import 'package:dragon_haven/models/chest.dart';
 import 'package:dragon_haven/models/mystic_relic.dart';
+import 'package:dragon_haven/models/rewarded_ad.dart';
 import 'package:dragon_haven/providers/household_provider.dart';
 import 'package:dragon_haven/screens/canonical_inventory_screen.dart';
 import 'package:dragon_haven/screens/canonical_eggs.dart';
@@ -12,6 +14,9 @@ import 'package:dragon_haven/screens/shop_hub_screen.dart';
 import 'package:dragon_haven/services/canonical_game_session.dart';
 import 'package:dragon_haven/services/canonical_game_snapshot.dart';
 import 'package:dragon_haven/services/audio_service.dart';
+import 'package:dragon_haven/services/canonical_rewarded_ads.dart';
+import 'package:dragon_haven/services/rewarded_ads_platform.dart';
+import 'package:dragon_haven/services/rewarded_ads_repository.dart';
 import 'package:dragon_haven/theme/app_theme.dart';
 import 'package:dragon_haven/widgets/chest_reveal.dart';
 import 'package:flutter/material.dart';
@@ -19,10 +24,79 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:provider/provider.dart';
 
 import '../tool/game_domain_probe.dart';
 import 'support/canonical_ui_server.dart';
+
+class _ShopNativeAd extends Fake implements RewardedAd {
+  _ShopNativeAd(this.onShow);
+  final void Function(_ShopNativeAd) onShow;
+  @override
+  FullScreenContentCallback<RewardedAd>? fullScreenContentCallback;
+  @override
+  Future<void> setServerSideOptions(
+      ServerSideVerificationOptions options) async {}
+  @override
+  Future<void> dispose() async {}
+  @override
+  Future<void> show(
+      {required OnUserEarnedRewardCallback onUserEarnedReward}) async {
+    onShow(this);
+    fullScreenContentCallback?.onAdShowedFullScreenContent?.call(this);
+  }
+}
+
+class _ShopAdPlatform implements RewardedAdsPlatform {
+  VoidCallback? onShow;
+  _ShopNativeAd? shown;
+  late final native = GoogleRewardedAdsPlatform.forTesting(
+      loadAd: (_, callback) async => callback.onAdLoaded(_ShopNativeAd((ad) {
+            shown = ad;
+            onShow?.call();
+          })));
+  @override
+  Future<LoadedRewardedAd> load(String unitId) => native.load(unitId);
+  @override
+  Future<RewardedAdsConsentState> initializeConsent() async =>
+      const RewardedAdsConsentState(
+          canRequestAds: true, privacyOptionsRequired: false);
+  @override
+  Future<RewardedAdsConsentState> showPrivacyOptions() => initializeConsent();
+}
+
+class _ShopAdRepository implements RewardedAdsRepository {
+  final releaseIssue = Completer<void>();
+  @override
+  Future<RewardedAdsStatus> status() async => RewardedAdsStatus(
+          enabled: true,
+          dailyLimit: 3,
+          nextResetAt: DateTime.now().add(const Duration(days: 1)),
+          offers: {
+            for (final currency in RewardedAdCurrency.values)
+              currency: RewardedAdOffer(
+                  currency: currency,
+                  reward: currency.fallbackReward,
+                  claimedToday: 0,
+                  remaining: 3)
+          });
+  @override
+  Future<RewardedAdClaim> issue(RewardedAdCurrency currency) async {
+    await releaseIssue.future;
+    return RewardedAdClaim(
+        id: '22222222-2222-4222-8222-222222222222',
+        token: 'test-opaque-claim',
+        currency: currency,
+        expiresAt: DateTime.now().add(const Duration(minutes: 15)));
+  }
+
+  @override
+  Future<RewardedAdClaimStatus> claimStatus(String id) async =>
+      const RewardedAdClaimStatus('issued');
+  @override
+  Future<bool> cancel(String id) async => true;
+}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -71,7 +145,9 @@ void main() {
   }
 
   Future<void> mount(WidgetTester tester, Widget child,
-      {String locale = 'en', double scale = 1}) async {
+      {String locale = 'en',
+      double scale = 1,
+      CanonicalRewardedAds? ads}) async {
     final baseTheme = buildAppTheme();
     const visual = String.fromEnvironment('ECONOMY_UI_FONT');
     final theme = visual.isEmpty
@@ -87,6 +163,8 @@ void main() {
         providers: [
           ChangeNotifierProvider.value(value: session),
           ChangeNotifierProvider.value(value: legacy),
+          if (ads != null)
+            ChangeNotifierProvider<CanonicalRewardedAds>(create: (_) => ads),
         ],
         child: MaterialApp(
           theme: theme,
@@ -165,6 +243,34 @@ void main() {
     expect(session.snapshot!.coins, coins - 500);
     expect(find.text('1 unopened chests'), findsOneWidget);
     expect(jsonEncode(legacy.exportState()), localBefore);
+    expect(server.receipts, hasLength(1));
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('Quill leads the relic shop and buys one bound copy for 100 gems',
+      (tester) async {
+    await prepare(tester);
+    final gems = session.snapshot!.gems;
+    final inventory = session.snapshot!.shop;
+    final quills = inventory.relics['nameweaversQuill'] ?? 0;
+    final bound = inventory.untradeableRelics['nameweaversQuill'] ?? 0;
+    await mount(tester,
+        const ShopHubScreen(initialCurrencyTab: 1, initialCategoryTab: 1));
+    final quill = find.byKey(const Key('shop-relic-nameweaversQuill'));
+    final next = find.byKey(const Key('shop-relic-moralPrism'));
+    expect(tester.getTopLeft(quill).dy, lessThan(tester.getTopLeft(next).dy));
+    final buy = find.byKey(const Key('buy-relic-nameweaversQuill'));
+    expect(
+        find.descendant(of: buy, matching: find.text('100')), findsOneWidget);
+    await tester.ensureVisible(buy);
+    await tester.pump(const Duration(milliseconds: 300));
+    await screenshot(tester, 'quill-shop-en-320');
+    await tester.tap(buy);
+    await waitForCommand(tester);
+    expect(session.snapshot!.gems, gems - 100);
+    expect(session.snapshot!.shop.relics['nameweaversQuill'], quills + 1);
+    expect(session.snapshot!.shop.untradeableRelics['nameweaversQuill'],
+        bound + 1);
     expect(server.receipts, hasLength(1));
     expect(tester.takeException(), isNull);
   });
@@ -270,6 +376,73 @@ void main() {
     expect(tester.takeException(), isNull);
   });
   for (final gems in [false, true]) {
+    testWidgets(
+        'preparation overlay is removed before native ad starts (gems=$gems)',
+        (tester) async {
+      await prepare(tester);
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      final repository = _ShopAdRepository();
+      final platform = _ShopAdPlatform();
+      final ads = CanonicalRewardedAds(
+          session: session,
+          repository: repository,
+          platform: platform,
+          config: RewardedAdsConfig(
+              mode: RewardedAdsMode.test,
+              gemsAdUnitId: RewardedAdsConfig.androidRewardedTestUnitId,
+              coinsAdUnitId: RewardedAdsConfig.androidRewardedTestUnitId,
+              platformSupported: true));
+      await tester.runAsync(ads.initialize);
+      await mount(
+          tester,
+          ShopHubScreen(
+              initialCurrencyTab: gems ? 1 : 0,
+              initialCategoryTab: gems ? 3 : 2),
+          ads: ads);
+      final card = find.byKey(Key('rewarded-chest-${gems ? 'gems' : 'coins'}'));
+      final scroll = find
+          .descendant(
+              of: find.byKey(
+                  PageStorageKey('${gems ? 'gems' : 'coins'}-packs-scroll')),
+              matching: find.byType(Scrollable))
+          .first;
+      await tester.scrollUntilVisible(card, 250, scrollable: scroll);
+      await tester.drag(scroll, const Offset(0, -240));
+      await tester.pump(const Duration(milliseconds: 400));
+      var nativeShows = 0;
+      platform.onShow = () {
+        nativeShows++;
+        // Include offstage widgets: the preparation route must be disposed,
+        // not merely hidden behind a native surface that has already started.
+        expect(find.byType(Dialog, skipOffstage: false), findsNothing);
+        expect(find.text('Preparing ads…', skipOffstage: false), findsNothing);
+      };
+      await tester
+          .tap(find.descendant(of: card, matching: find.byType(FilledButton)));
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(find.text('Preparing ads…'), findsOneWidget);
+      expect(nativeShows, 0);
+
+      repository.releaseIssue.complete();
+      // The SDK must wait for the overlay's disposal and the next painted frame.
+      for (var frame = 0; frame < 6; frame++) {
+        await tester.pump(const Duration(milliseconds: 16));
+      }
+      expect(nativeShows, 1);
+      expect(find.byType(Dialog, skipOffstage: false), findsNothing);
+      final currency =
+          gems ? RewardedAdCurrency.gems : RewardedAdCurrency.coins;
+      expect(ads.busy(currency), isTrue);
+      expect(server.sent, isEmpty);
+      platform.shown!.fullScreenContentCallback!
+          .onAdDismissedFullScreenContent!(platform.shown!);
+      await tester.pump(const Duration(seconds: 3));
+      expect(ads.busy(currency), isFalse);
+      expect(find.byType(Dialog, skipOffstage: false), findsNothing);
+      expect(server.sent, isEmpty);
+      expect(tester.takeException(), isNull);
+    });
+
     testWidgets(
         'free currency ad stays disabled under Buy with no reward command (gems=$gems)',
         (tester) async {

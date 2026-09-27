@@ -70,7 +70,11 @@ final class RewardedAdShowCompletion {
 }
 
 abstract interface class LoadedRewardedAd {
-  Future<bool> show({required String customData, bool Function()? mayShow});
+  Future<bool> show({
+    required String customData,
+    bool Function()? mayShow,
+    Future<void> Function()? beforeShow,
+  });
   Future<void> dispose();
 }
 
@@ -247,7 +251,9 @@ final class _GoogleLoadedRewardedAd implements LoadedRewardedAd {
 
   @override
   Future<bool> show(
-      {required String customData, bool Function()? mayShow}) async {
+      {required String customData,
+      bool Function()? mayShow,
+      Future<void> Function()? beforeShow}) async {
     if (_used) throw StateError('rewarded_ad_already_used');
     _used = true;
     final completion = RewardedAdShowCompletion();
@@ -265,6 +271,14 @@ final class _GoogleLoadedRewardedAd implements LoadedRewardedAd {
       requireAccount();
       await ad.setServerSideOptions(
           ServerSideVerificationOptions(customData: customData));
+      await _waitForForeground();
+      requireAccount();
+      // Let Flutter remove and paint away its preparation route while its
+      // Activity can still draw. Waiting for the SDK's shown callback is too
+      // late on Android, where opening the ad can already pause Flutter.
+      if (beforeShow != null) {
+        await beforeShow().timeout(foregroundTimeout);
+      }
       await _waitForForeground();
       requireAccount();
       ad.fullScreenContentCallback = FullScreenContentCallback<RewardedAd>(

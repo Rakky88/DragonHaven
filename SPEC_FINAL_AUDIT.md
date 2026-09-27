@@ -1,5 +1,153 @@
 # DragonHaven audit
 
+## v0.06.12 release preparation - 27 September 2026
+
+Candidate display/package version 0.06.12, Android build 10105. This release
+combines the four prepared changes documented below: relic balance and Quills,
+versioned Spirit/Orbit rules, the six-choice ranking layout and ad handoff.
+Migration 101 passed a rollback-only rehearsal on staging and was then applied
+there with exact migration-history and unchanged runtime/grant checks.
+
+Deployment requires client floor 10105 because earlier apps cannot decode the
+new relic and revealed-egg fields. Publish and verify the signed APK before
+raising that floor. The worker rollout pauses mutations while switching code,
+then changes the ruleset and client floor together. The rollout helper now
+records the activation attempt before sending it: after a floor-raising
+activation, any error pauses gameplay and retains the new worker/floor for
+forward repair instead of restoring an incompatible old serializer. Failures
+before activation retain safe rollback. All 28 rollout-helper tests pass,
+including an activation reply lost after commit and concurrent runtime changes.
+
+Publication and final production evidence are recorded separately after the
+remaining release checks complete. The earlier unreleased sections describe
+preparation evidence rather than current publication status.
+
+## Rewarded-ad preparation handoff (unreleased)
+
+Prepared on 27 September 2026; no release, deployment or version bump.
+The shop previously retained its full-screen Preparing ads route until the
+native ad was dismissed. Both currency shops now remove that exact route and
+await its disposal and a Flutter frame before handing control to the SDK.
+The hook runs after SSV setup. Foreground and account identity are checked
+again afterwards, so backgrounding or signing out during removal cannot start
+an ad against the wrong state. A five-second handoff deadline fails without
+starting playback and disposes the creative; late completion cannot launch it. Existing
+definitely-unshown claim cancellation releases that reservation, while earned
+rewards still wait for dismissal and retain signed server verification.
+
+Validation: **44 focused Flutter tests pass**, including both real shop routes
+through the production SDK wrapper with a fake native ad. They verify that the
+preparation overlay is disposed before native show, early close, deferred
+handoffs, handoff failure/deadline, backgrounding, account changes, reward
+previews and recovery. Full Flutter analysis is clean. No SDK, Android renderer,
+server reward rules, migration or live account data was changed.
+
+Only an emulator is connected. These tests verify the missing UI handoff;
+they do not reproduce or prove resolution of the handset's native compositor
+symptom (audio playing with stale app content until background/foreground).
+Google documents rewarded ads as native overlays above Flutter content:
+https://developers.google.com/admob/flutter/rewarded . Keep a physical-device
+playback check in the next build's acceptance checks.
+
+## Six visible Trial ranking choices (unreleased)
+
+Prepared on 27 September 2026; no release, deployment or version bump.
+The shared World/Friends/Conclave ranking selector now presents the six
+standard Trials in two labelled rows: Basic and Ascended. Three equal-width
+tiles per row keep the matching Spirit/Might/Arcana games aligned. Full names,
+icons and a selected-state check replace the clipped horizontal carousel.
+Seasonal rankings retain their separate event tile. Larger accessibility text
+can increase tile height and use the existing vertical sheet scroll.
+Ranking queries, caching, scores and server behaviour are unchanged.
+
+Validation: 5 ranking widget tests and 98 related social, UI parity and
+localization tests pass; Flutter analysis is clean. Real-font screenshots were
+reviewed at 286 and 320 logical pixels, with enlarged-text coverage at 1.6x.
+Tests verify all six standard choices are initially visible and tappable at
+286/320/390 pixels with normal text, Conclave selection of each game, event
+expiry and the absence of horizontal scrolling. Reference-document verification
+and diff whitespace checks pass.
+
+## Spirit containment and ongoing Orbit acceleration (unreleased)
+
+Prepared on 27 September 2026; no release, production deployment or version bump.
+Spirit Alignment v3 renders its player at 86% of the target's linear extent,
+with the white highlight clipped inside the player. The gold border is drawn
+outside the scoring area. Circle/square/triangle area intersections use that
+same geometry; full containment, including off-centre fits, gives 100% and
+the existing five-second bonus. Partial coverage is capped at 99% after rounding.
+Rune Orbit v2 uses fractional-millisecond windows with speed multiplied by
+1.045 per point; the former 260 ms minimum no longer caps new attempts.
+
+Client intents, Edge validation, command handling and replay agree on explicit
+Spirit v3 / Orbit v2 capabilities. Missing/older capabilities and restored
+checkpoints retain original rules. Unsupported resumes are refused before an
+existing attempt can be fenced or changed. This preserves ongoing games and
+lost-reply recovery across a coordinated future rollout. No new SQL migration
+is required by these two Trial changes. Rewards and expertise assists are not
+rerolled.
+
+Validation passed: **1,318 Flutter tests**, one intentional opt-in skip, clean
+Flutter analysis, **33 Edge command tests**, shared Dart VM/Deno replay parity,
+reference-document verification and diff checks. Boundary tests cover fully
+contained/off-centre fits, partial overlap rounding, bonus time and legacy
+checkpoints. Real painter raster tests plus visual review confirm that all
+three filled shapes and their highlights remain inside the gold contour.
+Orbit tests cover 100 consecutive hits, increasing speed through score 1000,
+old checkpoints and precise animation timing. New start/resume/restart tests
+exercise real canonical commands, including rejected old-client resumes.
+
+## Relic balance and recovery - 27 September 2026 (unreleased)
+
+Prepared changes only: no deployment, version bump, production flag change or
+player-state rewrite. The published app remains v0.06.11 / build 10104.
+
+- Altar Moral Echo and Order Sigil are replaced by Moral Prism and Order
+  Compass. Legacy saved IDs and queued commands remain readable; counts combine
+  old/new stock and consumption drains old stock first. Reads do not normalize
+  saves, preventing a false strict-restoration mismatch. Soul Mirror is newly
+  craftable at the Compass price (30 Fragments, 2 Essence, no Weaveheart).
+- These three crafted, bound relics reveal fixed facts on eggs and owned
+  hatched dragons. Soul Mirror personality discovery survives hatching, with
+  no hidden-trait reroll. Unknown egg personality is omitted from public views.
+- Normal relic gates are multiplied by five: Gold 5%, Dragon 10%, Mythical
+  20%, Sinister capped at 100%, direct S+ Trial 5%. The existing weighted pool
+  and unique-brooch exclusions remain intact.
+- Quill has an independent chest roll: Wooden 1%, Silver 2%, Gold 4%, Dragon
+  8%, Mythical 16%, excluded elsewhere. A chest can contain its normal relic
+  and a tradeable Quill together; receipts and reveal bundles retain both.
+  The bound 100-gem shop Quill is listed first. Renaming consumes crafted,
+  then shop-bound, then unreserved tradeable stock, in that order.
+- Recovery now recognizes authoritative rewarded_ad_claim_unavailable and
+  rewarded_ad_state_changed terminal failures. A fresh confirmed snapshot is
+  still required before retiring the durable pending command. Unrecognized,
+  malformed or mismatched receipts remain blocked instead of risking a duplicate
+  action. Tests cover restart after a lost rejection reply and subsequent play.
+  This closes an additional hang; it does not promise immunity to outages or
+  unknown outcomes. The earlier stale eggRarityRevealedIds cause was repaired
+  in migration 099 and provider cleanup in v0.06.10.
+
+Migration 101 is prepared and locally exercised, not applied: it updates the
+dormant SQL chest catalogue/opening, the bound shop catalogue, and the active
+canonical trade allowlist.
+Production ordinary rewards still use the shared Dart command engine. A future
+rollout must coordinate the migration, worker and new app. Old clients reject
+the new revealed-egg personality field and do not understand Quill stock/rewards;
+raise the minimum supported build to the new APK (or provide explicit old-client
+projection support) before exposing these new values. Do not roll the worker
+back to one that drops new state after these rewards have been granted.
+
+Gameplay reference tables were reviewed, including conditional combined
+Adventure/Trial probabilities; no redeem code or direct redeem reward changes.
+Validation passed: **1,297 Flutter tests**, one intentional opt-in skip,
+clean Flutter analysis, both chest/shop catalogue verifiers, local PostgreSQL
+migration/trade/shop contracts, shared Dart VM/Deno parity, reference-document
+verification and diff whitespace checks. Regression coverage includes legacy
+stock, egg/dragon Soul Mirror reveals (including lazy personality rendering),
+shop order/100-gem bound purchase, independent/double drops, Quill reservations
+and consumption, and rejected-ad recovery after restart. No live deployment
+or physical-device installation was performed for this prepared change.
+
 ## v0.06.11 published ? 27 September 2026
 
 Published `v0.06.11`, Android build **10104**, from

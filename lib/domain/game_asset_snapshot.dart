@@ -134,6 +134,7 @@ class GameAssetSnapshot {
           'tagRevision',
           'moral',
           'order',
+          'personality',
           'rarity',
           'lineage'
         ])
@@ -142,6 +143,8 @@ class GameAssetSnapshot {
             data['moralAxisKnown'] == true ||
             (location == 'egg' && data['lineageId'] == 'sinisterra'),
         'order': knowledge['order'] == true || data['lawAxisKnown'] == true,
+        'personality': knowledge['personality'] == true ||
+            data['personalityKnown'] == true,
         'rarity': knowledge['rarity'] == true ||
             (state['eggRarityRevealedIds'] as List).contains(id),
       };

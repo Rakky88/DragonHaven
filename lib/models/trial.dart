@@ -470,7 +470,7 @@ TrialReward trialRewardForGrade(
     TrialGrade.sPlus => (0, 69, 7),
   };
   final pool = mysticRelicDropPool(excluded: excludedRelics);
-  final relic = grade == TrialGrade.sPlus && relicRoll < .01 && pool.isNotEmpty
+  final relic = grade == TrialGrade.sPlus && relicRoll < .05 && pool.isNotEmpty
       ? pool[relicChoice.abs() % pool.length]
       : null;
   return TrialReward(

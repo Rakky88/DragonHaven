@@ -45,8 +45,13 @@ void main() {
     final pool = mysticRelicDropPool();
     expect(pool, hasLength(65));
     for (final r in MysticRelic.values) {
-      expect(pool.where((entry) => entry == r),
-          hasLength(r.isEquipable || r == MysticRelic.sparkAstrolabe ? 1 : 10));
+      expect(
+          pool.where((entry) => entry == r),
+          hasLength(r == MysticRelic.nameweaversQuill
+              ? 0
+              : r.isEquipable || r == MysticRelic.sparkAstrolabe
+                  ? 1
+                  : 10));
       if (r.isEquipable) {
         expect(r.isShopAvailable, isFalse);
         expect(r.isConsumable, isFalse);

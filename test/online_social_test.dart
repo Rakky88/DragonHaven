@@ -1967,8 +1967,7 @@ void main() {
     expect(find.text('211'), findsOneWidget);
 
     final ruinBreaker = find.byKey(const Key('trial-ranking-kind-ruinBreaker'));
-    // Trial choices have readable full labels in a horizontal scroller; on a
-    // narrow phone the next choice must first be brought into the viewport.
+    // Basic and Ascended trial choices share the same ranking request flow.
     await tester.ensureVisible(ruinBreaker);
     await tester.pumpAndSettle();
     expect(ruinBreaker.hitTestable(), findsOneWidget);

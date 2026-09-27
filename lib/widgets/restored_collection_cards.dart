@@ -377,10 +377,15 @@ class RestoredRelicEmptyState extends StatelessWidget {
 }
 
 String altarRelicEffect(AppStrings s, AltarRelic relic) => switch (relic) {
-      AltarRelic.moralEcho => s.pick('Reveal an egg’s moral alignment.',
-          'Onthul de morele aard van een ei.'),
-      AltarRelic.orderSigil => s.pick('Reveal an egg’s order alignment.',
-          'Onthul de orde-aard van een ei.'),
+      AltarRelic.moralPrism => s.pick(
+          'Reveal moral alignment for an egg or dragon.',
+          'Onthul de morele aard van een ei of draak.'),
+      AltarRelic.orderCompass => s.pick(
+          'Reveal order alignment for an egg or dragon.',
+          'Onthul de orde-aard van een ei of draak.'),
+      AltarRelic.soulMirror => s.pick(
+          'Reveal personality for an egg or dragon.',
+          'Onthul de persoonlijkheid van een ei of draak.'),
       AltarRelic.astralLens =>
         s.pick('Reveal an egg’s rarity.', 'Onthul de zeldzaamheid van een ei.'),
       AltarRelic.weaveOracle => s.pick(

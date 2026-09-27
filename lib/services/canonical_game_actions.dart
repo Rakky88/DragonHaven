@@ -442,6 +442,18 @@ ChestRewardBundle decodeChestRewards(Object? value,
     return value;
   }
 
+  List<MysticRelic> extraRelics(Object? value) {
+    if (value == null) return const [];
+    if (value is! List || value.length > 1) invalid();
+    return [
+      for (final id in value)
+        if (id == MysticRelic.nameweaversQuill.name)
+          MysticRelic.nameweaversQuill
+        else
+          invalid(),
+    ];
+  }
+
   return ChestRewardBundle(tier: tier, rewards: [
     for (final raw in value['rewards'] as List)
       if (raw is! Map ||
@@ -459,6 +471,7 @@ ChestRewardBundle decodeChestRewards(Object? value,
           specialEgg: flag(raw['specialEgg']),
           specialChestId: specialChestId,
           specialEggId: raw['specialEggId'] as String?,
+          additionalRelics: extraRelics(raw['additionalRelics']),
           relicFound: catalog(
               raw['relicFound'],
               (id) =>

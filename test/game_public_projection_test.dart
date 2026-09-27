@@ -169,6 +169,49 @@ void main() {
     expect(egg['lineageId'], isNull);
   });
 
+  test('legacy altar IDs and Soul Mirror preserve private state and new facts',
+      () async {
+    var source = _fixture();
+    source['eggAltar']['crafted'].addAll({
+      'moralEcho': 1,
+      'orderSigil': 1,
+      'soulMirror': 1,
+    });
+    expect(_project(source)['eggs'].single.containsKey('personalityTraitIds'),
+        isFalse);
+    for (final relic in ['moralEcho', 'orderSigil', 'soulMirror']) {
+      final result = await GameCommandEngine.execute(
+          state: source,
+          action: 'use_altar_relic',
+          payload: {'relic': relic, 'eggId': 'egg-hidden'},
+          secretSeed: sha256.convert(utf8.encode(relic)).toString(),
+          now: _now,
+          keeperId: _owner);
+      source = result['state'] as Map<String, dynamic>;
+    }
+    final shown = _project(source);
+    final egg = shown['eggs'].single;
+    expect(egg['personalityTraitIds'], isNotEmpty);
+    expect(egg['moralAxis'], 'good');
+    expect(egg['lawAxis'], 'chaotic');
+    expect(egg['lineageId'], isNull);
+    expect(egg.containsKey('hatchSeed'), isFalse);
+    final before = jsonEncode(source);
+    expect(_project(source), shown);
+    expect(jsonEncode(source), before);
+    final duplicate = GameCommandEngine.execute(
+        state: source,
+        action: 'use_altar_relic',
+        payload: {'relic': 'soulMirror', 'eggId': 'egg-hidden'},
+        secretSeed: _seed,
+        now: _now,
+        keeperId: _owner);
+    await expectLater(
+        duplicate,
+        throwsA(isA<GameCommandException>()
+            .having((e) => e.code, 'code', 'already_known')));
+  });
+
   test('nest keeps its timer and hides genetics until a real hatch succeeds',
       () async {
     var source = _fixture();

@@ -1,6 +1,10 @@
 part of 'household_provider.dart';
 
 extension EggAltarSystems on HouseholdProvider {
+  int get usableNameweaversQuills =>
+      eggAltar.count(AltarRelic.nameweaversQuill) +
+      usableRelicCount(MysticRelic.nameweaversQuill);
+
   AltarEggKnowledge eggKnowledge(String id) {
     var knowledge = eggAltar.knowledge(id);
     for (final egg in eggStash.where((egg) => egg.id == id)) {
@@ -14,7 +18,9 @@ extension EggAltarSystems on HouseholdProvider {
     ].where((dragon) => dragon.id == id)) {
       knowledge = knowledge.merge(dragon.altarKnowledge).merge(
           AltarEggKnowledge(
-              moral: dragon.moralAxisKnown, order: dragon.lawAxisKnown));
+              moral: dragon.moralAxisKnown,
+              order: dragon.lawAxisKnown,
+              personality: dragon.personalityKnown));
     }
     return knowledge
         .merge(AltarEggKnowledge(rarity: eggRarityRevealedIds.contains(id)));
@@ -141,9 +147,17 @@ extension EggAltarSystems on HouseholdProvider {
         ...sanctuaryDragons,
         if (incubatingEgg != null) incubatingEgg!
       ])
-        d.id: (d.altarKnowledge, d.moralAxisKnown, d.lawAxisKnown)
+        d.id: (
+          d.altarKnowledge,
+          d.moralAxisKnown,
+          d.lawAxisKnown,
+          d.personalityKnown,
+          [...d.personalityTraitIds]
+        )
     };
     final previousNames = {for (final d in ownedDragons) d.id: d.name};
+    final previousRelics = {...relicInventory};
+    final previousBoundRelics = {...untradeableRelicInventory};
     var serverCommitted = false;
     final settled = Completer<void>();
     _settledAltarOperation = settled.future;
@@ -185,6 +199,8 @@ extension EggAltarSystems on HouseholdProvider {
         eggAltar = previous;
         eggStash = previousEggs;
         eggRarityRevealedIds = previousRarity;
+        relicInventory = previousRelics;
+        untradeableRelicInventory = previousBoundRelics;
         for (final d in [
           pet,
           ...sanctuaryDragons,
@@ -195,6 +211,10 @@ extension EggAltarSystems on HouseholdProvider {
             d.altarKnowledge = k.$1;
             d.moralAxisKnown = k.$2;
             d.lawAxisKnown = k.$3;
+            d.personalityKnown = k.$4;
+            d.personalityTraitIds
+              ..clear()
+              ..addAll(k.$5);
           }
         }
         for (final d in ownedDragons) {
@@ -249,23 +269,26 @@ extension EggAltarSystems on HouseholdProvider {
         eggAltar.returnedIds.add(id);
         receipt['reward'] = reward.toJson();
       case 'craft':
-        final relic = AltarRelic.values
-            .where((r) => r.name == payload['relic'])
-            .firstOrNull;
+        final relic = AltarRelic.parse(payload['relic']);
         if (relic == null) throw const EggAltarException('invalid_relic');
         if (!eggAltar.wallet.covers(relic.cost)) {
           throw const EggAltarException('insufficient_materials');
         }
         eggAltar.wallet -= relic.cost;
-        eggAltar.crafted[relic.name] = eggAltar.count(relic) + 1;
+        eggAltar.crafted[relic.name] = (eggAltar.crafted[relic.name] ?? 0) + 1;
       case 'reveal':
-        final relic = AltarRelic.values
-            .where((r) => r.name == payload['relic'])
-            .firstOrNull;
+        final relic = AltarRelic.parse(payload['relic']);
         if (relic == null || relic == AltarRelic.nameweaversQuill) {
           throw const EggAltarException('invalid_relic');
         }
-        if (!eggStash.any((e) => e.id == id) && nestEgg?.id != id) {
+        final dragon = dragonById(id);
+        final hatchedTarget = relic.canRevealDragon &&
+            dragon != null &&
+            !dragon.isEgg &&
+            ownedDragons.any((owned) => owned.id == id);
+        if (!eggStash.any((e) => e.id == id) &&
+            nestEgg?.id != id &&
+            !hatchedTarget) {
           throw const EggAltarException('egg_not_found');
         }
         if (knowledge.knows(relic)) {
@@ -277,7 +300,7 @@ extension EggAltarSystems on HouseholdProvider {
         if (eggAltar.count(relic) <= 0) {
           throw const EggAltarException('relic_not_owned');
         }
-        eggAltar.crafted[relic.name] = eggAltar.count(relic) - 1;
+        eggAltar.consume(relic);
         eggAltar.eggs[id] = AltarEggKnowledge.fromJson({
           ...knowledge.toJson(),
           relic.knownKey: true,
@@ -295,10 +318,16 @@ extension EggAltarSystems on HouseholdProvider {
           throw const EggAltarException('invalid_name');
         }
         const quill = AltarRelic.nameweaversQuill;
-        if (eggAltar.count(quill) <= 0) {
+        if (usableNameweaversQuills <= 0) {
           throw const EggAltarException('relic_not_owned');
         }
-        eggAltar.crafted[quill.name] = eggAltar.count(quill) - 1;
+        if (eggAltar.count(quill) > 0) {
+          eggAltar.crafted[quill.name] = eggAltar.count(quill) - 1;
+        } else {
+          // Bound shop copies are consumed before tradeable drops; inventory
+          // reservations were excluded by usableNameweaversQuills above.
+          _consumeRelic(MysticRelic.nameweaversQuill);
+        }
         eggAltar.names[dragon.id] = name;
       case 'donate':
         throw const EggAltarException('altar_sign_in_required');
@@ -356,6 +385,7 @@ extension EggAltarSystems on HouseholdProvider {
       dragon.altarKnowledge = eggKnowledge(dragon.id);
       dragon.moralAxisKnown |= dragon.altarKnowledge.moral;
       dragon.lawAxisKnown |= dragon.altarKnowledge.order;
+      if (dragon.altarKnowledge.personality) dragon.revealPersonality();
       if (!dragon.isEgg && eggAltar.names.containsKey(dragon.id)) {
         dragon.name = eggAltar.names[dragon.id]!;
       }

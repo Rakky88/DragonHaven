@@ -128,7 +128,9 @@ const specialContentReference = ReferenceDocumentSpec(
     'supabase/migrations/202609090062_seasonal_preview_access.sql',
     'supabase/migrations/202609070045_dormant_chest_opening.sql',
     'supabase/migrations/202609080058_equipment_relic_pool.sql',
+    'supabase/migrations/202609270101_relic_drop_balance_and_quills.sql',
     'tool/economy_chest_catalog.dart',
+    'tool/economy_shop_catalog.dart',
   ],
 );
 
@@ -229,7 +231,9 @@ const randomRewardsReference = ReferenceDocumentSpec(
     'supabase/migrations/202609070044_sinister_altar_rewards.sql',
     'supabase/migrations/202609070045_dormant_chest_opening.sql',
     'supabase/migrations/202609080058_equipment_relic_pool.sql',
+    'supabase/migrations/202609270101_relic_drop_balance_and_quills.sql',
     'tool/economy_chest_catalog.dart',
+    'tool/economy_shop_catalog.dart',
     'supabase/migrations/202609070040_seasonal_events.sql',
     'supabase/migrations/202609070041_seasonal_event_lint_fixes.sql',
   ],

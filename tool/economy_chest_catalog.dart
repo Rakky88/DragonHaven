@@ -13,7 +13,7 @@ import 'package:dragon_haven/models/profile_portrait.dart';
 /// Versioned server snapshot. Changes require a NEW forward migration once 45
 /// has been applied. Never regenerate an already applied migration in place.
 Map<String, Object?> economyChestCatalog() => {
-      'version': 4,
+      'version': 5,
       'portrait': profilePortraitCatalog.map((item) => item.id).toList(),
       'title': accountTitleCatalog.map((item) => item.id).toList(),
       'music': musicCatalog.map((item) => item.id).toList(),
@@ -23,6 +23,14 @@ Map<String, Object?> economyChestCatalog() => {
       'relic': MysticRelic.values.map((item) => item.name).toList(),
       'relic_weights': {
         for (final r in MysticRelic.values) r.name: r.dropWeight
+      },
+      'quill_chances': {
+        'wooden': .01,
+        'silver': .02,
+        'gold': .04,
+        'dragon': .08,
+        'mythical': .16,
+        'sinister': 0.0,
       },
       'unique_relics': MysticRelic.values
           .where((r) => r.isEquipable)
@@ -62,11 +70,11 @@ Map<String, Object?> economyChestCatalog() => {
         'silver':
             _tier(45, 80, .5, 1, 2, .04, 0, .01, [.65, .90, .98, .997, .9998]),
         'gold': _tier(
-            90, 160, .72, 2, 4, .12, .01, .02, [.50, .80, .94, .99, .999]),
+            90, 160, .72, 2, 4, .12, .05, .02, [.50, .80, .94, .99, .999]),
         'dragon':
-            _tier(180, 300, .90, 4, 7, 1, .02, .04, [.25, .55, .80, .95, .995]),
+            _tier(180, 300, .90, 4, 7, 1, .10, .04, [.25, .55, .80, .95, .995]),
         'mythical':
-            _tier(400, 650, 1, 8, 13, 1, .04, .08, [.10, .30, .55, .80, .97]),
+            _tier(400, 650, 1, 8, 13, 1, .20, .08, [.10, .30, .55, .80, .97]),
         'sinister':
             _tier(400, 650, 1, 8, 13, 1, 1, .12, [.10, .30, .55, .80, .97]),
       },
@@ -101,7 +109,7 @@ void main(List<String> arguments) {
     return;
   }
   final sql = File('supabase/migrations/'
-          '202609200085_shared_expertise_budget.sql')
+          '202609270101_relic_drop_balance_and_quills.sql')
       .readAsStringSync();
   if (!sql.contains('\$catalog\$$snapshot\$catalog\$::jsonb')) {
     stderr.writeln(

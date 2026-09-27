@@ -32,6 +32,7 @@ class ChestReward {
     this.specialChestId,
     this.specialEggId,
     this.relicFound,
+    this.additionalRelics = const [],
     this.portraitFound,
     this.titleFound,
     this.musicTrackFound,
@@ -46,6 +47,11 @@ class ChestReward {
   final String? specialChestId;
   final String? specialEggId;
   final MysticRelic? relicFound;
+  final List<MysticRelic> additionalRelics;
+  List<MysticRelic> get relics => [
+        if (relicFound != null) relicFound!,
+        ...additionalRelics,
+      ];
   final ProfilePortrait? portraitFound;
   final AccountTitle? titleFound;
   final MusicTrack? musicTrackFound;
@@ -77,10 +83,8 @@ class ChestRewardBundle {
       rewards.where((reward) => reward.sinisterEgg).length;
   int get specialEggCount =>
       rewards.where((reward) => reward.specialEgg).length;
-  List<MysticRelic> get relics => rewards
-      .map((reward) => reward.relicFound)
-      .whereType<MysticRelic>()
-      .toList(growable: false);
+  List<MysticRelic> get relics =>
+      rewards.expand((reward) => reward.relics).toList(growable: false);
   List<ProfilePortrait> get portraits => rewards
       .map((reward) => reward.portraitFound)
       .whereType<ProfilePortrait>()

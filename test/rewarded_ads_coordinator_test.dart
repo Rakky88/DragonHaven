@@ -112,6 +112,31 @@ void main() {
       expect(repository.cancelled, isEmpty);
     });
 
+    test('UI handoff precedes showing and never grants a reward by itself',
+        () async {
+      final handoffStarted = Completer<void>();
+      final painted = Completer<void>();
+      final dismissed = Completer<bool>();
+      platform.loaded.dismissal = dismissed.future;
+      await ads.initialize();
+      final watching = ads.watch(RewardedAdCurrency.gems, beforeShow: () {
+        handoffStarted.complete();
+        return painted.future;
+      });
+      await handoffStarted.future;
+      expect(repository.issueCalls, 1);
+      expect(ads.busy(RewardedAdCurrency.gems), isTrue);
+      expect(ads.earnedPending(RewardedAdCurrency.gems), isFalse);
+      painted.complete();
+      await Future<void>.delayed(Duration.zero);
+      expect(ads.earnedPending(RewardedAdCurrency.gems), isFalse);
+
+      dismissed.complete(true);
+      expect(await watching, RewardedAdWatchOutcome.rewardPreviewed);
+      expect(ads.earnedPending(RewardedAdCurrency.gems), isTrue);
+      expect(repository.cancelled, isEmpty);
+    });
+
     test('consent failure does not prevent recovery and retries on resume',
         () async {
       platform.consentFailures = 1;
@@ -254,10 +279,13 @@ final class _LoadedAd implements LoadedRewardedAd {
 
   @override
   Future<bool> show(
-      {required String customData, bool Function()? mayShow}) async {
+      {required String customData,
+      bool Function()? mayShow,
+      Future<void> Function()? beforeShow}) async {
     this.customData = customData;
     final failure = error;
     if (failure != null) throw failure;
+    await beforeShow?.call();
     return dismissal == null ? result : await dismissal!;
   }
 }

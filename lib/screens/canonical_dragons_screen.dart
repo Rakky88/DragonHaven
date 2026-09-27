@@ -4,7 +4,6 @@ import 'package:provider/provider.dart';
 
 import '../l10n/app_strings.dart';
 import '../models/dragon_lineage.dart';
-import '../models/egg_altar.dart';
 import '../models/dragon_school.dart';
 import '../models/mystic_relic.dart';
 import '../models/pet.dart';
@@ -792,7 +791,7 @@ class _CanonicalDragonActionsCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final strings = AppStrings.of(context);
-    final quills = view.inventory.count(AltarRelic.nameweaversQuill);
+    final quills = view.inventory.usableNameweaversQuills;
     final canName = dragon.name.trim().isEmpty || quills > 0;
     final canRelease = !dragon.favorite &&
         dragon.adventureId == null &&

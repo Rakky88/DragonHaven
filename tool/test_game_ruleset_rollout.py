@@ -377,6 +377,111 @@ class GameRulesetRolloutTest(unittest.TestCase):
             ):
                 self.assertEqual(failed.current[key], failed.initial[key])
 
+    def test_incompatible_failure_after_activation_keeps_worker_and_floor_paused(self):
+        for failures in (
+            {"fail_smoke": True},
+            {"fail_postflight": True},
+            {"fail_activation_response": True},
+        ):
+            with self.subTest(failures=failures), tempfile.TemporaryDirectory() as directory:
+                args = self.args(Path(directory) / "apply", "apply")
+                args.minimum_client_build = 10102
+                failed = FakeRollout(args, **failures)
+                with self.assertRaisesRegex(
+                    RolloutError, "candidate_failed_gameplay_paused_forward_recovery_required"
+                ):
+                    failed.execute()
+                self.assertFalse(failed.current["enabled"])
+                self.assertFalse(failed.current["migration_enabled"])
+                self.assertEqual(failed.current["minimum_client_build"], 10102)
+                self.assertEqual(failed.current["ruleset_sha256"], "b" * 64)
+                self.assertEqual(failed.function["ezbr_sha256"], "2" * 64)
+                self.assertEqual(failed.deployments, ["candidate"])
+                self.assertFalse((failed.evidence / "rollback.json").exists())
+                recovery = json.loads((failed.evidence / "forward-recovery.json").read_text())
+                self.assertFalse(recovery["automaticRollback"])
+                self.assertTrue(recovery["gameplayPaused"])
+                self.assertIn("without restoring", recovery["operatorAction"])
+                if failures.get("fail_activation_response"):
+                    self.assertIsNone(failed.candidate_runtime)
+                with self.assertRaisesRegex(
+                    RolloutError, "incompatible_activation_requires_forward_recovery"
+                ):
+                    failed._rollback()
+
+    def test_incompatible_failure_before_activation_can_restore_baseline(self):
+        with tempfile.TemporaryDirectory() as directory:
+            args = self.args(Path(directory) / "apply", "apply")
+            args.minimum_client_build = 10102
+            failed = FakeRollout(args, fail_candidate_download=True)
+            with self.assertRaisesRegex(RolloutError, "simulated_candidate_download_failure"):
+                failed.execute()
+            self.assertFalse(failed.activation_attempted)
+            self.assertEqual(failed.deployments, ["candidate", "baseline"])
+            for key in (
+                "enabled", "migration_enabled", "minimum_client_build", "ruleset_sha256"
+            ):
+                self.assertEqual(failed.current[key], failed.initial[key])
+            self.assertTrue((failed.evidence / "rollback.json").exists())
+            self.assertFalse((failed.evidence / "forward-recovery.json").exists())
+
+    def test_unconfirmed_activation_failure_is_conservatively_paused(self):
+        with tempfile.TemporaryDirectory() as directory:
+            args = self.args(Path(directory) / "apply", "apply")
+            args.minimum_client_build = 10102
+            failed = FakeRollout(args)
+            update = failed._update_runtime
+
+            def reject_activation(expected, changes, label):
+                if label == "candidate_runtime_activate":
+                    raise RolloutError("candidate_runtime_activate_concurrent_change")
+                return update(expected, changes, label)
+
+            failed._update_runtime = reject_activation
+            with self.assertRaisesRegex(
+                RolloutError, "candidate_failed_gameplay_paused_forward_recovery_required"
+            ):
+                failed.execute()
+            self.assertTrue(failed.activation_attempted)
+            self.assertIsNone(failed.candidate_runtime)
+            self.assertFalse(failed.current["enabled"])
+            self.assertFalse(failed.current["migration_enabled"])
+            self.assertEqual(failed.current["minimum_client_build"], 10102)
+            self.assertEqual(failed.current["ruleset_sha256"], "a" * 64)
+            self.assertEqual(failed.deployments, ["candidate"])
+
+    def test_incompatible_failure_preserves_concurrent_floor_and_ruleset(self):
+        with tempfile.TemporaryDirectory() as directory:
+            args = self.args(Path(directory) / "apply", "apply")
+            args.minimum_client_build = 10102
+            failed = FakeRollout(args, mutate_during_postflight=True)
+            with self.assertRaisesRegex(
+                RolloutError, "candidate_failed_gameplay_paused_forward_recovery_required"
+            ):
+                failed.execute()
+            self.assertFalse(failed.current["enabled"])
+            self.assertFalse(failed.current["migration_enabled"])
+            self.assertEqual(failed.current["minimum_client_build"], 10103)
+            self.assertEqual(failed.current["ruleset_sha256"], "b" * 64)
+            self.assertEqual(failed.deployments, ["candidate"])
+
+    def test_incompatible_pause_failure_never_falls_back_to_old_worker(self):
+        with tempfile.TemporaryDirectory() as directory:
+            args = self.args(Path(directory) / "apply", "apply")
+            args.minimum_client_build = 10102
+            failed = FakeRollout(args, fail_smoke=True, fail_incompatible_pause=True)
+            with self.assertRaisesRegex(
+                RolloutError, "candidate_failed_pause_unverified_forward_recovery_required"
+            ):
+                failed.execute()
+            self.assertEqual(failed.deployments, ["candidate"])
+            self.assertEqual(failed.current["minimum_client_build"], 10102)
+            self.assertEqual(failed.current["ruleset_sha256"], "b" * 64)
+            recovery = json.loads((failed.evidence / "forward-recovery.json").read_text())
+            self.assertFalse(recovery["gameplayPaused"])
+            self.assertFalse(recovery["automaticRollback"])
+            self.assertFalse((failed.evidence / "rollback-failure.json").exists())
+
     def test_concurrent_runtime_change_is_paused_without_being_overwritten(self):
         with tempfile.TemporaryDirectory() as directory:
             failed = FakeRollout(
@@ -425,7 +530,7 @@ class GameRulesetRolloutTest(unittest.TestCase):
         return argparse.Namespace(
             environment="staging",
             mode=mode,
-            minimum_client_build=10102,
+            minimum_client_build=10101,
             evidence_dir=str(evidence),
             supabase="supabase",
             dart="dart",
@@ -480,6 +585,9 @@ class FakeRollout(Rollout):
         fail_pause_response=False,
         fail_postflight=False,
         mutate_during_postflight=False,
+        fail_activation_response=False,
+        fail_candidate_download=False,
+        fail_incompatible_pause=False,
     ):
         super().__init__(args)
         self.initial = GameRulesetRolloutTest.runtime()
@@ -495,6 +603,9 @@ class FakeRollout(Rollout):
         self.fail_pause_response = fail_pause_response
         self.fail_postflight = fail_postflight
         self.mutate_during_postflight = mutate_during_postflight
+        self.fail_activation_response = fail_activation_response
+        self.fail_candidate_download = fail_candidate_download
+        self.fail_incompatible_pause = fail_incompatible_pause
         self.deployments = []
         self.runtime_updates = []
         self.postflights = 0
@@ -523,6 +634,8 @@ class FakeRollout(Rollout):
         return dict(self.function)
 
     def _download(self, destination, label):
+        if label == "candidate_worker_verify_download" and self.fail_candidate_download:
+            raise RolloutError("simulated_candidate_download_failure")
         destination.mkdir(parents=True, exist_ok=False)
         worker = destination / 'supabase/functions/execute-game-command'
         worker.mkdir(parents=True)
@@ -532,6 +645,8 @@ class FakeRollout(Rollout):
 
     def _update_runtime(self, expected, changes, label):
         self.assert_expected(expected)
+        if label == "incompatible_activation_pause" and self.fail_incompatible_pause:
+            raise RolloutError("simulated_incompatible_pause_failure")
         previous_hash = self.current["ruleset_sha256"]
         self.current.update(changes)
         if self.current["ruleset_sha256"] != previous_hash:
@@ -540,6 +655,8 @@ class FakeRollout(Rollout):
         self.runtime_updates.append((label, dict(changes)))
         if label == "candidate_runtime_pause" and self.fail_pause_response:
             raise RolloutError("simulated_pause_response_loss")
+        if label == "candidate_runtime_activate" and self.fail_activation_response:
+            raise RolloutError("simulated_activation_response_loss")
         return dict(self.current)
 
     def assert_expected(self, expected):

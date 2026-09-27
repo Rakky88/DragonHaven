@@ -1,3 +1,5 @@
+import '../widgets/altar_relic_targets.dart';
+import '../models/mystic_relic.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -143,6 +145,14 @@ class EggKnowledgeSummary extends StatelessWidget {
                     Text(s.moralAxisName(egg?.moralAxis ?? nest!.moralAxis))),
           if (known.order)
             Chip(label: Text(s.lawAxisName(egg?.lawAxis ?? nest!.lawAxis))),
+          if (known.personality)
+            Chip(
+                label: Text((egg != null
+                        ? (egg.activate(coins: 0, gems: 0)..revealPersonality())
+                        : nest!)
+                    .personalityTraitIds
+                    .map(s.personality)
+                    .join(' · '))),
         ]);
   }
 }
@@ -686,6 +696,15 @@ class _AltarEggDetails extends StatelessWidget {
                                 ? s.lawAxisName(egg.lawAxis)
                                 : unknown),
                         _AltarDetailLine(
+                            label: s.pick('Personality', 'Persoonlijkheid'),
+                            value: known.personality
+                                ? (egg.activate(coins: 0, gems: 0)
+                                      ..revealPersonality())
+                                    .personalityTraitIds
+                                    .map(s.personality)
+                                    .join(' \u00b7 ')
+                                : unknown),
+                        _AltarDetailLine(
                             label: s.pick('Incubation', 'Broedtijd'),
                             value: s.remainingDuration(egg.incubationDuration)),
                         _AltarDetailLine(
@@ -757,10 +776,15 @@ class _AltarDetailLine extends StatelessWidget {
 }
 
 String altarRelicEffect(AppStrings s, AltarRelic relic) => switch (relic) {
-      AltarRelic.moralEcho => s.pick('Reveal an egg’s moral alignment.',
-          'Onthul de morele aard van een ei.'),
-      AltarRelic.orderSigil => s.pick('Reveal an egg’s order alignment.',
-          'Onthul de orde-aard van een ei.'),
+      AltarRelic.moralPrism => s.pick(
+          'Reveal moral alignment for an egg or dragon.',
+          'Onthul de morele aard van een ei of draak.'),
+      AltarRelic.orderCompass => s.pick(
+          'Reveal order alignment for an egg or dragon.',
+          'Onthul de orde-aard van een ei of draak.'),
+      AltarRelic.soulMirror => s.pick(
+          'Reveal personality for an egg or dragon.',
+          'Onthul de persoonlijkheid van een ei of draak.'),
       AltarRelic.astralLens =>
         s.pick('Reveal an egg’s rarity.', 'Onthul de zeldzaamheid van een ei.'),
       AltarRelic.weaveOracle => s.pick(
@@ -904,15 +928,36 @@ Future<void> showUseAltarRelic(BuildContext context, AltarRelic relic) async {
       context: context,
       showDragHandle: true,
       isScrollControlled: true,
-      builder: (_) => _AltarEggPicker(relic: relic));
+      builder: (sheetContext) => !relic.canRevealDragon
+          ? _AltarEggPicker(relic: relic)
+          : SafeArea(
+              child: SizedBox(
+                  height: MediaQuery.sizeOf(sheetContext).height * .78,
+                  child: AltarRelicTargets(
+                      eggs: _AltarEggPicker(relic: relic),
+                      dragons: ListView(children: [
+                        for (final dragon in game.ownedDragons.where((d) =>
+                            !d.isEgg &&
+                            !game.isRelicKnownFor(
+                                MysticRelic.values.byName(relic.name), d)))
+                          ListTile(
+                              key: Key('altar-dragon-${dragon.id}'),
+                              title: Text(dragon.displayName),
+                              trailing: const Icon(Icons.chevron_right_rounded),
+                              onTap: () =>
+                                  Navigator.pop(sheetContext, dragon.id)),
+                      ])))));
   if (!context.mounted || id == null) return;
   final s = AppStrings.of(context);
   final confirmed = await showDialog<bool>(
       context: context,
       builder: (c) => AlertDialog(
               title: Text(relic.label),
-              content: Text(s.pick('Use one relic on this egg?',
-                  'Eén relic gebruiken op dit ei?')),
+              content: Text(game.dragonById(id)?.isEgg == false
+                  ? s.pick('Use one relic on this dragon?',
+                      'Eén relic gebruiken op deze draak?')
+                  : s.pick('Use one relic on this egg?',
+                      'Eén relic gebruiken op dit ei?')),
               actions: [
                 TextButton(
                     onPressed: () => Navigator.pop(c, false),
@@ -930,7 +975,22 @@ Future<void> showUseAltarRelic(BuildContext context, AltarRelic relic) async {
       context: context,
       builder: (c) => AlertDialog(
               title: Text(relic.label),
-              content: EggKnowledgeSummary(eggId: id),
+              content: game.dragonById(id)?.isEgg == false
+                  ? Text(
+                      switch (relic) {
+                        AltarRelic.moralPrism =>
+                          s.moralAxisName(game.dragonById(id)!.moralAxis),
+                        AltarRelic.orderCompass =>
+                          s.lawAxisName(game.dragonById(id)!.lawAxis),
+                        AltarRelic.soulMirror => game
+                            .dragonById(id)!
+                            .personalityTraitIds
+                            .map(s.personality)
+                            .join(' \u00b7 '),
+                        _ => '',
+                      },
+                      textAlign: TextAlign.center)
+                  : EggKnowledgeSummary(eggId: id),
               actions: [
                 TextButton(
                     onPressed: () => Navigator.pop(c), child: const Text('OK'))
@@ -941,7 +1001,7 @@ Future<void> showRenameWithQuill(BuildContext context, String dragonId) async {
   final game = context.read<HouseholdProvider>();
   final dragon = game.dragonById(dragonId);
   if (dragon == null || dragon.isEgg) return;
-  if (game.eggAltar.count(AltarRelic.nameweaversQuill) == 0) {
+  if (game.usableNameweaversQuills == 0) {
     await runAltarAction(context, () async {
       throw const EggAltarException('relic_not_owned');
     });
@@ -1060,7 +1120,11 @@ class EggAltarArt extends StatelessWidget {
 
 class WeaveReturnResult extends StatefulWidget {
   const WeaveReturnResult(
-      {super.key, this.egg, this.eggArtwork, required this.reward, required this.canSkip});
+      {super.key,
+      this.egg,
+      this.eggArtwork,
+      required this.reward,
+      required this.canSkip});
   final DragonEgg? egg;
   final Widget? eggArtwork;
   final WeaveWallet reward;

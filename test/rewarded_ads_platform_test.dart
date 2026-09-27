@@ -108,6 +108,106 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('native show waits for the preparation view handoff',
+      (tester) async {
+    final ad = _Ad();
+    final loaded = await _withAd(ad).load('test-unit');
+    final painted = Completer<void>();
+    var handoffs = 0;
+    String? verificationAtHandoff;
+    final result = loaded.show(
+        customData: 'opaque-claim-token',
+        beforeShow: () {
+          verificationAtHandoff = ad.verification?.customData;
+          handoffs++;
+          return painted.future;
+        });
+    await tester.pump();
+    expect(verificationAtHandoff, 'opaque-claim-token');
+    expect(handoffs, 1);
+    expect(ad.shows, 0);
+    expect(ad.disposals, 0);
+
+    painted.complete();
+    await tester.pump();
+    expect(await result, isTrue);
+    expect(ad.shows, 1);
+    expect(ad.disposals, 1);
+  });
+
+  testWidgets('backgrounding during the UI handoff waits for foreground',
+      (tester) async {
+    final ad = _Ad();
+    final loaded = await _withAd(ad).load('test-unit');
+    final result = loaded.show(
+        customData: 'claim',
+        beforeShow: () async {
+          binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+        });
+    await tester.pump();
+    expect(ad.shows, 0);
+
+    binding.handleAppLifecycleStateChanged(AppLifecycleState.hidden);
+    binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+    binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await tester.pump();
+    expect(await result, isTrue);
+    expect(ad.shows, 1);
+  });
+
+  testWidgets('a failed UI handoff is a definitely unshown claim',
+      (tester) async {
+    final ad = _Ad();
+    final loaded = await _withAd(ad).load('test-unit');
+    await expectLater(
+        loaded.show(
+            customData: 'claim',
+            beforeShow: () async => throw StateError('route removal failed')),
+        throwsA(isA<RewardedAdShowException>()
+            .having((e) => e.claimMayHaveBeenShown, 'shown', false)));
+    expect(ad.shows, 0);
+    expect(ad.disposals, 1);
+  });
+
+  testWidgets('a handoff deadline never launches over an unremoved view',
+      (tester) async {
+    final ad = _Ad();
+    final loaded = await _withAd(ad).load('test-unit');
+    final painted = Completer<void>();
+    final result = expectLater(
+        loaded.show(customData: 'claim', beforeShow: () => painted.future),
+        throwsA(isA<RewardedAdShowException>()
+            .having((e) => e.claimMayHaveBeenShown, 'shown', false)));
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 2));
+    await result;
+    expect(ad.shows, 0);
+    expect(ad.disposals, 1);
+
+    painted.complete();
+    await tester.pump();
+    expect(ad.shows, 0);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('account change during UI handoff prevents native show',
+      (tester) async {
+    var currentAccount = true;
+    final ad = _Ad();
+    final loaded = await _withAd(ad).load('test-unit');
+    await expectLater(
+        loaded.show(
+            customData: 'claim',
+            mayShow: () => currentAccount,
+            beforeShow: () async {
+              currentAccount = false;
+            }),
+        throwsA(isA<RewardedAdShowException>()
+            .having((e) => e.claimMayHaveBeenShown, 'shown', false)));
+    expect(ad.shows, 0);
+    expect(ad.disposals, 1);
+  });
+
   testWidgets('backgrounding during SSV setup cannot launch a hidden ad',
       (tester) async {
     final ad = _Ad();

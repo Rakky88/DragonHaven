@@ -210,6 +210,7 @@ class _SpiritAlignmentTrialGameState extends State<SpiritAlignmentTrialGame>
                               shape: game.shape,
                               size: size,
                               filled: false,
+                              containedScoring: game.containedScoring,
                               color: AppColors.gold,
                             ),
                           ),
@@ -223,6 +224,7 @@ class _SpiritAlignmentTrialGameState extends State<SpiritAlignmentTrialGame>
                               shape: game.shape,
                               size: size,
                               filled: true,
+                              containedScoring: game.containedScoring,
                               color: overlap == 100
                                   ? const Color(0xFF82FFE0)
                                   : const Color(0xFFBDA4FF),
@@ -295,8 +297,11 @@ class _SpiritAlignmentTrialGameState extends State<SpiritAlignmentTrialGame>
                         : game.phase == SpiritAlignmentPhase.vertical
                             ? strings.pick('Tap to lock the height',
                                 'Tik om de hoogte vast te zetten')
-                            : strings.pick('Tap to stop on the outline',
-                                'Tik om op de omtrek te stoppen'),
+                            : game.containedScoring
+                                ? strings.pick('Tap to stop inside the outline',
+                                    'Tik om binnen de omtrek te stoppen')
+                                : strings.pick('Tap to stop on the outline',
+                                    'Tik om op de omtrek te stoppen'),
                 textAlign: TextAlign.center,
                 style: const TextStyle(
                   color: Colors.white,
@@ -320,15 +325,20 @@ class _SpiritAlignmentTrialGameState extends State<SpiritAlignmentTrialGame>
                                 'Lijn zoveel mogelijk vormen uit')
                             : strings.pick('Align all three shapes',
                                 'Lijn alle drie vormen uit'),
-                        body: game.timed
+                        body: game.containedScoring
                             ? strings.pick(
-                                'Start with 60 seconds. Tap once to lock the height, then tap again on the golden outline. Every 100% overlap adds 5 seconds. Keep going until time runs out!',
-                                'Je begint met 60 seconden. Tik eenmaal om de hoogte vast te zetten en nogmaals op de gouden omtrek. Elke overlap van 100% geeft 5 seconden extra. Ga door tot de tijd om is!',
+                                'Start with 60 seconds. Tap once to lock the height, then again to stop inside the golden outline. A shape entirely inside earns 100% and 5 extra seconds!',
+                                'Je begint met 60 seconden. Tik eenmaal om de hoogte vast te zetten en nogmaals om binnen de gouden omtrek te stoppen. Een vorm die helemaal binnen zit geeft 100% en 5 seconden extra!',
                               )
-                            : strings.pick(
-                                'Tap once to lock the height, then tap again on the golden outline. Three displayed 100% scores make the next round 10% faster.',
-                                'Tik eenmaal om de hoogte vast te zetten en nogmaals op de gouden omtrek. Drie zichtbare scores van 100% maken de volgende ronde 10% sneller.',
-                              ),
+                            : game.timed
+                                ? strings.pick(
+                                    'Start with 60 seconds. Tap once to lock the height, then tap again on the golden outline. Every 100% overlap adds 5 seconds. Keep going until time runs out!',
+                                    'Je begint met 60 seconden. Tik eenmaal om de hoogte vast te zetten en nogmaals op de gouden omtrek. Elke overlap van 100% geeft 5 seconden extra. Ga door tot de tijd om is!',
+                                  )
+                                : strings.pick(
+                                    'Tap once to lock the height, then tap again on the golden outline. Three displayed 100% scores make the next round 10% faster.',
+                                    'Tik eenmaal om de hoogte vast te zetten en nogmaals op de gouden omtrek. Drie zichtbare scores van 100% maken de volgende ronde 10% sneller.',
+                                  ),
                       ),
                     ),
                   ),
@@ -1240,45 +1250,75 @@ class _Shape extends StatelessWidget {
     required this.shape,
     required this.size,
     required this.filled,
+    required this.containedScoring,
     required this.color,
   });
   final SpiritAlignmentShape shape;
   final double size;
   final bool filled;
+  final bool containedScoring;
   final Color color;
 
   @override
   Widget build(BuildContext context) => SizedBox.square(
         dimension: size,
         child: CustomPaint(
-            painter: _ShapePainter(shape: shape, filled: filled, color: color)),
+            painter: _ShapePainter(
+                shape: shape,
+                filled: filled,
+                color: color,
+                containedScoring: containedScoring)),
       );
 }
 
 class _ShapePainter extends CustomPainter {
   const _ShapePainter(
-      {required this.shape, required this.filled, required this.color});
+      {required this.shape,
+      required this.filled,
+      required this.color,
+      required this.containedScoring});
   final SpiritAlignmentShape shape;
   final bool filled;
+  final bool containedScoring;
   final Color color;
 
   @override
   void paint(Canvas canvas, Size size) {
-    final rect = Offset.zero & size;
+    final bounds = Offset.zero & size;
+    final rect = containedScoring && filled
+        ? bounds
+            .deflate(size.width * (1 - SpiritAlignmentGeometry.playerScale) / 2)
+        : bounds;
     final path = switch (shape) {
       SpiritAlignmentShape.circle => Path()..addOval(rect),
       SpiritAlignmentShape.square => Path()..addRect(rect),
       SpiritAlignmentShape.triangle => Path()
-        ..moveTo(size.width / 2, 0)
-        ..lineTo(size.width, size.height)
-        ..lineTo(0, size.height)
+        ..moveTo(rect.center.dx, rect.top)
+        ..lineTo(rect.right, rect.bottom)
+        ..lineTo(rect.left, rect.bottom)
         ..close(),
     };
+    if (containedScoring) {
+      canvas.save();
+      if (filled) {
+        // Keep the entire white highlight inside the scored player shape.
+        canvas.clipPath(path);
+      } else {
+        // Paint the gold ring outwards only: its inner edge is exactly the
+        // target boundary used by the replay model, also for the triangle.
+        canvas.clipPath(Path.combine(PathOperation.difference,
+            Path()..addRect(bounds.inflate(size.width)), path));
+      }
+    }
     canvas.drawPath(
       path,
       Paint()
         ..color = color
-        ..strokeWidth = filled ? 3 : 5
+        ..strokeWidth = containedScoring
+            ? 2 * SpiritAlignmentGeometry.outlineWidth * size.width
+            : filled
+                ? 3
+                : 5
         ..style = filled ? PaintingStyle.fill : PaintingStyle.stroke,
     );
     if (filled) {
@@ -1290,11 +1330,13 @@ class _ShapePainter extends CustomPainter {
           ..style = PaintingStyle.stroke,
       );
     }
+    if (containedScoring) canvas.restore();
   }
 
   @override
   bool shouldRepaint(covariant _ShapePainter oldDelegate) =>
       oldDelegate.shape != shape ||
       oldDelegate.filled != filled ||
+      oldDelegate.containedScoring != containedScoring ||
       oldDelegate.color != color;
 }

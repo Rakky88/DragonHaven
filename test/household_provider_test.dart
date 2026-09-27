@@ -715,9 +715,9 @@ void main() {
     final game = HouseholdProvider(random: Random(204));
     expect(game.relicDropChance(ChestTier.wooden), 0);
     expect(game.relicDropChance(ChestTier.silver), 0);
-    expect(game.relicDropChance(ChestTier.gold), .01);
-    expect(game.relicDropChance(ChestTier.dragon), .02);
-    expect(game.relicDropChance(ChestTier.mythical), .04);
+    expect(game.relicDropChance(ChestTier.gold), .05);
+    expect(game.relicDropChance(ChestTier.dragon), .10);
+    expect(game.relicDropChance(ChestTier.mythical), .20);
     expect(game.relicDropChance(ChestTier.sinister), 1);
     expect(game.relicDropChance(ChestTier.portrait), 0);
     expect(game.relicDropChance(ChestTier.title), 0);

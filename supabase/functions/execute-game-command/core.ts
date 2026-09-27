@@ -126,10 +126,12 @@ function exactKeys(value: JsonObject, keys: readonly string[]) {
 }
 function validCommandPayload(action: string, payload: JsonObject) {
   const keys = commandKeys[action];
-  return exactKeys(payload, keys) ||
-    ((action === "start_trial" || action === "resume_trial") &&
-      payload.spiritAlignmentVersion === 2 &&
-      exactKeys(payload, [...keys, "spiritAlignmentVersion"]));
+  if (exactKeys(payload, keys)) return true;
+  if ((action !== "start_trial" && action !== "resume_trial") ||
+    !keys.every((key) => Object.hasOwn(payload, key))) return false;
+  return Object.entries(payload).every(([key, value]) => keys.includes(key) ||
+    (key === "spiritAlignmentVersion" && (value === 2 || value === 3)) ||
+    (key === "runeOrbitVersion" && value === 2));
 }
 function positiveInteger(value: unknown): value is number {
   return Number.isSafeInteger(value) && (value as number) > 0;

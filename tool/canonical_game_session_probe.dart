@@ -364,9 +364,10 @@ void main() {
               returned.inventory.materials.hearts <= altarBefore.hearts + 1,
           'client_probe_lifecycle_return_failed');
       stdout.writeln('PROBE: ui_altar_returned');
+      await tap(find.text('Craft'));
       await tap(key('canonical-craft-nameweaversQuill'));
       await settleCommand();
-      await tap(key('canonical-craft-moralEcho'));
+      await tap(key('canonical-craft-moralPrism'));
       await settleCommand();
       require(
           game.snapshot!.inventory.materials.fragments ==
@@ -376,16 +377,21 @@ void main() {
           'client_probe_lifecycle_craft_cost');
       final keptEgg =
           game.snapshot!.eggs.firstWhere((e) => e.location == 'stash');
-      await tap(find.text('Eggs'));
+      await tap(key('altar-use-moralPrism'));
       await tap(key('canonical-egg-${keptEgg.id}'));
-      await tap(key('canonical-reveal-moralEcho'));
-      await confirm();
+      await tap(key('altar-choose-reviewed-egg'));
+      await tap(find.descendant(
+          of: find.byType(AlertDialog),
+          matching: find.widgetWithText(FilledButton, 'Use')));
       await settleCommand();
       require(
           game.snapshot!.egg(keptEgg.id)!.revealedMoralAxis != null &&
               game.snapshot!.egg(keptEgg.id)!.revealedLineageId == null &&
-              game.snapshot!.inventory.crafted['moralEcho'] == 0,
+              game.snapshot!.inventory.crafted['moralPrism'] == 0,
           'client_probe_lifecycle_discovery_failed');
+      await tap(find.widgetWithText(TextButton, 'OK'));
+      await tap(find.text('Eggs'));
+      await tap(key('canonical-egg-${keptEgg.id}'));
       await tap(key('canonical-tag-egg'));
       await settleCommand();
       require(game.snapshot!.egg(keptEgg.id)!.returnBlockReason == 'egg_tagged',

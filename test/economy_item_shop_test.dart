@@ -27,9 +27,10 @@ void main() {
   test('shop snapshot matches every real price and excludes restricted goods',
       () {
     final catalog = economyShopCatalog();
-    final sql = File('supabase/migrations/202609070047_dormant_item_shop.sql')
+    final sql = File(
+            'supabase/migrations/202609270101_relic_drop_balance_and_quills.sql')
         .readAsStringSync();
-    expect(jsonDecode(sql.split(r'$catalog$')[1]), catalog);
+    expect(jsonDecode(sql.split(r'$shop_catalog$')[1]), catalog);
     final furniture = catalog['furniture']! as Map;
     for (final item in shopCatalog) {
       expect(furniture[item.id]['price'], item.price);
@@ -45,8 +46,17 @@ void main() {
             .where((relic) => relic.isShopAvailable)
             .map((relic) => relic.name)
             .toSet());
-    expect(relics, hasLength(4));
+    expect(relics, hasLength(5));
     expect(relics['astralLens']['tradeable'], isFalse);
+    expect(relics['nameweaversQuill'], {
+      'currency': 'gems',
+      'price': 100,
+      'tradeable': false,
+      'unique_while_owned': false,
+    });
+    for (final relic in MysticRelic.values.where((r) => r.isShopAvailable)) {
+      expect(relics[relic.name]['price'], relic.gemPrice);
+    }
   });
 
   test('item purchase remains disabled in production', () async {

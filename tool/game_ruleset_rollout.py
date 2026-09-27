@@ -1,10 +1,12 @@
-"""Controlled DragonHaven game-worker rollout with automatic rollback.
+"""Controlled DragonHaven game-worker rollout with guarded recovery.
 
 The helper deliberately keeps schema application separate. It will only roll a
 worker when local and remote migration histories already match exactly. It
 stores the previous Edge Function source and the non-secret runtime row before
 changing anything, then restores both if deployment, activation, the
 synthetic authenticated smoke check, or mandatory server postflight fails.
+Once activation of a higher client floor is attempted, new persistent state
+may exist: failures pause gameplay and retain the new worker for forward repair.
 """
 
 from __future__ import annotations
@@ -158,6 +160,7 @@ class Rollout:
         self.new_ruleset = ""
         self.migration_versions: list[str] = []
         self.worker_deploy_attempted = False
+        self.activation_attempted = False
 
     def _run(self, command: list[str], label: str, cwd: Path | None = None) -> str:
         completed = subprocess.run(
@@ -782,7 +785,54 @@ class Rollout:
                     raise cleanup_failure
                 raise RolloutError("smoke_cleanup_failed") from cleanup_failure
 
+    def _requires_forward_recovery(self) -> bool:
+        return (
+            self.baseline_runtime is not None
+            and self.args.minimum_client_build > self.baseline_runtime["minimum_client_build"]
+            and self.activation_attempted
+        )
+
+    def _fail_closed_after_activation(self, failure: Exception) -> None:
+        record = {
+            "automaticRollback": False,
+            "activationAttempted": True,
+            "failure": type(failure).__name__,
+            "operatorAction": (
+                "keep gameplay paused; retain the deployed worker and raised client floor; "
+                "repair forward without restoring the baseline worker"
+            ),
+        }
+        try:
+            current = self._runtime()
+            paused = self._update_runtime(
+                current,
+                {
+                    "enabled": False,
+                    "migration_enabled": False,
+                    "minimum_client_build": max(
+                        current["minimum_client_build"], self.args.minimum_client_build
+                    ),
+                },
+                "incompatible_activation_pause",
+            )
+            verified = self._runtime()
+            if not self._same_runtime_state(verified, paused):
+                raise RolloutError("incompatible_activation_pause_not_verified")
+            record.update(gameplayPaused=True, runtime=verified)
+        except Exception as pause_failure:
+            record.update(gameplayPaused=False, pauseFailure=type(pause_failure).__name__)
+            self._write("forward-recovery.json", record)
+            raise RolloutError(
+                "candidate_failed_pause_unverified_forward_recovery_required"
+            ) from failure
+        self._write("forward-recovery.json", record)
+        raise RolloutError(
+            "candidate_failed_gameplay_paused_forward_recovery_required"
+        ) from failure
+
     def _rollback(self) -> dict[str, object]:
+        if self._requires_forward_recovery():
+            raise RolloutError("incompatible_activation_requires_forward_recovery")
         if self.baseline_runtime is None or self.baseline_function is None:
             raise RolloutError("rollback_baseline_missing")
         current = self._runtime()
@@ -899,6 +949,9 @@ class Rollout:
             deployed_ruleset = self._download(deployed_dir, "candidate_worker_verify_download")
             if deployed_ruleset != self.new_ruleset:
                 raise RolloutError("candidate_worker_ruleset_mismatch")
+            # Mark before the request: a lost activation reply cannot prove that
+            # real player writes did not run under the new persistent format.
+            self.activation_attempted = True
             candidate_runtime = self._update_runtime(
                 paused,
                 {
@@ -936,6 +989,8 @@ class Rollout:
             self._write("result.json", result)
             return result
         except Exception as failure:
+            if self._requires_forward_recovery():
+                self._fail_closed_after_activation(failure)
             if (
                 not self.worker_deploy_attempted
                 and isinstance(failure, RolloutError)

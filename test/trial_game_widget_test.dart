@@ -164,7 +164,7 @@ void main() {
     expect(find.byKey(const Key('spirit-time-remaining')), findsOneWidget);
     await tester.tap(board);
     await tester.pump(const Duration(milliseconds: 48));
-    expect(find.text('Tap to stop on the outline'), findsOneWidget);
+    expect(find.text('Tap to stop inside the outline'), findsOneWidget);
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox.shrink());
   });

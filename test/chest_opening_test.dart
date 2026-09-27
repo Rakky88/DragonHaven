@@ -57,7 +57,8 @@ void main() {
       'catalog snapshot matches real client collections and Special definitions',
       () {
     final catalog = economyChestCatalog();
-    final sql = File('supabase/migrations/202609200085_shared_expertise_budget.sql')
+    final sql = File(
+            'supabase/migrations/202609270101_relic_drop_balance_and_quills.sql')
         .readAsStringSync();
     final embedded = sql.split(r'$catalog$')[1];
     expect(jsonDecode(embedded), catalog);
@@ -66,7 +67,8 @@ void main() {
     expect(catalog['music'], hasLength(80));
     expect(catalog['relic'], contains('astralLens'));
     expect(catalog['relic'], isNot(contains('weaveOracle')));
-    expect(catalog['relic'], isNot(contains('nameweaversQuill')));
+    expect(catalog['relic'], contains('nameweaversQuill'));
+    expect((catalog['relic_weights'] as Map)['nameweaversQuill'], 0);
     for (final tier in (catalog['tiers']! as Map).values) {
       expect(tier['coins_max'], greaterThanOrEqualTo(tier['coins_min']));
       expect(tier['rarity'], hasLength(5));

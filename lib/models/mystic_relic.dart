@@ -12,12 +12,17 @@ enum MysticRelic {
   moonweaveBrooch,
   soulbloomBrooch,
   sparkAstrolabe,
+  nameweaversQuill,
 }
 
 const relicShopGemPrice = 500;
 
 extension MysticRelicPresentation on MysticRelic {
+  int get gemPrice =>
+      this == MysticRelic.nameweaversQuill ? 100 : relicShopGemPrice;
+
   String get nameEn => switch (this) {
+        MysticRelic.nameweaversQuill => "Nameweaver's Quill",
         MysticRelic.sparkAstrolabe => 'Spark Astrolabe',
         MysticRelic.moralPrism => 'Moral Prism',
         MysticRelic.orderCompass => 'Order Compass',
@@ -32,6 +37,7 @@ extension MysticRelicPresentation on MysticRelic {
       };
 
   String get nameNl => switch (this) {
+        MysticRelic.nameweaversQuill => 'Naamweversveer',
         MysticRelic.sparkAstrolabe => 'Vonkastrolabium',
         MysticRelic.moralPrism => 'Moreel Prisma',
         MysticRelic.orderCompass => 'Ordekompas',
@@ -46,6 +52,8 @@ extension MysticRelicPresentation on MysticRelic {
       };
 
   String get descriptionEn => switch (this) {
+        MysticRelic.nameweaversQuill =>
+          'Gives one dragon a new name. Consumed when the name is changed.',
         MysticRelic.sparkAstrolabe =>
           'Reveals the Dragon Spark of one dragon: its hidden extra expertise capacity.',
         MysticRelic.moralPrism =>
@@ -71,6 +79,8 @@ extension MysticRelicPresentation on MysticRelic {
       };
 
   String get descriptionNl => switch (this) {
+        MysticRelic.nameweaversQuill =>
+          'Geeft een draak een nieuwe naam. Wordt verbruikt zodra de naam is gewijzigd.',
         MysticRelic.sparkAstrolabe =>
           'Onthult de Drakenvonk van een draak: zijn verborgen extra expertisecapaciteit.',
         MysticRelic.moralPrism =>
@@ -95,21 +105,25 @@ extension MysticRelicPresentation on MysticRelic {
           'Verdubbelt Spirit die de drager verdient in Adventures en Trials. Eén broche per draak.',
       };
 
-  String get assetPath => 'assets/images/relics/${switch (this) {
-        MysticRelic.sparkAstrolabe => 'spark_astrolabe',
-        MysticRelic.moralPrism => 'moral_prism',
-        MysticRelic.orderCompass => 'order_compass',
-        MysticRelic.soulMirror => 'soul_mirror',
-        MysticRelic.astralLens => 'astral_lens',
-        MysticRelic.chronoshard => 'chronoshard',
-        MysticRelic.wayfinderSigil => 'wayfinder_sigil',
-        MysticRelic.twinstarBrooch => 'twinstar_brooch',
-        MysticRelic.emberheartBrooch => 'emberheart_brooch',
-        MysticRelic.moonweaveBrooch => 'moonweave_brooch',
-        MysticRelic.soulbloomBrooch => 'soulbloom_brooch',
-      }}.png';
+  String get assetPath => this == MysticRelic.nameweaversQuill
+      ? 'assets/images/egg_altar/nameweavers_quill.png'
+      : 'assets/images/relics/${switch (this) {
+          MysticRelic.nameweaversQuill => 'nameweavers_quill',
+          MysticRelic.sparkAstrolabe => 'spark_astrolabe',
+          MysticRelic.moralPrism => 'moral_prism',
+          MysticRelic.orderCompass => 'order_compass',
+          MysticRelic.soulMirror => 'soul_mirror',
+          MysticRelic.astralLens => 'astral_lens',
+          MysticRelic.chronoshard => 'chronoshard',
+          MysticRelic.wayfinderSigil => 'wayfinder_sigil',
+          MysticRelic.twinstarBrooch => 'twinstar_brooch',
+          MysticRelic.emberheartBrooch => 'emberheart_brooch',
+          MysticRelic.moonweaveBrooch => 'moonweave_brooch',
+          MysticRelic.soulbloomBrooch => 'soulbloom_brooch',
+        }}.png';
 
   bool get isShopAvailable => switch (this) {
+        MysticRelic.nameweaversQuill => true,
         MysticRelic.sparkAstrolabe => false,
         MysticRelic.moralPrism ||
         MysticRelic.orderCompass ||
@@ -153,8 +167,12 @@ extension MysticRelicPresentation on MysticRelic {
         _ => null,
       };
 
-  int get dropWeight =>
-      isEquipable || this == MysticRelic.sparkAstrolabe ? 1 : 10;
+  // Quills have their own independent chest roll, never a weighted-pool ticket.
+  int get dropWeight => this == MysticRelic.nameweaversQuill
+      ? 0
+      : isEquipable || this == MysticRelic.sparkAstrolabe
+          ? 1
+          : 10;
 
   bool get isConsumable => !isEquipable;
 
@@ -166,7 +184,7 @@ extension MysticRelicPresentation on MysticRelic {
       : 'assets/images/relics/animations/$name/frame_${frame.toString().padLeft(2, '0')}.webp';
 }
 
-/// Conditional pool after the unchanged chest / S+ relic-drop gate succeeds.
+/// Conditional pool after the chest / S+ relic-drop gate succeeds.
 /// Every ordinary relic has ten tickets; each unique brooch has one.
 List<MysticRelic> mysticRelicDropPool({Set<MysticRelic> excluded = const {}}) =>
     [

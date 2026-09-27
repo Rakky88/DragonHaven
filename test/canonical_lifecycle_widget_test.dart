@@ -15,6 +15,7 @@ import 'package:dragon_haven/models/adventure.dart';
 import 'package:dragon_haven/models/dragon_egg.dart';
 import 'package:dragon_haven/models/pet.dart';
 import 'package:dragon_haven/widgets/expertise_score_badge.dart';
+import 'package:dragon_haven/widgets/altar_relic_targets.dart';
 import 'package:dragon_haven/services/canonical_game_session.dart';
 import 'package:dragon_haven/theme/app_theme.dart';
 import 'package:flutter/material.dart';
@@ -294,9 +295,9 @@ void main() {
       server.state['eggAltar']['crafted']['moralEcho'] = 1;
     });
     final egg = session.snapshot!.eggs.firstWhere(
-        (egg) => egg.location == 'stash' && !egg.known(AltarRelic.moralEcho));
+        (egg) => egg.location == 'stash' && !egg.known(AltarRelic.moralPrism));
     await tap(tester, find.text('Relics'));
-    await tap(tester, key('altar-use-moralEcho'));
+    await tap(tester, key('altar-use-moralPrism'));
     expect(find.text('Choose an egg'), findsOneWidget);
     expect(key('altar-egg-sort-direction'), findsOneWidget);
     await tap(tester, key('canonical-egg-${egg.id}'));
@@ -309,8 +310,67 @@ void main() {
             matching: find.widgetWithText(FilledButton, 'Use')));
     await command(tester);
     expect(session.snapshot!.egg(egg.id)!.revealedMoralAxis, isNotNull);
-    expect(session.snapshot!.inventory.count(AltarRelic.moralEcho), 0);
+    expect(session.snapshot!.inventory.count(AltarRelic.moralPrism), 0);
     expect(server.sent, hasLength(1));
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('Soul Mirror picker reveals eggs and dragons through the server',
+      (tester) async {
+    await setup(tester, const CanonicalInventoryScreen(), scale: 1.25,
+        prepare: (server) {
+      server.state['eggAltar']['crafted']['soulMirror'] = 2;
+    });
+    final egg = session.snapshot!.eggs.firstWhere(
+        (egg) => egg.location == 'stash' && !egg.known(AltarRelic.soulMirror));
+    final dragon = session.snapshot!.dragons.firstWhere(
+        (dragon) => dragon.owned && !dragon.knows(MysticRelic.soulMirror));
+    await tap(tester, find.text('Relics'));
+    await tap(tester, key('altar-use-soulMirror'));
+    expect(
+        find.descendant(
+            of: find.byType(AltarRelicTargets),
+            matching: find.widgetWithText(Tab, 'Eggs')),
+        findsOneWidget);
+    expect(
+        find.descendant(
+            of: find.byType(AltarRelicTargets),
+            matching: find.widgetWithText(Tab, 'Dragons')),
+        findsOneWidget);
+    await tap(tester, key('canonical-egg-${egg.id}'));
+    await tap(tester, key('altar-choose-reviewed-egg'));
+    expect(find.text('Use one relic on this egg?'), findsOneWidget);
+    await tap(
+        tester,
+        find.descendant(
+            of: find.byType(AlertDialog),
+            matching: find.widgetWithText(FilledButton, 'Use')));
+    await command(tester);
+    expect(
+        session.snapshot!.egg(egg.id)!.revealedPersonalityTraitIds, isNotEmpty);
+    expect(session.snapshot!.inventory.count(AltarRelic.soulMirror), 1);
+    await tap(tester, find.widgetWithText(TextButton, 'OK'));
+    await tap(tester, key('altar-use-soulMirror'));
+    await tap(
+        tester,
+        find.descendant(
+            of: find.byType(AltarRelicTargets),
+            matching: find.widgetWithText(Tab, 'Dragons')));
+    await tap(tester, key('altar-dragon-${dragon.id}'));
+    expect(find.text('Use one relic on this dragon?'), findsOneWidget);
+    await tap(
+        tester,
+        find.descendant(
+            of: find.byType(AlertDialog),
+            matching: find.widgetWithText(FilledButton, 'Use')));
+    await command(tester);
+    expect(session.snapshot!.dragon(dragon.id)!.personality, isNotEmpty);
+    expect(session.snapshot!.inventory.count(AltarRelic.soulMirror), 0);
+    expect(server.sent, hasLength(2));
+    expect(server.sent.map((command) => command.action),
+        everyElement('use_altar_relic'));
+    expect(server.sent.map((command) => command.payload['eggId']),
+        [egg.id, dragon.id]);
     expect(tester.takeException(), isNull);
   });
 

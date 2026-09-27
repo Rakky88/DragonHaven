@@ -584,32 +584,44 @@ Deno.test("Trial resume accepts only its authenticated attempt ID, never caller 
   }
 });
 
-Deno.test("Trial capability preserves legacy payloads and accepts only alignment version 2", async () => {
+Deno.test("Trial capabilities preserve legacy payloads and accept only supported alignment and orbit versions", async () => {
   for (const action of ["start_trial", "resume_trial"]) {
     const payload = action === "start_trial"
       ? {offerId: "trial-offer", dragonId: "owned-dragon"}
       : {attemptId: requestId};
-    for (const candidate of [payload, {...payload, spiritAlignmentVersion: 2}]) {
+    for (const candidate of [payload, {...payload, spiritAlignmentVersion: 2},
+      {...payload, spiritAlignmentVersion: 3}, {...payload, runeOrbitVersion: 2},
+      {...payload, spiritAlignmentVersion: 3, runeOrbitVersion: 2}]) {
       const accepted = setup();
       assert((await handleCommand(request({...body, action, payload: candidate}), accepted.deps)).status === 200);
       equal(accepted.inputs[0].payload, candidate);
       equal(accepted.calls[0].payload.p_payload, candidate);
     }
-    for (const capability of [null, 0, 1, 3, "2", true, 2.5]) {
+    for (const capability of [null, 0, 1, 4, "2", true, 2.5]) {
       const denied = setup();
       assert((await handleCommand(request({...body, action,
         payload: {...payload, spiritAlignmentVersion: capability}}), denied.deps)).status === 400);
       equal(denied.calls, []);
     }
+    for (const capability of [null, 0, 1, 3, "2", true, 2.5]) {
+      const denied = setup();
+      assert((await handleCommand(request({...body, action,
+        payload: {...payload, runeOrbitVersion: capability}}), denied.deps)).status === 400);
+      equal(denied.calls, []);
+    }
     const denied = setup();
     assert((await handleCommand(request({...body, action,
-      payload: {...payload, spiritAlignmentVersion: 2, score: 999}}), denied.deps)).status === 400);
+      payload: {...payload, spiritAlignmentVersion: 3, runeOrbitVersion: 2, score: 999}}), denied.deps)).status === 400);
     equal(denied.calls, []);
   }
   const denied = setup();
   assert((await handleCommand(request({...body, action: "refresh",
     payload: {spiritAlignmentVersion: 2}}), denied.deps)).status === 400);
   equal(denied.calls, []);
+  const deniedOrbit = setup();
+  assert((await handleCommand(request({...body, action: "refresh",
+    payload: {runeOrbitVersion: 2}}), deniedOrbit.deps)).status === 400);
+  equal(deniedOrbit.calls, []);
 });
 
 Deno.test("database server authority survives execution, replay, reads and recovery", async () => {

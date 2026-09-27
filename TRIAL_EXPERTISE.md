@@ -10,9 +10,9 @@ tegenover de gewone zone, breedte, snelheid of marge.
 | Cavern Flight | Botsingszone `S / 100 %` kleiner: 950 geeft 9,5%, 1100 geeft 11%. |
 | Ruin Breaker | Gewone raakzone `(M / 100) * 1,5 %` breder; perfecte zone `(M / 100) * 0,5 %` breder. |
 | Runeweaver | Elke rune blijft `500 + A / 10` ms zichtbaar, afgerond op hele ms. De bestaande extra herinnering vanaf 240 Arcana blijft. |
-| Spirit Alignment | De duur van zowel de verticale als horizontale bewegingscyclus wordt vermenigvuldigd met `1 + (S / 10000) * 0,8`. De getoonde overlap blijft de echte geometrische overlap en wordt niet door expertise verhoogd. |
+| Spirit Alignment | De duur van zowel de verticale als horizontale bewegingscyclus wordt vermenigvuldigd met `1 + (S / 10000) * 0,8`. De score is het percentage van de kleinere vorm binnen de gouden contour; helemaal binnen geeft 100%. Expertise verhoogt dit percentage niet. |
 | Ruin Guard | Elke rots valt `M / 100 %` langzamer voordat de vaste versnelling per drie rondes wordt toegepast. |
-| Rune Orbit | Elke rune blijft `A / 100 %` langer in de gouden poort voordat de vaste versnelling per goed antwoord wordt toegepast. |
+| Rune Orbit | Beginduur per rune: `min(800, 720 * (1 + max(0, A) / 10000))` ms. Elk punt deelt die duur door 1,045: de draaisnelheid stijgt telkens met 4,5%, zonder snelheidsplafond of afronding op hele milliseconden. |
 | Halloween | Volgende pompoenpreview `max(100, A)` ms, na de vorige feedback; eerste preview 2.900 ms. Toegestane afstand tot het padmidden `12 + S / 200` schermpunten. |
 | Christmas | Cadeaus krijgen `M / 1000 * 3` seconden extra. De versnelling is `S / 100 %` trager. De bestaande ruimere aflevermarge blijft. |
 | New Year | Tikvenster aan beide kanten van de lijn `0,18 + M / 10000` seconde. Noten verschijnen `S / 10000 * 4` seconden eerder. |
@@ -31,12 +31,20 @@ de bijbehorende trial dus niet.
 
 Halloween, Christmas, Valentine, Pride en Harvestmoon starten met 75 seconden,
 plus `(M + A + S) / 1000 * 3` seconden. De extra Spirittijd bij Valentine en
-Pride komt daar bovenop. Cavern Flight, Runeweaver, Spirit Alignment, Sunwake,
+Pride komt daar bovenop. Cavern Flight, Runeweaver, Sunwake,
 New Year en Birthday hebben geen tijdslimiet. Ruin Breaker behoudt zijn 30 slagen
-of drie missers. Spirit Alignment gaat alleen door wanneer cirkel, vierkant en
-driehoek alle drie zichtbaar 100% halen; elke geslaagde ronde beweegt exact 1,10
-keer sneller. Ruin Guard en Rune Orbit eindigen na drie missers.
+of drie missers. Spirit Alignment begint met 60 seconden en blijft vormen
+aanbieden tot de tijd om is. Elke volledig passende vorm geeft 100 punten en
+5 seconden extra. De gouden lijn ligt buiten het meetgebied: op de lijn is
+niet volledig binnen. Een bijna volledige plaatsing kan niet naar 100% worden
+afgerond. Ruin Guard en Rune Orbit eindigen na drie missers.
 Birthday eindigt bij één misser; Sunwake en New Year bij drie.
+
+Deze voorbereide regels gelden voor nieuwe Spirit-v3- en Orbit-v2-pogingen.
+Lopende oude pogingen behouden hun oorspronkelijke timing en scoreberekening:
+Spirit v1 gebruikt drie perfecte vormen en 10% versnelling per ronde; v2 heeft
+de minuutklok maar vormen van gelijke grootte. Orbit v1 behoudt zijn bestaande
+afgeronde duur met een minimum van 260 ms.
 
 Geen van de eventtrials heeft een scoreplafond of een maximumaantal scoreacties.
 De tijdslimieten van de vijf genoemde spellen blijven gelden. De S+-grenzen

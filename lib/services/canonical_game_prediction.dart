@@ -387,7 +387,8 @@ CanonicalGameSnapshot? predictGameDisplay(CanonicalGameSnapshot confirmed,
         }
         owned.add(item.id);
       case 'craft_altar_relic':
-        final relic = AltarRelic.values.byName(payload['relic'] as String);
+        final relic = AltarRelic.parse(payload['relic']);
+        if (relic == null) return null;
         final altar = inventory['altar'] as Map;
         final materials =
             WeaveWallet.fromJson(Map<String, dynamic>.from(altar['wallet']));

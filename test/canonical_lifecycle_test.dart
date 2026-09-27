@@ -232,4 +232,28 @@ void main() {
     expect(session.snapshot!.dragon(egg.id)?.owned, isFalse);
     expect(session.snapshot!.coins, coins);
   });
+
+  test(
+      'crafted Soul Mirror and dropped quills complete through canonical state',
+      () async {
+    final egg = session.snapshot!.eggs.first;
+    expect(egg.revealedPersonalityTraitIds, isNull);
+    await actions().craft(AltarRelic.soulMirror);
+    await actions().revealEgg(AltarRelic.soulMirror, egg.id);
+    expect(
+        session.snapshot!.egg(egg.id)!.revealedPersonalityTraitIds, isNotEmpty);
+    expect(session.snapshot!.egg(egg.id)!.known(AltarRelic.soulMirror), isTrue);
+    expect(session.snapshot!.inventory.count(AltarRelic.soulMirror), 0);
+    final dragon = session.snapshot!.dragons.firstWhere((d) => d.owned);
+    await actions().craft(AltarRelic.soulMirror);
+    await actions().revealEgg(AltarRelic.soulMirror, dragon.id);
+    expect(session.snapshot!.dragon(dragon.id)!.personality, isNotEmpty);
+    server.state['relicInventory']['nameweaversQuill'] = 1;
+    server.revision++;
+    await session.synchronize();
+    expect(session.snapshot!.inventory.usableNameweaversQuills, 1);
+    await actions().nameDragon(dragon.id, 'Quill Name');
+    expect(session.snapshot!.dragon(dragon.id)!.name, 'Quill Name');
+    expect(session.snapshot!.inventory.usableNameweaversQuills, 0);
+  });
 }

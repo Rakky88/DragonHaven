@@ -184,7 +184,7 @@ void main() {
     final sPlusRelic = trialRewardForGrade(
       TrialGrade.sPlus,
       .50,
-      relicRoll: .009,
+      relicRoll: .049,
       relicChoice: 20,
     );
     expect(sPlusRelic.relic, MysticRelic.soulMirror);
@@ -192,7 +192,7 @@ void main() {
       trialRewardForGrade(
         TrialGrade.sPlus,
         .50,
-        relicRoll: .01,
+        relicRoll: .05,
       ).relic,
       isNull,
     );

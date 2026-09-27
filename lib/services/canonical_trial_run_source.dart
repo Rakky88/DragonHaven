@@ -26,6 +26,9 @@ class CanonicalTrialRunSource {
   String? _attemptId;
   String? _recoveredStartAttemptId;
   bool _startPending = false;
+  bool get _hasVersionedRules =>
+      offer.kind == TrialKind.spiritAlignment ||
+      offer.kind == TrialKind.runeOrbit;
   int _acknowledgedMs = 0;
   int get acknowledgedMs => _acknowledgedMs;
   bool get accountCurrent =>
@@ -49,7 +52,7 @@ class CanonicalTrialRunSource {
     // this screen. Its public attempt intentionally has no rule-version field;
     // restore the server checkpoint instead of guessing the local rules.
     final existing = session.snapshot?.trialAttempt;
-    if (offer.kind == TrialKind.spiritAlignment &&
+    if (_hasVersionedRules &&
         existing?.offerId == offer.id &&
         existing?.dragonId == dragonId &&
         existing?.kind == offer.kind) {
@@ -61,7 +64,7 @@ class CanonicalTrialRunSource {
       await session.synchronize();
       _requireAccount();
       raw = session.snapshot?.data['trials']['attempt'];
-      if (raw != null && offer.kind == TrialKind.spiritAlignment) {
+      if (raw != null && _hasVersionedRules) {
         _recoveredStartAttemptId = CanonicalTrialAttempt.parse(raw).id;
         _startPending = false;
         return _resumeSaved();
@@ -73,7 +76,8 @@ class CanonicalTrialRunSource {
         'offerId': offer.id,
         'dragonId': dragonId,
         if (offer.kind == TrialKind.spiritAlignment)
-          'spiritAlignmentVersion': 2,
+          'spiritAlignmentVersion': 3,
+        if (offer.kind == TrialKind.runeOrbit) 'runeOrbitVersion': 2,
       });
     }
     _requireAccount();
@@ -114,7 +118,8 @@ class CanonicalTrialRunSource {
             ? current.id
             : resumeAttemptId ?? _recoveredStartAttemptId!,
         if (offer.kind == TrialKind.spiritAlignment)
-          'spiritAlignmentVersion': 2,
+          'spiritAlignmentVersion': 3,
+        if (offer.kind == TrialKind.runeOrbit) 'runeOrbitVersion': 2,
       });
     }
     _requireAccount();

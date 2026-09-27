@@ -14,6 +14,8 @@ abstract final class TrialAttempts {
       required String offerId,
       required String dragonId,
       bool timedSpiritAlignment = false,
+      bool containedSpiritAlignment = false,
+      bool uncappedRuneOrbit = false,
       required DateTime now}) async {
     final dragon = game.ownedDragons.where((d) => d.id == dragonId).firstOrNull;
     final offer =
@@ -34,6 +36,8 @@ abstract final class TrialAttempts {
         kind: offer.kind,
         seed: seed,
         timedSpiritAlignment: timedSpiritAlignment,
+        containedSpiritAlignment: containedSpiritAlignment,
+        uncappedRuneOrbit: uncappedRuneOrbit,
         training: {
           for (final focus in TrainingFocus.values)
             focus: dragon.trainingFor(focus)
@@ -63,6 +67,8 @@ abstract final class TrialAttempts {
       required String id,
       required String replacementId,
       bool supportsTimedSpiritAlignment = false,
+      bool supportsContainedSpiritAlignment = false,
+      bool supportsUncappedRuneOrbit = false,
       required DateTime now}) {
     if (attempt == null || attempt['type'] != 'trial' || attempt['id'] != id) {
       throw const TrialAttemptException('game_attempt_unavailable');
@@ -75,7 +81,10 @@ abstract final class TrialAttempts {
         Map<String, dynamic>.from(attempt['checkpoint'] as Map));
     // Reject an old app before fencing the current device or touching the
     // attempt. An upgraded app can still resume every legacy checkpoint.
-    if (!supportsTimedSpiritAlignment && model.alignment?.timed == true) {
+    if ((!supportsTimedSpiritAlignment && model.alignment?.timed == true) ||
+        (!supportsContainedSpiritAlignment &&
+            model.alignment?.containedScoring == true) ||
+        (!supportsUncappedRuneOrbit && model.orbit?.uncappedSpeed == true)) {
       throw const TrialAttemptException('game_attempt_unavailable');
     }
     if (model.kind.name != attempt['gameId']) {

@@ -777,9 +777,12 @@ class _RelicShop extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 12),
-        for (final relic in MysticRelic.values.where(
-          (candidate) => candidate.isShopAvailable,
-        ))
+        for (final relic in [
+          MysticRelic.nameweaversQuill,
+          ...MysticRelic.values.where((candidate) =>
+              candidate.isShopAvailable &&
+              candidate != MysticRelic.nameweaversQuill),
+        ])
           _RelicShopCard(
             relic: relic,
             owned: game.relicCount(relic),
@@ -863,11 +866,11 @@ class _RelicShopCard extends StatelessWidget {
                     width: double.infinity,
                     child: FilledButton.icon(
                       key: Key('buy-relic-${relic.name}'),
-                      onPressed: !game.canAct || game.gems < relicShopGemPrice
+                      onPressed: !game.canAct || game.gems < relic.gemPrice
                           ? null
                           : () => runShopAction(context, () => _buy(context)),
                       icon: const GameIconSprite(GameIconKind.gem, size: 25),
-                      label: const Text('$relicShopGemPrice'),
+                      label: Text('${relic.gemPrice}'),
                     ),
                   ),
                 ],
@@ -892,8 +895,8 @@ class _RelicShopCard extends StatelessWidget {
             '$name is aan je Inventory toegevoegd. Dit exemplaar is niet ruilbaar.',
           ),
         MysticRelicPurchaseResult.insufficientGems => strings.pick(
-            '${relicShopGemPrice - readShopEconomy(context).gems} more gems needed.',
-            'Je hebt nog ${relicShopGemPrice - readShopEconomy(context).gems} edelstenen nodig.',
+            '${relic.gemPrice - readShopEconomy(context).gems} more gems needed.',
+            'Je hebt nog ${relic.gemPrice - readShopEconomy(context).gems} edelstenen nodig.',
           ),
         MysticRelicPurchaseResult.notAvailable => strings.pick(
             'This Relic is not available in the shop.',
@@ -1765,7 +1768,13 @@ class _RewardedChestPreview extends StatelessWidget {
     }
 
     try {
-      final outcome = await ads.watch(currency);
+      final outcome = await ads.watch(currency, beforeShow: () async {
+        closeLoading();
+        // A route removal is not a rendered frame. Finish removing its overlay
+        // entries and paint the shop before the native ad pauses Flutter.
+        await loading.completed;
+        await WidgetsBinding.instance.endOfFrame;
+      });
       closeLoading();
       if (!context.mounted || !ads.current) return;
       switch (outcome) {

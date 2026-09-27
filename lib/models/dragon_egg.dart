@@ -74,6 +74,7 @@ class DragonEgg {
         gems: gems,
         altarKnowledge: altarKnowledge,
         lawAxisKnown: altarKnowledge.order,
+        personalityKnown: altarKnowledge.personality,
       );
 
   Map<String, dynamic> toJson() => {

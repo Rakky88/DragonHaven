@@ -749,7 +749,7 @@ void main() {
       for (final relic in MysticRelic.values) relic.assetPath,
       'assets/images/relics/egg_crack_magic.png',
     };
-    expect(paths, hasLength(78));
+    expect(paths, hasLength(79));
     for (final path in paths) {
       final image = await _decode(path);
       expect(image.width / image.height, inInclusiveRange(.5, 2.0),

@@ -547,6 +547,11 @@ class CanonicalEggView {
   String? get revealedRarity => _data['rarity'] as String?;
   String? get revealedLawAxis => _data['lawAxis'] as String?;
   String? get revealedMoralAxis => _data['moralAxis'] as String?;
+  List<String>? get revealedPersonalityTraitIds =>
+      _data['personalityTraitIds'] == null
+          ? null
+          : List<String>.unmodifiable(
+              (_data['personalityTraitIds'] as List).cast<String>());
   bool get tagged => _data['tagged'] as bool;
   String? get returnBlockReason => _data['returnBlockReason'] as String?;
   DateTime get acquiredAt => DateTime.parse(_data['acquiredAt'] as String);
@@ -558,8 +563,9 @@ class CanonicalEggView {
   int get xp => _data['xp'] as int;
   DateTime? get hatchAt => startedAt?.add(incubation);
   bool known(AltarRelic relic) => switch (relic) {
-        AltarRelic.moralEcho => revealedMoralAxis != null,
-        AltarRelic.orderSigil => revealedLawAxis != null,
+        AltarRelic.moralPrism => revealedMoralAxis != null,
+        AltarRelic.orderCompass => revealedLawAxis != null,
+        AltarRelic.soulMirror => revealedPersonalityTraitIds != null,
         AltarRelic.astralLens => revealedRarity != null,
         AltarRelic.weaveOracle => revealedLineageId != null,
         AltarRelic.nameweaversQuill => false,
@@ -585,7 +591,8 @@ class CanonicalEggView {
           'lineageId',
           'rarity',
           'lawAxis',
-          'moralAxis'
+          'moralAxis',
+          if (data.containsKey('personalityTraitIds')) 'personalityTraitIds'
         ]) ||
         (data.containsKey('firstEgg') && data['firstEgg'] is! bool) ||
         !_text(data['id']) ||
@@ -616,6 +623,16 @@ class CanonicalEggView {
     }
     if (data['lineageId'] != null && data['rarity'] == null) {
       throw const CanonicalGameException('game_snapshot_invalid');
+    }
+    if (data.containsKey('personalityTraitIds')) {
+      final traits = data['personalityTraitIds'];
+      if (traits is! List ||
+          traits.isEmpty ||
+          traits.length > 2 ||
+          traits.toSet().length != traits.length ||
+          traits.any((trait) => !dragonPersonalityTraits.contains(trait))) {
+        throw const CanonicalGameException('game_snapshot_invalid');
+      }
     }
     final hints = _map(data['hints']);
     if (!_keys(hints, const ['en', 'nl']) ||
@@ -861,7 +878,12 @@ class CanonicalInventoryView {
   late final Set<String> reservedEggIds;
   late final List<int> chronoshards;
   late final Map<MysticRelic, String> equipment;
-  int count(AltarRelic relic) => crafted[relic.name] ?? 0;
+  int count(AltarRelic relic) =>
+      (crafted[relic.name] ?? 0) +
+      (relic.legacyId == null ? 0 : crafted[relic.legacyId] ?? 0);
+  int get usableNameweaversQuills =>
+      count(AltarRelic.nameweaversQuill) +
+      (usableRelics[MysticRelic.nameweaversQuill] ?? 0);
   MysticRelic? equippedOn(String id) =>
       equipment.entries.where((e) => e.value == id).firstOrNull?.key;
   bool canUseChronoshard(int reduction) =>

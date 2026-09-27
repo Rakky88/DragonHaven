@@ -1,3 +1,39 @@
+## Standard Trial scoring and acceleration - 27 September 2026 (prepared)
+
+New ordinary Spirit Alignment v3 scores the portion of a smaller shape inside
+the golden contour's interior; full containment earns 100% and the existing
+five-second bonus. Rune Orbit v2 speeds up 4.5% per point without a minimum
+step duration. Versioned checkpoints preserve old runs and capability checks
+prevent an old app from resuming rules it cannot replay. Event minigames,
+offer/category chances, grade thresholds, rewards and Special Chest contents
+are unaffected. Full rules are in TRIAL_EXPERTISE.md and RANDOM_REWARDS_AND_ODDS.md.
+
+## Altar relics and shared relic drops - 27 September 2026 (prepared)
+
+The Altar now offers Moral Prism (20 Fragments + 1 Essence), Order Compass
+(30 + 2), and Soul Mirror (30 + 2); none costs a Weaveheart. Moral Echo and
+Order Sigil are retired from the catalogue, with existing counts preserved
+as Prism and Compass. These crafted, bound relics reveal fixed moral, order
+or personality facts on either eggs or owned hatched dragons. Revealed egg
+traits carry through hatching; no hidden fact, hatch seed or rarity is rerolled.
+
+Shared normal relic gates are now Gold 5%, Dragon 10%, Mythical 20%, Sinister
+100%, and S+ Trial 5% (including Event Trials). The weighted 11-relic pool and
+brooch exclusions are unchanged. Nameweaver's Quill has its own independent
+1%/2%/4%/8%/16% roll in Wooden/Silver/Gold/Dragon/Mythical Chests only. It never
+drops from Sinister, Special, Portrait, Title or Music Chests or the direct S+
+roll. An ordinary chest may give a normal relic and a Quill together. Dropped
+Quills are tradeable; crafted and 100-gem shop Quills are bound. The shop lists
+Quill first. Full combined odds are in `RANDOM_REWARDS_AND_ODDS.md`.
+
+Event Special Chest contents, their 10% emote roll, egg identities, calendars,
+point targets and event-specific guaranteed rewards do not change. Historical
+Golden Wings direct relic rewards still choose one of their four original
+items uniformly. The new ordinary chest rates apply when opening eligible
+grade/podium chests, without changing which chest is awarded. These are
+prepared rules; deploying the matching worker and forward database migration
+is required before production uses them.
+
 ## Timed standard Spirit Alignment - 27 September 2026 (unreleased)
 
 The ordinary Spirit Alignment Trial now starts with 60 seconds and accepts
@@ -464,7 +500,7 @@ descending; existing recommendation/acquisition order breaks ties. Ordinary
 Adventures keep their single-focus display and ordering. Inspecting Expertise
 does not select or start a dragon. Duration formulas and rewards are unchanged.
 
-<!-- reference-source-fingerprint: 606838db2d7ff1a4 -->
+<!-- reference-source-fingerprint: 12ec06d4c3866f6c -->
 
 Calendar hardening after v0.05.29: canonical commands normalize the database
 instant to UTC. Legacy offline play retains its local day. Long-adventure
@@ -934,10 +970,12 @@ participation requirements, reward tables and preview entitlements are unchanged
 Halloween's current rank boundaries are 500 / 1200 / 1600 / 1800 / 2000
 (C / B / A / S / S+). Valentine uses 650 / 1600 / 2600 / 3900 / 10000; Pride
 uses 1200 / 2900 / 4800 / 7200 / 12000. New Year uses
-500 / 1200 / 2000 / 3000 / 20000; Christmas uses 7500 for S+. S+ rewards
-use the weighted relic pool documented in `RANDOM_REWARDS_AND_ODDS.md`, including
-four unique equipable brooches. Their Expertise bonus applies once within the
-wearer's cap; event Adventures and online pair/group rewards use the same rule.
+500 / 1200 / 2000 / 3000 / 20000; Christmas uses 7500 for S+. S+ completions
+perform a 5% direct normal-relic roll using the weighted pool documented in
+`RANDOM_REWARDS_AND_ODDS.md`, including four unique equipable brooches. Quill
+has no direct Trial roll; the ordinary grade chest has its separate chest-only
+Quill chance. Each brooch's Expertise bonus applies once within the wearer's
+cap; event Adventures and online pair/group rewards use the same rule.
 Special Chest contents and each event's direct relic pool remain unchanged.
 
 ## 8. Other chest and egg types
@@ -1044,11 +1082,18 @@ an independent 10% chance of one Weaveheart. No hidden
 rarity, Spectral state or source affects the reward table. Exact probabilities
 and the account-wide Weaveheart guarantee are in RANDOM_REWARDS_AND_ODDS.md.
 
-The Altar adds Moral Echo, Order Sigil, craftable Astral Lens, Weave Oracle and
-Nameweaver's Quill. Oracle reveals the fixed family and rarity, without awarding
-a hatch or discovery. Quill renames one already-named hatched dragon and costs
-10 Fragments + 1 Essence. First naming remains free. Existing Astral Lens drops,
-shop and trade stock remain intact. Crafted stock and materials cannot be traded.
+The Altar offers Moral Prism, Order Compass, Soul Mirror, craftable Astral Lens,
+Weave Oracle and Nameweaver's Quill. Prism costs 20 Fragments + 1 Essence;
+Compass and Mirror each cost 30 Fragments + 2 Essence. These three reveal the
+fixed moral alignment, order alignment or personality on an egg or owned
+hatched dragon. Old Moral Echo and Order Sigil stock is preserved under the
+replacement names, without retaining the old names as selectable relics.
+Oracle reveals the fixed family and rarity, without awarding a hatch or
+discovery. Quill renames one already-named hatched dragon and costs 10 Fragments
++ 1 Essence to craft. First naming remains free. Quill also has a tradeable
+ordinary-chest drop and a bound 100-gem shop option, described in the current
+relic reference. Existing Astral Lens drops, shop and trade stock remain intact.
+Crafted stock and materials cannot be traded.
 
 Online material spending and returns use a separate server ledger with atomic,
 idempotent commands, per-egg ownership checks and permanent returned-ID markers.
@@ -1068,8 +1113,11 @@ Migration 45 adds server-side opening for ordinary, Sinister, Special, portrait,
 title and music chest instances. All existing probabilities, inclusive currency
 ranges and eligible pools above are preserved. The client catalog snapshot is
 checked by `tool/economy_chest_catalog.dart --verify`; future catalog changes
-require a forward migration. Oracle and Nameweaver's Quill remain Altar-only;
-Astral Lens remains in the normal relic pool.
+require a forward migration. This historical phase originally made Oracle and
+Nameweaver's Quill Altar-only. The prepared forward catalogue update supersedes
+that Quill restriction, updates ordinary relic gates, and adds the independent
+Quill drop and trade eligibility. Oracle remains Altar-only; Astral Lens
+remains in the normal weighted relic pool. Existing receipts are not rerolled.
 
 Each owner-locked transaction handles at most ten distinct owned chest IDs.
 The stored receipt and ledger prevent both request retries and a new request ID

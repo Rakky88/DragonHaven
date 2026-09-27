@@ -653,6 +653,15 @@ Future<void> _useCanonicalRelic(BuildContext context, MysticRelic relic) async {
       context.mounted &&
       session.connection.sessionEpoch == actions.epoch &&
       session.snapshot?.ownerId == view.ownerId;
+  if (relic == MysticRelic.nameweaversQuill) {
+    await Navigator.push(
+        context,
+        MaterialPageRoute<void>(
+            builder: (_) => Scaffold(
+                appBar: AppBar(title: Text(strings.relicName(relic))),
+                body: const CanonicalDragonsScreen())));
+    return;
+  }
   if (relic == MysticRelic.astralLens) {
     final eggs = view.eggs
         .where((egg) =>
@@ -1065,6 +1074,7 @@ class _AnimatedRelicRevealDialogState
         strings.lawAxisName(LawAxis.values.byName(widget.dragon.lawAxis!)),
       MysticRelic.soulMirror =>
         widget.dragon.personality!.map(strings.personality).join(' · '),
+      MysticRelic.nameweaversQuill ||
       MysticRelic.astralLens ||
       MysticRelic.chronoshard ||
       MysticRelic.wayfinderSigil ||

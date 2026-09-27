@@ -70,6 +70,8 @@ class CanonicalGameReceipt {
     'game_action_unavailable',
     'game_social_claim_unavailable',
     'game_social_state_changed',
+    'rewarded_ad_claim_unavailable',
+    'rewarded_ad_state_changed',
     'game_attempt_unavailable',
     'game_attempt_time_invalid',
     'game_attempt_input_limit',

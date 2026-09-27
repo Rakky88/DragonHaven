@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:ui' as ui;
+import 'package:dragon_haven/l10n/app_strings.dart';
 import 'package:dragon_haven/models/dragon_egg.dart';
 import 'package:dragon_haven/models/egg_altar.dart';
 import 'package:dragon_haven/models/pet.dart';
@@ -122,6 +123,45 @@ void main() {
     await settle(tester);
   }
 
+  testWidgets('Soul Mirror egg summary shows the revealed personality traits',
+      (tester) async {
+    final g = game()
+      ..eggStash = [
+        DragonEgg(
+            id: 'mirror-egg',
+            lineageId: 'thunderpuff',
+            acquiredAt: DateTime(2026),
+            hatchSeed: 8,
+            prismatic: false)
+      ];
+    g.eggAltar.crafted[AltarRelic.soulMirror.name] = 1;
+    final egg = g.eggStash.single;
+    // Egg activation leaves personality generation lazy even after the
+    // Altar knowledge flag is saved. The summary must reveal it before use.
+    expect(egg.activate(coins: 0, gems: 0).personalityTraitIds, isEmpty);
+    await mount(tester, g,
+        const Scaffold(body: EggKnowledgeSummary(eggId: 'mirror-egg')));
+    expect(find.byType(Chip), findsNothing);
+
+    await tester
+        .runAsync(() => g.useAltarRelic(AltarRelic.soulMirror, 'mirror-egg'));
+    await settle(tester);
+    expect(g.eggKnowledge('mirror-egg').personality, isTrue);
+    expect(g.eggAltar.count(AltarRelic.soulMirror), 0);
+    final traits = (egg.activate(coins: 0, gems: 0)..revealPersonality())
+        .personalityTraitIds;
+    expect(traits, isNotEmpty);
+    final chip = tester.widget<Chip>(find.byType(Chip));
+    final text = (chip.label as Text).data!;
+    expect(text.trim(), isNotEmpty);
+    for (final trait in traits) {
+      expect(text, contains(const AppStrings('en').personality(trait)));
+    }
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
+    g.dispose();
+  });
+
   testWidgets(
       'Sinister return requires a hold and a second confirmation; cancelling spends nothing',
       (tester) async {
@@ -230,7 +270,7 @@ void main() {
     await tester.tap(find.byKey(const Key('altar-egg-sinister')));
     await settle(tester);
     expect(find.text('Dragon family'), findsOneWidget);
-    expect(find.text('Still hidden'), findsNWidgets(3));
+    expect(find.text('Still hidden'), findsNWidgets(4));
     expect(
         tester
             .widget<FilledButton>(

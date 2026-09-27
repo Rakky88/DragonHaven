@@ -2,6 +2,39 @@
 ///
 /// The list order is German, Spanish, French, Italian, Portuguese and Japanese.
 const trialPhraseTranslations = <String, List<String>>{
+  'Basic trials': [
+    'Basisprüfungen',
+    'Pruebas básicas',
+    'Épreuves de base',
+    'Prove di base',
+    'Provas básicas',
+    '基本の試練'
+  ],
+  'Ascended trials': [
+    'Aufstiegsprüfungen',
+    'Pruebas ascendidas',
+    'Épreuves transcendées',
+    'Prove ascese',
+    'Provas ascendidas',
+    '昇華の試練'
+  ],
+  'Tap to stop inside the outline': [
+    'Tippe, um innerhalb des Umrisses anzuhalten',
+    'Toca para detenerte dentro del contorno',
+    'Touchez pour arrêter la forme dans le contour',
+    'Tocca per fermarti dentro il contorno',
+    'Toca para parar dentro do contorno',
+    'タップして輪郭の内側で止めよう'
+  ],
+  'Start with 60 seconds. Tap once to lock the height, then again to stop inside the golden outline. A shape entirely inside earns 100% and 5 extra seconds!':
+      [
+    'Du beginnst mit 60 Sekunden. Tippe einmal, um die Höhe festzulegen, und erneut, um innerhalb des goldenen Umrisses anzuhalten. Eine vollständig enthaltene Form bringt 100% und 5 zusätzliche Sekunden!',
+    'Empiezas con 60 segundos. Toca una vez para fijar la altura y otra para detener la figura dentro del contorno dorado. ¡Una figura totalmente dentro da un 100% y 5 segundos extra!',
+    'Vous commencez avec 60 secondes. Touchez une fois pour fixer la hauteur, puis à nouveau pour arrêter la forme dans le contour doré. Une forme entièrement à l’intérieur rapporte 100% et 5 secondes supplémentaires !',
+    'Inizi con 60 secondi. Tocca una volta per fissare l’altezza e di nuovo per fermare la forma dentro il contorno dorato. Una forma completamente dentro vale il 100% e 5 secondi extra!',
+    'Começas com 60 segundos. Toca uma vez para fixar a altura e outra para parar a forma dentro do contorno dourado. Uma forma totalmente dentro dá 100% e mais 5 segundos!',
+    '制限時間は60秒。1回タップして高さを決め、もう1回タップして金色の輪郭の内側で止めよう。形が完全に内側に入ると100%を獲得し、5秒追加されます！'
+  ],
   'ASCENDED TRIAL': [
     'ASCENDED-PRÜFUNG',
     'PRUEBA ASCENDIDA',

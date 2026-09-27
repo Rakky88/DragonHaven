@@ -480,7 +480,7 @@ class _EventTrialChoice extends StatelessWidget {
   }
 }
 
-class _TrialKindSelector extends StatefulWidget {
+class _TrialKindSelector extends StatelessWidget {
   const _TrialKindSelector({
     required this.selectedKind,
     required this.onSelected,
@@ -490,74 +490,58 @@ class _TrialKindSelector extends StatefulWidget {
   final ValueChanged<TrialKind>? onSelected;
 
   @override
-  State<_TrialKindSelector> createState() => _TrialKindSelectorState();
-}
-
-class _TrialKindSelectorState extends State<_TrialKindSelector> {
-  final _scrollController = ScrollController();
-  final _choiceKeys = {
-    for (final kind in standardTrialKinds) kind: GlobalKey(),
-  };
-
-  @override
-  void initState() {
-    super.initState();
-    _revealSelection();
-  }
-
-  @override
-  void didUpdateWidget(covariant _TrialKindSelector oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.selectedKind != widget.selectedKind) _revealSelection();
-  }
-
-  void _revealSelection() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || !_scrollController.hasClients) return;
-      final target =
-          _choiceKeys[widget.selectedKind]?.currentContext?.findRenderObject();
-      if (target == null) return;
-      // Only move the horizontal selector, never the rankings' vertical scroll.
-      _scrollController.position.ensureVisible(target, alignment: .5);
-    });
-  }
-
-  @override
-  void dispose() {
-    _scrollController.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     final strings = AppStrings.of(context);
-    return Scrollbar(
-      controller: _scrollController,
-      thumbVisibility: true,
-      trackVisibility: true,
-      thickness: 3,
-      radius: const Radius.circular(3),
-      child: SingleChildScrollView(
-        key: const Key('trial-ranking-kind-selector'),
-        controller: _scrollController,
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.fromLTRB(14, 0, 14, 10),
-        child: Row(
-          children: [
-            for (final kind in standardTrialKinds) ...[
-              if (kind != standardTrialKinds.first) const SizedBox(width: 9),
-              _TrialChoice(
-                key: _choiceKeys[kind],
-                kind: kind,
-                selected: kind == widget.selectedKind,
-                label: _trialLabel(strings, kind),
-                onTap: widget.onSelected == null
-                    ? null
-                    : () => widget.onSelected!(kind),
-              ),
-            ],
+    return Padding(
+      key: const Key('trial-ranking-kind-selector'),
+      padding: const EdgeInsets.symmetric(horizontal: 14),
+      child: Column(
+        children: [
+          for (final (label, kinds) in [
+            (
+              strings.pick('Basic trials', 'Basis-trials'),
+              standardTrialKinds.take(3).toList()
+            ),
+            (
+              strings.pick('Ascended trials', 'Ascended-trials'),
+              standardTrialKinds.skip(3).toList()
+            ),
+          ]) ...[
+            if (kinds.first != standardTrialKinds.first)
+              const SizedBox(height: 10),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 6),
+              child: Row(children: [
+                Semantics(
+                    header: true,
+                    child: Text(label,
+                        style: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.muted))),
+                const SizedBox(width: 8),
+                const Expanded(
+                    child: Divider(height: 1, color: Color(0xFFE8E0EF))),
+              ]),
+            ),
+            IntrinsicHeight(
+                child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                for (final kind in kinds) ...[
+                  if (kind != kinds.first) const SizedBox(width: 8),
+                  Expanded(
+                      child: _TrialChoice(
+                    kind: kind,
+                    selected: kind == selectedKind,
+                    label: _trialLabel(strings, kind),
+                    onTap: onSelected == null ? null : () => onSelected!(kind),
+                  )),
+                ],
+              ],
+            )),
           ],
-        ),
+        ],
       ),
     );
   }
@@ -565,7 +549,6 @@ class _TrialKindSelectorState extends State<_TrialKindSelector> {
 
 class _TrialChoice extends StatelessWidget {
   const _TrialChoice({
-    super.key,
     required this.kind,
     required this.selected,
     required this.label,
@@ -580,22 +563,23 @@ class _TrialChoice extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Semantics(
         selected: selected,
+        enabled: onTap != null,
         button: true,
         child: Material(
           color: selected
               ? AppColors.eventColor(context, AppColors.twilightDark)
               : Colors.white,
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(16),
           clipBehavior: Clip.antiAlias,
           child: InkWell(
             key: Key('trial-ranking-kind-${kind.name}'),
             onTap: onTap,
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 180),
-              constraints: const BoxConstraints(minHeight: 68),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+              constraints: const BoxConstraints(minHeight: 80),
+              padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 8),
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(18),
+                borderRadius: BorderRadius.circular(16),
                 border: Border.all(
                   color: selected
                       ? AppColors.gold
@@ -603,29 +587,37 @@ class _TrialChoice extends StatelessWidget {
                   width: 1.5,
                 ),
               ),
-              child: Row(
+              child: Column(
                 mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   ExcludeSemantics(
-                      child: TrialIconSprite(kind: kind, size: 42)),
-                  const SizedBox(width: 10),
-                  Text(
-                    label,
-                    maxLines: 1,
-                    softWrap: false,
-                    style: TextStyle(
-                      color: selected ? Colors.white : AppColors.ink,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  SizedBox.square(
-                    dimension: 18,
-                    child: selected
-                        ? const Icon(Icons.check_circle_rounded,
-                            color: AppColors.gold, size: 18)
-                        : null,
+                      child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      TrialIconSprite(kind: kind, size: 34),
+                      if (selected)
+                        const Positioned(
+                            top: -2,
+                            right: -7,
+                            child: Icon(Icons.check_circle_rounded,
+                                color: AppColors.gold, size: 16)),
+                    ],
+                  )),
+                  const SizedBox(height: 5),
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(minHeight: 28),
+                    child: Center(
+                        child: Text(
+                      label,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: selected ? Colors.white : AppColors.ink,
+                        fontSize: 12,
+                        height: 1.15,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    )),
                   ),
                 ],
               ),

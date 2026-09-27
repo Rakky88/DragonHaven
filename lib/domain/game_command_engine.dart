@@ -247,7 +247,10 @@ abstract final class GameCommandEngine {
               seed: identities.nextInt(1 << 31),
               offerId: args.text('offerId'),
               dragonId: args.text('dragonId'),
-              timedSpiritAlignment: payload['spiritAlignmentVersion'] == 2,
+              timedSpiritAlignment:
+                  payload.containsKey('spiritAlignmentVersion'),
+              containedSpiritAlignment: payload['spiritAlignmentVersion'] == 3,
+              uncappedRuneOrbit: payload['runeOrbitVersion'] == 2,
               now: now);
           result = TrialAttempts.display(activeAttempt);
         case 'resume_trial':
@@ -257,7 +260,10 @@ abstract final class GameCommandEngine {
               id: args.text('attemptId'),
               replacementId: identities.uuid(),
               supportsTimedSpiritAlignment:
-                  payload['spiritAlignmentVersion'] == 2,
+                  payload.containsKey('spiritAlignmentVersion'),
+              supportsContainedSpiritAlignment:
+                  payload['spiritAlignmentVersion'] == 3,
+              supportsUncappedRuneOrbit: payload['runeOrbitVersion'] == 2,
               now: now);
           result = {
             'attempt': TrialAttempts.display(activeAttempt),
@@ -369,12 +375,18 @@ abstract final class GameCommandEngine {
                   sinisterConfirmed: args.boolean('sinisterConfirmed')))
               .toJson();
         case 'craft_altar_relic':
-          await game
-              .craftAltarRelic(args.enumValue('relic', AltarRelic.values));
+          final relic = AltarRelic.parse(args.text('relic'));
+          if (relic == null) {
+            throw const GameCommandException('invalid_argument');
+          }
+          await game.craftAltarRelic(relic);
           result = true;
         case 'use_altar_relic':
-          await game.useAltarRelic(
-              args.enumValue('relic', AltarRelic.values), args.text('eggId'));
+          final relic = AltarRelic.parse(args.text('relic'));
+          if (relic == null) {
+            throw const GameCommandException('invalid_argument');
+          }
+          await game.useAltarRelic(relic, args.text('eggId'));
           result = true;
         case 'use_chronoshard':
           result = (await game.useChronoshard(
@@ -654,6 +666,8 @@ abstract final class GameCommandEngine {
                 'specialChestId': reward.specialChestId,
                 'specialEggId': reward.specialEggId,
                 'relicFound': reward.relicFound?.name,
+                'additionalRelics':
+                    reward.additionalRelics.map((r) => r.name).toList(),
                 'portraitFound': reward.portraitFound?.id,
                 'titleFound': reward.titleFound?.id,
                 'musicTrackFound': reward.musicTrackFound?.id,

@@ -20,40 +20,61 @@ extension WeaveMaterialPresentation on WeaveMaterial {
 /// Crafted stock is separate from the existing drop inventory: it cannot enter
 /// a trade pool or be restored over the authoritative crafting ledger.
 enum AltarRelic {
-  moralEcho,
-  orderSigil,
+  moralPrism,
+  orderCompass,
+  soulMirror,
   astralLens,
   weaveOracle,
-  nameweaversQuill
+  nameweaversQuill;
+
+  /// Retired IDs remain readable for old saves and queued commands only.
+  static AltarRelic? parse(Object? value) => switch (value) {
+        'moralEcho' => moralPrism,
+        'orderSigil' => orderCompass,
+        _ => values.where((relic) => relic.name == value).firstOrNull,
+      };
 }
 
 extension AltarRelicPresentation on AltarRelic {
   String get label => switch (this) {
-        AltarRelic.moralEcho => 'Moral Echo',
-        AltarRelic.orderSigil => 'Order Sigil',
+        AltarRelic.moralPrism => 'Moral Prism',
+        AltarRelic.orderCompass => 'Order Compass',
+        AltarRelic.soulMirror => 'Soul Mirror',
         AltarRelic.astralLens => 'Astral Lens',
         AltarRelic.weaveOracle => 'Weave Oracle',
         AltarRelic.nameweaversQuill => "Nameweaver's Quill",
       };
-  String get asset => this == AltarRelic.astralLens
-      ? MysticRelic.astralLens.assetPath
-      : 'assets/images/egg_altar/${switch (this) {
-          AltarRelic.moralEcho => 'moral_echo',
-          AltarRelic.orderSigil => 'order_sigil',
-          AltarRelic.weaveOracle => 'weave_oracle',
-          AltarRelic.nameweaversQuill => 'nameweavers_quill',
-          AltarRelic.astralLens => 'astral_lens',
-        }}.png';
+  String get asset => switch (this) {
+        AltarRelic.moralPrism => MysticRelic.moralPrism.assetPath,
+        AltarRelic.orderCompass => MysticRelic.orderCompass.assetPath,
+        AltarRelic.soulMirror => MysticRelic.soulMirror.assetPath,
+        AltarRelic.astralLens => MysticRelic.astralLens.assetPath,
+        AltarRelic.weaveOracle => 'assets/images/egg_altar/weave_oracle.png',
+        AltarRelic.nameweaversQuill =>
+          'assets/images/egg_altar/nameweavers_quill.png',
+      };
+  String? get legacyId => switch (this) {
+        AltarRelic.moralPrism => 'moralEcho',
+        AltarRelic.orderCompass => 'orderSigil',
+        _ => null,
+      };
+  bool get canRevealDragon =>
+      this == AltarRelic.moralPrism ||
+      this == AltarRelic.orderCompass ||
+      this == AltarRelic.soulMirror;
   WeaveWallet get cost => switch (this) {
-        AltarRelic.moralEcho => const WeaveWallet(20, 1, 0),
-        AltarRelic.orderSigil => const WeaveWallet(30, 2, 0),
+        AltarRelic.moralPrism => const WeaveWallet(20, 1, 0),
+        AltarRelic.orderCompass ||
+        AltarRelic.soulMirror =>
+          const WeaveWallet(30, 2, 0),
         AltarRelic.astralLens => const WeaveWallet(50, 5, 1),
         AltarRelic.weaveOracle => const WeaveWallet(125, 12, 2),
         AltarRelic.nameweaversQuill => const WeaveWallet(10, 1, 0),
       };
   String get knownKey => switch (this) {
-        AltarRelic.moralEcho => 'moral',
-        AltarRelic.orderSigil => 'order',
+        AltarRelic.moralPrism => 'moral',
+        AltarRelic.orderCompass => 'order',
+        AltarRelic.soulMirror => 'personality',
         AltarRelic.astralLens => 'rarity',
         AltarRelic.weaveOracle => 'lineage',
         AltarRelic.nameweaversQuill => 'name',
@@ -101,17 +122,20 @@ class AltarEggKnowledge {
       this.tagRevision = 0,
       this.moral = false,
       this.order = false,
+      this.personality = false,
       this.rarity = false,
       this.lineage = false});
   final bool tagged;
   final int tagRevision;
   final bool moral;
   final bool order;
+  final bool personality;
   final bool rarity;
   final bool lineage;
   bool knows(AltarRelic relic) => switch (relic) {
-        AltarRelic.moralEcho => moral,
-        AltarRelic.orderSigil => order,
+        AltarRelic.moralPrism => moral,
+        AltarRelic.orderCompass => order,
+        AltarRelic.soulMirror => personality,
         AltarRelic.astralLens => rarity,
         AltarRelic.weaveOracle => lineage,
         AltarRelic.nameweaversQuill => false,
@@ -125,6 +149,7 @@ class AltarEggKnowledge {
         tagRevision: max(tagRevision, other.tagRevision),
         moral: moral || other.moral,
         order: order || other.order,
+        personality: personality || other.personality,
         rarity: rarity || other.rarity,
         lineage: lineage || other.lineage,
       );
@@ -133,6 +158,7 @@ class AltarEggKnowledge {
         'tagRevision': tagRevision,
         'moral': moral,
         'order': order,
+        if (personality) 'personality': true,
         'rarity': rarity,
         'lineage': lineage,
       };
@@ -142,6 +168,7 @@ class AltarEggKnowledge {
         tagRevision: _count(json['tagRevision']),
         moral: json['moral'] == true,
         order: json['order'] == true,
+        personality: json['personality'] == true,
         rarity: json['rarity'] == true,
         lineage: json['lineage'] == true,
       );
@@ -174,7 +201,17 @@ class EggAltarState {
   final Set<String> returnedIds;
   final Map<String, String> names;
   final Map<String, Map<String, dynamic>> operations;
-  int count(AltarRelic relic) => crafted[relic.name] ?? 0;
+  int count(AltarRelic relic) =>
+      (crafted[relic.name] ?? 0) +
+      (relic.legacyId == null ? 0 : crafted[relic.legacyId] ?? 0);
+  void consume(AltarRelic relic) {
+    if (count(relic) <= 0) throw const EggAltarException('relic_not_owned');
+    final legacy = relic.legacyId;
+    final key =
+        legacy != null && (crafted[legacy] ?? 0) > 0 ? legacy : relic.name;
+    crafted[key] = crafted[key]! - 1;
+  }
+
   AltarEggKnowledge knowledge(String id) =>
       eggs[id] ?? const AltarEggKnowledge();
   Map<String, dynamic> toJson() => {

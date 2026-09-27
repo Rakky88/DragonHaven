@@ -59,11 +59,11 @@ void main() {
   test('a fresh capable start uses timed rules and the unchanged public shape',
       () async {
     final attempt = await source.start();
-    expect(checkpointVersion(), 2);
+    expect(checkpointVersion(), 3);
     expect(server.sent.single.payload, {
       'offerId': offer.id,
       'dragonId': source.dragonId,
-      'spiritAlignmentVersion': 2,
+      'spiritAlignmentVersion': 3,
     });
     expect(source.restoredModel, isNull);
     expect(session.snapshot!.trialAttempt!.id, attempt.id);
@@ -103,7 +103,7 @@ void main() {
     expect(resumed.id, isNot(oldId));
     expect(source.restoredModel!.alignment!.timed, false);
     expect(checkpointVersion(), 1);
-    expect(server.sent.last.payload['spiritAlignmentVersion'], 2);
+    expect(server.sent.last.payload['spiritAlignmentVersion'], 3);
   });
 
   test('a released client can still finish its original three-shape game',
@@ -117,6 +117,7 @@ void main() {
       kind: attempt.kind,
       seed: attempt.seed,
       timedSpiritAlignment: false,
+      containedSpiritAlignment: false,
       training: {
         for (final focus in TrainingFocus.values)
           focus: source.dragon!.trainingFor(focus),
@@ -161,7 +162,7 @@ void main() {
     final resumed = await capable.start();
     expect(resumed.id, isNot(started.id));
     expect(capable.restoredModel!.alignment!.timed, true);
-    expect(checkpointVersion(), 2);
+    expect(checkpointVersion(), 3);
   });
 
   test('lost legacy start retries its exact durable payload after upgrading',
@@ -199,7 +200,7 @@ void main() {
     await expectLater(source.start(), throwsA(isA<CanonicalGameException>()));
     await source.start();
     expect(source.restoredModel!.alignment!.timed, true);
-    expect(checkpointVersion(), 2);
+    expect(checkpointVersion(), 3);
     final starts = server.sent.where((entry) => entry.action == 'start_trial');
     expect(starts.map((entry) => entry.requestId).toSet(), hasLength(1));
     expect(server.sent.last.action, 'resume_trial');
@@ -219,11 +220,11 @@ void main() {
           ? {'offerId': offer.id, 'dragonId': source.dragonId}
           : {'attemptId': 'attempt'};
       expect(intent(action, payload).payload, payload);
-      final capable = {...payload, 'spiritAlignmentVersion': 2};
+      final capable = {...payload, 'spiritAlignmentVersion': 3};
       expect(
           CanonicalGameIntent.parse(intent(action, capable).toJson()).payload,
           capable);
-      for (final invalid in [null, 0, 1, 3, '2', true, 2.5]) {
+      for (final invalid in [null, 0, 1, 4, '2', true, 2.5]) {
         expect(
           () => intent(action, {...payload, 'spiritAlignmentVersion': invalid}),
           throwsA(isA<CanonicalGameException>()),
@@ -232,7 +233,7 @@ void main() {
       expect(() => intent(action, {...capable, 'score': 999}),
           throwsA(isA<CanonicalGameException>()));
     }
-    expect(() => intent('refresh', {'spiritAlignmentVersion': 2}),
+    expect(() => intent('refresh', {'spiritAlignmentVersion': 3}),
         throwsA(isA<CanonicalGameException>()));
   });
 }

@@ -1,3 +1,4 @@
+import '../widgets/altar_relic_targets.dart';
 import '../widgets/compact_egg_hatch_time.dart';
 import 'dart:async';
 
@@ -903,13 +904,41 @@ Future<void> showCanonicalAltarRelicPicker(
       context: context,
       showDragHandle: true,
       isScrollControlled: true,
-      builder: (sheetContext) => SafeArea(
-          child: SizedBox(
-              height: MediaQuery.sizeOf(sheetContext).height * .72,
-              child: CanonicalEggList(
-                  forAltar: true,
-                  relic: relic,
-                  onChoose: (id) => Navigator.pop(sheetContext, id)))));
+      builder: (sheetContext) {
+        final eggs = CanonicalEggList(
+            forAltar: true,
+            relic: relic,
+            onChoose: (id) => Navigator.pop(sheetContext, id));
+        return SafeArea(
+            child: SizedBox(
+                height: MediaQuery.sizeOf(sheetContext).height * .72,
+                child: !relic.canRevealDragon
+                    ? eggs
+                    : AltarRelicTargets(
+                        eggs: eggs,
+                        dragons: ListView(children: [
+                          for (final dragon in session.snapshot!.dragons.where(
+                              (d) =>
+                                  d.owned &&
+                                  !d.knows(
+                                      MysticRelic.values.byName(relic.name))))
+                            ListTile(
+                                key: Key('altar-dragon-${dragon.id}'),
+                                leading: DragonArt(
+                                    height: 48,
+                                    animate: false,
+                                    stageKey: dragon.stageKey,
+                                    lineageId: dragon.lineageId,
+                                    evolutionPath: dragon.activeEvolutionPath,
+                                    prismatic: dragon.prismatic,
+                                    sinister: dragon.sinister),
+                                title: Text(dragon.displayName),
+                                trailing:
+                                    const Icon(Icons.chevron_right_rounded),
+                                onTap: () =>
+                                    Navigator.pop(sheetContext, dragon.id)),
+                        ]))));
+      });
   if (!context.mounted ||
       id == null ||
       session.snapshot?.ownerId != owner ||
@@ -920,8 +949,11 @@ Future<void> showCanonicalAltarRelicPicker(
       context: context,
       builder: (c) => AlertDialog(
               title: Text(relic.label),
-              content: Text(s.pick('Use one relic on this egg?',
-                  'E\u00e9n relic gebruiken op dit ei?')),
+              content: Text(session.snapshot?.egg(id) != null
+                  ? s.pick('Use one relic on this egg?',
+                      'E\u00e9n relic gebruiken op dit ei?')
+                  : s.pick('Use one relic on this dragon?',
+                      'E\u00e9n relic gebruiken op deze draak?')),
               actions: [
                 TextButton(
                     onPressed: () => Navigator.pop(c, false),
@@ -939,12 +971,26 @@ Future<void> showCanonicalAltarRelicPicker(
       return;
     }
     final egg = session.snapshot?.egg(id);
-    if (egg == null) return;
+    final dragon = session.snapshot?.dragon(id);
+    if (egg == null && dragon == null) return;
     await showDialog<void>(
         context: context,
         builder: (c) => AlertDialog(
                 title: Text(relic.label),
-                content: CanonicalEggKnowledgeSummary(egg: egg),
+                content: egg != null
+                    ? CanonicalEggKnowledgeSummary(egg: egg)
+                    : Text(
+                        switch (relic) {
+                          AltarRelic.moralPrism => s.moralAxisName(
+                              MoralAxis.values.byName(dragon!.moralAxis!)),
+                          AltarRelic.orderCompass => s.lawAxisName(
+                              LawAxis.values.byName(dragon!.lawAxis!)),
+                          AltarRelic.soulMirror => dragon!.personality!
+                              .map(s.personality)
+                              .join(' \u00b7 '),
+                          _ => '',
+                        },
+                        textAlign: TextAlign.center),
                 actions: [
                   TextButton(
                       onPressed: () => Navigator.pop(c),
@@ -972,6 +1018,8 @@ class CanonicalEggKnowledgeSummary extends StatelessWidget {
         Chip(label: Text(canonicalKnownRarity(s, egg.revealedRarity))),
       if (moral != null) Chip(label: Text(s.moralAxisName(moral))),
       if (law != null) Chip(label: Text(s.lawAxisName(law))),
+      if (egg.revealedPersonalityTraitIds case final traits?)
+        Chip(label: Text(traits.map(s.personality).join(' \u00b7 '))),
     ]);
   }
 }
@@ -1022,6 +1070,10 @@ class _InventoryEggDetails extends StatelessWidget {
                     if (moral != null)
                       Chip(label: Text(s.moralAxisName(moral))),
                     if (law != null) Chip(label: Text(s.lawAxisName(law))),
+                    if (egg.revealedPersonalityTraitIds case final traits?)
+                      Chip(
+                          label:
+                              Text(traits.map(s.personality).join(' \u00b7 '))),
                   ]),
               const SizedBox(height: 10),
               Container(
@@ -1419,10 +1471,15 @@ class _EggDetailLine extends StatelessWidget {
 }
 
 String altarRelicEffect(AppStrings s, AltarRelic relic) => switch (relic) {
-      AltarRelic.moralEcho => s.pick('Reveal an egg’s moral alignment.',
-          'Onthul de morele aard van een ei.'),
-      AltarRelic.orderSigil => s.pick('Reveal an egg’s order alignment.',
-          'Onthul de orde-aard van een ei.'),
+      AltarRelic.moralPrism => s.pick(
+          'Reveal moral alignment for an egg or dragon.',
+          'Onthul de morele aard van een ei of draak.'),
+      AltarRelic.orderCompass => s.pick(
+          'Reveal order alignment for an egg or dragon.',
+          'Onthul de orde-aard van een ei of draak.'),
+      AltarRelic.soulMirror => s.pick(
+          'Reveal personality for an egg or dragon.',
+          'Onthul de persoonlijkheid van een ei of draak.'),
       AltarRelic.astralLens =>
         s.pick('Reveal an egg’s rarity.', 'Onthul de zeldzaamheid van een ei.'),
       AltarRelic.weaveOracle => s.pick(

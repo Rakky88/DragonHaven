@@ -20,7 +20,9 @@ class TrialRunModel {
       {required this.kind,
       required this.seed,
       required Map<TrainingFocus, int> training,
-      bool timedSpiritAlignment = true})
+      bool timedSpiritAlignment = true,
+      bool containedSpiritAlignment = true,
+      bool uncappedRuneOrbit = true})
       : training = Map.unmodifiable(training),
         _random = Random(seed) {
     durationMs = trialDefinitions[kind]!.durationMilliseconds(training);
@@ -44,6 +46,7 @@ class TrialRunModel {
           seed: seed,
           spirit: stat(TrainingFocus.spirit),
           timed: timedSpiritAlignment,
+          containedScoring: containedSpiritAlignment,
           random: TrialRandom(seed));
     }
     if (kind == TrialKind.ruinGuard) {
@@ -56,6 +59,7 @@ class TrialRunModel {
       orbit = RuneOrbitGame(
           seed: seed,
           arcana: stat(TrainingFocus.arcana),
+          uncappedSpeed: uncappedRuneOrbit,
           random: TrialRandom(seed));
     }
     if (kind == TrialKind.witchlightWard) {

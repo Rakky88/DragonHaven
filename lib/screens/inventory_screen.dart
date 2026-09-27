@@ -1480,6 +1480,8 @@ class _RelicCard extends StatelessWidget {
 
 Future<void> _useRelic(BuildContext context, MysticRelic relic) async {
   switch (relic) {
+    case MysticRelic.nameweaversQuill:
+      return showUseAltarRelic(context, AltarRelic.nameweaversQuill);
     case MysticRelic.astralLens:
       return _useAstralLens(context);
     case MysticRelic.chronoshard:
@@ -2003,6 +2005,7 @@ class _AnimatedRelicRevealDialogState
       MysticRelic.orderCompass => strings.lawAxisName(widget.dragon.lawAxis),
       MysticRelic.soulMirror =>
         widget.dragon.personalityTraitIds.map(strings.personality).join(' · '),
+      MysticRelic.nameweaversQuill ||
       MysticRelic.astralLens ||
       MysticRelic.chronoshard ||
       MysticRelic.wayfinderSigil ||

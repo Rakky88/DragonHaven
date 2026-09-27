@@ -69,14 +69,21 @@ void main() {
       acquiredAt: DateTime(2026),
       hatchSeed: 8,
       prismatic: false);
-  HouseholdProvider game() =>
-      HouseholdProvider(random: Random(8), persistenceEnabled: false)
-        ..pet = Pet(
-            id: 'dragon',
-            name: 'Ember',
-            firstEgg: false,
-            stage: DragonStage.hatchling)
-        ..eggStash = [egg('one'), egg('two')];
+  HouseholdProvider game() => HouseholdProvider(
+      random: Random(8),
+      persistenceEnabled: false,
+      clock: () => DateTime.utc(2026))
+    ..pet = Pet(
+        id: 'dragon',
+        name: 'Ember',
+        firstEgg: false,
+        favorite: true,
+        acquiredAt: DateTime.utc(2026),
+        stageStartedAt: DateTime.utc(2026),
+        needsUpdatedAt: DateTime.utc(2026),
+        hatchSeed: 8,
+        stage: DragonStage.hatchling)
+    ..eggStash = [egg('one'), egg('two')];
   Matcher failure(String code) =>
       throwsA(isA<EggAltarException>().having((e) => e.code, 'code', code));
 
@@ -196,10 +203,10 @@ void main() {
     expect(g.eggAltar.wallet.toJson(),
         {'fragments': 0, 'essence': 0, 'hearts': 0});
     expect(g.eggAltar.count(AltarRelic.nameweaversQuill), 1);
-    await expectLater(g.craftAltarRelic(AltarRelic.moralEcho),
+    await expectLater(g.craftAltarRelic(AltarRelic.moralPrism),
         failure('insufficient_materials'));
     final trade = OnlineInventorySnapshot.fromGame(g).toTradeJson();
-    expect((trade['relics'] as Map).containsKey('nameweaversQuill'), isFalse);
+    expect((trade['relics'] as Map)['nameweaversQuill'] ?? 0, 0);
     expect(MysticRelic.values, originalDrops);
     expect(MysticRelic.astralLens.isShopAvailable, isTrue);
   });
@@ -223,6 +230,93 @@ void main() {
     await expectLater(g.useAltarRelic(AltarRelic.weaveOracle, 'one'),
         failure('already_known'));
     expect(g.eggAltar.count(AltarRelic.weaveOracle), 1);
+  });
+
+  test('replacement recipes preserve legacy stocks without double-counting',
+      () async {
+    final g = game();
+    g.eggAltar.crafted
+        .addAll({'moralEcho': 2, 'moralPrism': 1, 'orderSigil': 1});
+    g.eggAltar.wallet = const WeaveWallet(80, 5, 0);
+    expect(AltarRelic.parse('moralEcho'), AltarRelic.moralPrism);
+    expect(AltarRelic.parse('orderSigil'), AltarRelic.orderCompass);
+    expect(AltarRelic.values.map((r) => r.name),
+        isNot(anyOf(contains('moralEcho'), contains('orderSigil'))));
+    expect(AltarRelic.moralPrism.asset, MysticRelic.moralPrism.assetPath);
+    expect(AltarRelic.orderCompass.asset, MysticRelic.orderCompass.assetPath);
+    expect(AltarRelic.soulMirror.cost.toJson(),
+        AltarRelic.orderCompass.cost.toJson());
+    await g.craftAltarRelic(AltarRelic.moralPrism);
+    await g.craftAltarRelic(AltarRelic.orderCompass);
+    await g.craftAltarRelic(AltarRelic.soulMirror);
+    expect(g.eggAltar.count(AltarRelic.moralPrism), 4);
+    expect(g.eggAltar.count(AltarRelic.orderCompass), 2);
+    expect(g.eggAltar.count(AltarRelic.soulMirror), 1);
+    expect(g.eggAltar.wallet.toJson(), const WeaveWallet(0, 0, 0).toJson());
+    await g.useAltarRelic(AltarRelic.moralPrism, 'one');
+    expect(g.eggAltar.crafted['moralEcho'], 1);
+    expect(g.eggAltar.crafted['moralPrism'], 2);
+    expect(g.eggKnowledge('one').moral, isTrue);
+    final restored = HouseholdProvider.forServerState(g.exportState(),
+        random: Random(8),
+        now: DateTime.utc(2026),
+        idGenerator: () => 'unused');
+    expect(restored.eggAltar.count(AltarRelic.moralPrism), 3);
+    restored.dispose();
+  });
+
+  test('crafted discoveries reveal eggs and hatched dragons consistently',
+      () async {
+    final g = game();
+    for (final relic in [
+      AltarRelic.moralPrism,
+      AltarRelic.orderCompass,
+      AltarRelic.soulMirror
+    ]) {
+      g.eggAltar.crafted[relic.name] = 2;
+      await g.useAltarRelic(relic, 'one');
+      await g.useAltarRelic(relic, 'dragon');
+      expect(g.eggAltar.count(relic), 0);
+      expect(g.eggKnowledge('one').knows(relic), isTrue);
+      expect(g.eggKnowledge('dragon').knows(relic), isTrue);
+    }
+    expect(g.pet.personalityKnown, isTrue);
+    expect(g.pet.personalityTraitIds, isNotEmpty);
+    final personality = (g.eggStash.first.activate(coins: 0, gems: 0)
+          ..revealPersonality())
+        .personalityTraitIds;
+    expect(await g.activateEgg('one'), isTrue);
+    expect(g.nestEgg!.personalityKnown, isTrue);
+    expect(g.nestEgg!.personalityTraitIds, personality);
+    final restored = HouseholdProvider.forServerState(g.exportState(),
+        random: Random(8),
+        now: DateTime.utc(2026),
+        idGenerator: () => 'unused');
+    expect(restored.nestEgg!.personalityTraitIds, personality);
+    restored.dispose();
+  });
+
+  test('quills consume crafted then bound stock and respect trade reservations',
+      () async {
+    final g = game();
+    const quill = MysticRelic.nameweaversQuill;
+    g.eggAltar.crafted['nameweaversQuill'] = 1;
+    g.relicInventory[quill] = 3;
+    g.untradeableRelicInventory[quill] = 1;
+    g.reservedOnlineTradeRelics[quill.name] = 1;
+    expect(g.usableNameweaversQuills, 3);
+    expect(await g.renameDragonWithQuill('dragon', 'Crafted'), isTrue);
+    expect(g.eggAltar.count(AltarRelic.nameweaversQuill), 0);
+    expect(g.relicCount(quill), 3);
+    expect(await g.renameDragonWithQuill('dragon', 'Bound'), isTrue);
+    expect(g.relicCount(quill), 2);
+    expect(g.untradeableRelicCount(quill), 0);
+    expect(await g.renameDragonWithQuill('dragon', 'Dropped'), isTrue);
+    expect(g.relicCount(quill), 1);
+    expect(g.usableNameweaversQuills, 0);
+    expect(await g.renameDragonWithQuill('dragon', 'Reserved'), isFalse);
+    expect(g.pet.name, 'Dropped');
+    expect(g.relicCount(quill), 1);
   });
 
   test(

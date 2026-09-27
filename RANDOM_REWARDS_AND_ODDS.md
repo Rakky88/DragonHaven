@@ -1,3 +1,21 @@
+## Relic balance and Altar catalogue - 27 September 2026 (prepared)
+
+Ordinary weighted-pool relic gates are now Gold 5%, Dragon 10%, Mythical 20%,
+Sinister 100%, and direct S+ Trial 5%. This multiplies the previous eligible
+gates by five, capped at 100%; the 11-item pool and its weights are unchanged.
+Nameweaver's Quill has a separate, independent Wooden/Silver/Gold/Dragon/Mythical
+roll of 1%/2%/4%/8%/16%, and no Sinister, Special, cosmetic-chest or direct S+
+roll. One chest can therefore grant both a normal relic and a Quill. These
+Quill percentages are final, not another five-times multiplier. Chest Quills
+are tradeable; Altar-crafted and 100-gem shop Quills are bound.
+
+The Altar replaces Moral Echo with Moral Prism and Order Sigil with Order
+Compass, preserving old counts, and adds Soul Mirror at the Compass recipe.
+All three reveal fixed facts on eggs or hatched dragons; no fact is rerolled.
+The tables below describe these prepared rules. Historical audit sections
+describe their original migrations; production changes require deployment of
+the matching worker and forward migration.
+
 ## Egg picker presentation restoration - 23 September 2026
 
 Restoring the v0.05.40 Rooftop Nest picker, standard Egg details and direct
@@ -248,7 +266,7 @@ Ruleset: v0.05.29 published and verified; production schema 65, economy activati
 
 Source baseline: v0.05.16, with subsequent changes and dormant server rules below
 
-<!-- reference-source-fingerprint: a62f3f182059e71a -->
+<!-- reference-source-fingerprint: dfbbf2dbd08fd00c -->
 
 Calendar hardening after v0.05.29: canonical commands normalize the database
 instant to UTC. Legacy offline play retains its local day. Long-adventure
@@ -344,7 +362,7 @@ idempotent. This is a shadow migration boundary, not a new live reward roll.
 
 - “Uniform” means every integer or every eligible item in the stated pool has the same chance.
 - Collection rewards never produce duplicates. Their exact per-item odds therefore change as the collection becomes smaller.
-- Unless stated otherwise, the coin, gem, egg, relic, and emote rolls made by one chest are independent of each other.
+- Unless stated otherwise, the coin, gem, egg, normal relic, Quill, and emote rolls made by one chest are independent of each other.
 - Opening ten chests performs ten normal openings in sequence. It does not use a special ten-pack odds table.
 - A chance is rolled with a cryptographically secure random source for normal game-state rewards. Seeded visual or minigame layouts are identified separately.
 - Generated UUIDs, Keeper IDs, cryptographic nonces, and other security identifiers are not gameplay rewards and are outside the scope of this document.
@@ -357,11 +375,11 @@ Every integer inside a coin or gem range is equally likely.
 
 | Chest | Coins | Gems | Egg | Relic | Unique chest emote | Other guaranteed reward |
 |---|---:|---:|---:|---:|---:|---|
-| Wooden | 20–40 | None | 1% base; 3% with egg pity | None | 0.5% | — |
-| Silver | 45–80 | 50% none; 25% 1; 25% 2 | 4% base; 12% with egg pity | None | 1% | — |
-| Gold | 90–160 | 28% none; 24% each for 2, 3, or 4 | 12% base; 36% with egg pity | 1% | 2% | — |
-| Dragon | 180–300 | 10% none; 22.5% each for 4, 5, 6, or 7 | 100% | 2% | 4% | — |
-| Mythical | 400–650 | 8–13, uniform | 100% | 4% | 8% | — |
+| Wooden | 20–40 | None | 1% base; 3% with egg pity | 1% Quill only | 0.5% | — |
+| Silver | 45–80 | 50% none; 25% 1; 25% 2 | 4% base; 12% with egg pity | 2% Quill only | 1% | — |
+| Gold | 90–160 | 28% none; 24% each for 2, 3, or 4 | 12% base; 36% with egg pity | 5% normal + independent 4% Quill | 2% | — |
+| Dragon | 180–300 | 10% none; 22.5% each for 4, 5, 6, or 7 | 100% | 10% normal + independent 8% Quill | 4% | — |
+| Mythical | 400–650 | 8–13, uniform | 100% | 20% normal + independent 16% Quill | 8% | — |
 | Sinister | 400–650 | 8–13, uniform | 100%; then 50% Sinister Egg and 50% ordinary Mysterious Egg | 100% | 12% | — |
 | Golden Wings Special | Exactly 269 | Exactly 10 | 100% Golden Wings Special Egg | None from the chest itself | 10% | — |
 | Witchlight Special | Exactly 313 | Exactly 13 | 100% Witchlight Egg | None from the chest itself | 10% | — |
@@ -396,17 +414,24 @@ There is no pity system for dragon rarity, relics, emotes, portraits, titles, mu
 
 ### 1.3 Relics from ordinary chests
 
-| Chest | Chance of any relic |
-|---|---:|
-| Wooden | 0% |
-| Silver | 0% |
-| Gold | 1% |
-| Dragon | 2% |
-| Mythical | 4% |
-| Sinister | 100% |
-| Special, Portrait, Title, Music | 0% |
+| Chest | Normal weighted-pool relic | Independent Quill | At least one relic | Both |
+|---|---:|---:|---:|---:|
+| Wooden | 0% | 1% | 1% | 0% |
+| Silver | 0% | 2% | 2% | 0% |
+| Gold | 5% | 4% | 8.8% | 0.2% |
+| Dragon | 10% | 8% | 17.2% | 0.8% |
+| Mythical | 20% | 16% | 32.8% | 3.2% |
+| Sinister | 100% | 0% | 100% | 0% |
+| Special, Portrait, Title, Music | 0% | 0% | 0% | 0% |
 
-When a relic drop succeeds, selection uses this weighted pool:
+The normal drop gates are five times their previous value, capped at 100%.
+Sinister still grants one guaranteed normal relic, not five relics. With
+normal gate `p` and Quill gate `q`, `P(any) = p + q - p*q` and `P(both) = p*q`.
+Both rewards are delivered and recorded when both rolls succeed. The Quill
+never replaces the normal relic or uses a weighted-pool ticket. Its final
+1%/2%/4%/8%/16% rates are not multiplied again. It has no pity counter.
+
+When the normal relic drop succeeds, selection uses this weighted pool:
 
 | Relic | Weight | Effect |
 | --- | ---: | --- |
@@ -422,8 +447,9 @@ brooch or Spark Astrolabe `1/65` (1.53846%) of a successful relic drop. Each
 rare item is therefore ten times rarer than one ordinary relic. An acquired
 brooch is removed permanently; the consumable Astrolabe stays eligible. With
 `b` still eligible brooches the denominator is `61 + b`.
-The overall chest relic-drop chance above remains unchanged. The same weighted
-pool applies to the independent 1% S+ Trial relic roll.
+The same weighted pool applies to the independent 5% S+ Trial relic roll.
+Nameweaver's Quill has weight zero and cannot be selected by either weighted
+roll; its chest-only roll is described separately above.
 
 All four brooches are unique, permanent, untradeable, and available only from
 eligible ordinary chests or S+ Trials. They cannot be bought or crafted. A dragon
@@ -438,6 +464,13 @@ The Spark Astrolabe is untradeable, cannot be bought or crafted, and drops only
 from these chests or S+ Trials. Repeated use on an already revealed dragon
 consumes nothing. Other gameplay-dropped relics remain tradeable. A Chronoshard's permanent
 reduction is uniformly selected from whole percentages 10–90: `1/81` each.
+
+Nameweaver's Quill drops are tradeable, including after an ordinary trade.
+The 100-gem shop Quill appears first in the relic shop and is not tradeable;
+crafted Altar Quills also remain bound. All variants rename one already-named
+hatched dragon without changing its identity or traits; initial naming is free.
+Renaming consumes crafted stock first, then bound shop stock, then a tradeable
+drop. Copies reserved in a trade cannot be consumed.
 
 ### Shared expertise and Dragon Spark (20 September 2026 candidate)
 
@@ -742,6 +775,21 @@ The Group Adventure chest is rolled authoritatively by the Supabase server when 
 
 Opening the awarded chest later performs all of that chest's normal content rolls from section 1. Adventure chest selection and chest opening are therefore two separate random stages.
 
+The resulting relic probabilities, conditional on opening that awarded chest,
+are:
+
+| Adventure | Normal relic | Quill | At least one relic | Both |
+|---|---:|---:|---:|---:|
+| Mini | 0% | 1% | 1% | 0% |
+| Short | 2.30% | 2.84% | 5.018% | 0.122% |
+| Long | 6.45% | 5.16% | 11.212% | 0.398% |
+| Group | 7% | 5.60% | 12.10% | 0.50% |
+
+For chest-type weights `w_t`, use `sum(w_t*p_t)`, `sum(w_t*q_t)`,
+`sum(w_t*(p_t+q_t-p_t*q_t))` and `sum(w_t*p_t*q_t)` respectively.
+Do not multiply the two averaged chances: the rolls are independent within
+each chest type, while both depend on the randomly selected chest tier.
+
 ### 3.2 A Wish on Golden Wings event reward
 
 Completing the birthday Special Adventure guarantees the event-specific reward bundle below. This is not a universal reward table for future Special Events:
@@ -752,7 +800,11 @@ Completing the birthday Special Adventure guarantees the event-specific reward b
 - one Music Chest if the remaining collection capacity allows it; and
 - one uniformly random relic from Moral Prism, Order Compass, Soul Mirror, and Astral Lens.
 
-Each event-relic option has exactly a 25% chance. This event pool contains no Chronoshard, Wayfinder Sigil or equipable brooch.
+Each event-relic option has exactly a 25% chance. This guaranteed historical
+reward still selects one item; a five-times gate increase cannot increase a
+100% grant. This event pool contains no Chronoshard, Wayfinder Sigil, Quill or
+equipable brooch. It applies only to already-started historical event runs;
+current event points rewards grant their fixed Special Chest instead.
 
 ### 3.3 New seasonal Adventure rewards
 
@@ -855,10 +907,31 @@ plus silver emote, and place 3 a Gold Chest plus bronze emote.
 
 Every S+ completion also independently performs:
 
-- a 1% relic roll; and
+- a 5% normal relic roll; and
 - a 10% unique Trial-emote roll.
 
 The relic uses the same weighted 11-relic, 65-ticket pool and four lifetime-unique brooch rules described in section 1.3. The emote is selected uniformly from the 55 unowned Trial emotes. If all Trial emotes are owned, the effective emote chance becomes 0%.
+
+Quills are absent from the direct S+ roll, but the separate grade chest can
+contain one when later opened. The exact chest-derived odds are:
+
+| Grade | Normal relic from chest | Quill from chest | At least one from chest | Both from chest | Additional direct normal relic |
+|---|---:|---:|---:|---:|---:|
+| D | 0% | 0% | 0% | 0% | 0% |
+| C | 0% | 1% | 1% | 0% | 0% |
+| B | 0.25% | 1.25% | 1.49% | 0.01% | 0% |
+| A | 1% | 2.10% | 3.06% | 0.04% | 0% |
+| S | 3.55% | 3.44% | 6.844% | 0.146% | 0% |
+| S+ | 5.60% | 4.48% | 9.796% | 0.284% | 5% |
+
+For S+, at least one relic across the direct reward and opened chest has
+probability `0.05 + 0.95 * 0.09796 = 14.3062%`. At least two has probability
+`0.00284 + 0.05 * (0.09796 - 0.00284) = 0.7596%`; exactly three has probability
+`0.05 * 0.00284 = 0.0142%`. Excluding Quills, at least one normal relic across
+both routes has probability `0.05 + 0.95 * 0.056 = 10.32%`. Receiving a new
+brooch directly excludes it from the later chest's selection pool, without
+changing the normal chest drop gate. These rules apply to standard and event
+Trials alike; event Special Chests never gain a Quill roll.
 
 The 55 Trial emotes are:
 
@@ -998,21 +1071,30 @@ These systems use randomness but do not directly choose a reward item. Rewards r
   exactly five seconds, once per placement; partial overlaps add no time. The
   score remains the sum of all placement percentages. The clock includes the
   700 ms result display, and input at or after expiry cannot add time or score.
-  Movement speed stays constant across sets of three. The percentage is the true geometric
-  intersection of the equal circle, square, or triangle in one square logical
-  arena. A fixed sub-pixel input snap moves a near-perfect stop onto exact
-  alignment; every other result stays below 100%. Spirit slows both movement
+  Movement speed stays constant across sets of three. In prepared version 3,
+  the filled shape is 86% of the target's linear size, centered within the same
+  logical shape box. The percentage is the fraction of that player shape inside
+  the target's interior; the gold outline is drawn entirely outside that area.
+  Any fully contained position earns 100%; a shape on/crossing the gold line
+  stays below 100% even if its fractional area rounds upward. Circle intersection,
+  rectangular overlap and triangle clipping use the same geometry as rendering.
+  A small input snap remains for near-central taps. Spirit slows both movement
   cycles by multiplying their duration by `1 + (S / 10000) * 0.8`; it never
   changes the measured overlap or the 60-second starting time. Existing version
   1 checkpoints and starts from older apps retain their untimed, three-perfect
-  continuation rule and 1.10 speed multiplier. This compatibility does not
+  continuation rule and 1.10 speed multiplier. Version 2 retains the timed rules
+  with equal-sized shapes. Capabilities select new versions at start, and
+  restored checkpoints keep their original version. This compatibility does not
   change offer probabilities, grade thresholds or reward pools.
 - Ruin Guard selects each falling boulder's lane uniformly from three lanes.
   Might lengthens its fall time by `M / 100 %`; every third completed boulder
   raises speed by a factor of 1.08. Three missed boulders end the run.
 - Rune Orbit selects the target rune uniformly from five runes for each round.
-  Their gate order is deterministic; Arcana lengthens each visible step by
-  `A / 100 %` before the score-driven acceleration. Three wrong captures end
+  Their gate order is deterministic. Prepared version 2 has a base step duration
+  of `min(800, 720 * (1 + max(0, A) / 10000))` milliseconds, divided by
+  `1.045^score`. Every point increases angular speed by 4.5%, without a lower
+  duration clamp or whole-millisecond rounding. Old version-1 checkpoints keep
+  their original rounded 260..800 ms timing. Three wrong captures end
   the run. None of these layout draws selects a reward.
 - Every online seasonal Trial uses the server-provided seed; local preview/test
   seeds remain injectable. These random layouts never roll a reward item.
@@ -1143,16 +1225,22 @@ use the current table.
 
 | Crafted consumable | Fragments | Essence | Weaveheart | Fixed information/action |
 |---|---:|---:|---:|---|
-| Moral Echo | 20 | 1 | 0 | Egg moral alignment |
-| Order Sigil | 30 | 2 | 0 | Egg law alignment |
+| Moral Prism | 20 | 1 | 0 | Egg or hatched-dragon moral alignment |
+| Order Compass | 30 | 2 | 0 | Egg or hatched-dragon law alignment |
+| Soul Mirror | 30 | 2 | 0 | Egg or hatched-dragon personality traits |
 | Astral Lens | 50 | 5 | 1 | Egg rarity |
 | Weave Oracle | 125 | 12 | 2 | Egg family and rarity |
 | Nameweaver's Quill | 10 | 1 | 0 | Rename one already-named hatched dragon |
 
-Scans never reroll the egg and do not consume another relic for known information.
-Tagged eggs may be scanned. Oracle and Quill are Altar-exclusive; existing Astral
-Lens drops and shop remain unchanged, as does the 11-relic, 65-ticket
-MysticRelic drop pool.
+Scans never reroll the egg or dragon and do not consume another relic for known
+information. Tagged eggs may be scanned. Weave Oracle remains Altar-exclusive;
+Quill also has the independent chest roll and bound 100-gem shop option above.
+Moral Echo and Order Sigil are retired catalogue names. Existing crafted counts
+map to Moral Prism and Order Compass, with the same recipe costs and no lost
+stock. Old saved/request IDs are readable for compatibility only. Soul Mirror
+is newly craftable for the same 30/2/0 cost as Order Compass. Crafted stock
+remains separate from drop/shop instances. The ordinary weighted MysticRelic
+pool remains 11 items and 65 initial tickets, excluding Quill.
 Materials and crafted stock are not tradeable. Beacon donations buy only shared
 cosmetic progress; there are no additional rolls or improved loot odds.
 
@@ -1167,8 +1255,11 @@ Migration 45 adds server-side opening for ordinary, Sinister, Special, portrait,
 title and music chest instances. All existing probabilities, inclusive currency
 ranges and eligible pools above are preserved. The client catalog snapshot is
 checked by `tool/economy_chest_catalog.dart --verify`; future catalog changes
-require a forward migration. Oracle and Nameweaver's Quill remain Altar-only;
-Astral Lens remains in the normal relic pool.
+require a forward migration. This historical phase originally made Oracle and
+Nameweaver's Quill Altar-only. The prepared forward catalogue update supersedes
+that Quill restriction and adds the independent Quill roll, higher normal
+relic gates and trade eligibility; Oracle remains Altar-only. Astral Lens
+remains in the normal relic pool. Existing opening receipts are not rerolled.
 
 Each owner-locked transaction handles at most ten distinct owned chest IDs.
 The stored receipt and ledger prevent both request retries and a new request ID

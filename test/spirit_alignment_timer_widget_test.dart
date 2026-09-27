@@ -63,7 +63,9 @@ void main() {
     final scores = <int>[];
     await pumpGame(tester, onFinished: (score) async => scores.add(score));
     expect(time('01:00'), findsOneWidget);
-    expect(find.textContaining('Every 100% overlap adds 5 seconds'),
+    expect(
+        find.textContaining(
+            'A shape entirely inside earns 100% and 5 extra seconds'),
         findsOneWidget);
     await tester.pump(const Duration(seconds: 5));
     expect(time('01:00'), findsOneWidget);
@@ -107,7 +109,7 @@ void main() {
     expect(finished, isFalse);
     await tester.tap(board);
     await tester.pump();
-    expect(find.text('Tap to stop on the outline'), findsOneWidget);
+    expect(find.text('Tap to stop inside the outline'), findsOneWidget);
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox.shrink());
   });

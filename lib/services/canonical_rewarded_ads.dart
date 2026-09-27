@@ -318,7 +318,8 @@ final class CanonicalRewardedAds extends ChangeNotifier {
     _nextRefresh = Timer(delay, _runScheduledRefresh);
   }
 
-  Future<RewardedAdWatchOutcome> watch(RewardedAdCurrency currency) async {
+  Future<RewardedAdWatchOutcome> watch(RewardedAdCurrency currency,
+      {Future<void> Function()? beforeShow}) async {
     _requireCurrent();
     if (!config.enabled ||
         _consent?.canRequestAds != true ||
@@ -365,8 +366,10 @@ final class CanonicalRewardedAds extends ChangeNotifier {
       handedToPlatform = true;
       late final bool earned;
       try {
-        earned =
-            await loaded.show(customData: claim.token, mayShow: () => _current);
+        earned = await loaded.show(
+            customData: claim.token,
+            mayShow: () => _current,
+            beforeShow: beforeShow);
       } on RewardedAdShowException catch (error) {
         if (!error.claimMayHaveBeenShown) {
           unawaited(_cancelFailedShow(claim.id));
