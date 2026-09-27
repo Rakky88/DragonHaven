@@ -57,6 +57,7 @@ void main() {
           serverOwned: true,
           inventorySnapshot: () => throw StateError(
               'A server screen attempted to read a local inventory.'));
+      var exitRequests = 0;
       await tester.runAsync(() async {
         directory = await Directory.systemTemp.createTemp('dh-server-app-ui-');
         final game = HouseholdProvider(
@@ -81,10 +82,13 @@ void main() {
       });
       await tester.runAsync(() => tester.pumpWidget(RepaintBoundary(
           key: const Key('server-review-frame'),
-          child: MultiProvider(providers: [
-            ChangeNotifierProvider.value(value: session),
-            ChangeNotifierProvider.value(value: online),
-          ], child: ServerDragonHavenApp(auth: auth)))));
+          child: MultiProvider(
+              providers: [
+                ChangeNotifierProvider.value(value: session),
+                ChangeNotifierProvider.value(value: online),
+              ],
+              child: ServerDragonHavenApp(
+                  auth: auth, exitApplication: () async => exitRequests++)))));
       await tester.pump(const Duration(milliseconds: 500));
       for (var attempt = 0; session.busy && attempt < 100; attempt++) {
         await tester.runAsync(
@@ -153,7 +157,7 @@ void main() {
       await tester.tap(find.byKey(const Key('about-logo-button')));
       await tester.pumpAndSettle();
       expect(find.text('About DragonHaven'), findsWidgets);
-      expect(find.textContaining('v0.06.12'), findsWidgets);
+      expect(find.textContaining('v0.06.13'), findsWidgets);
       Navigator.of(tester.element(find.byType(Scaffold).last)).pop();
       await tester.pumpAndSettle();
       await tester.tap(find.byKey(const Key('haven-menu-button')));
@@ -227,6 +231,18 @@ void main() {
       expect(find.text('Dragon Tower'), findsOneWidget);
       expect(Navigator.of(tester.element(find.byType(Scaffold).first)).canPop(),
           false);
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+      expect(find.text('Close DragonHaven?'), findsOneWidget);
+      expect(exitRequests, 0);
+      await tester.tap(find.byKey(const Key('cancel-app-exit')));
+      await tester.pumpAndSettle();
+      expect(exitRequests, 0);
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('confirm-app-exit')));
+      await tester.pumpAndSettle();
+      expect(exitRequests, 1);
       expect(tester.takeException(), isNull);
       await tester.pumpWidget(const SizedBox());
       await tester.pump();

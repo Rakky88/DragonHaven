@@ -7,7 +7,9 @@ declare keeper uuid := gen_random_uuid(); partner uuid := gen_random_uuid();
   command_id uuid; leased jsonb; retried jsonb; receipt jsonb; result_value jsonb;
   source_state jsonb; next_state jsonb; facts jsonb; rules text := repeat('a5',32);
   revision bigint := 1; original_wallet jsonb; action_value text; source_id uuid; payload_value jsonb;
+  client_build integer;
 begin
+  select minimum_client_build into client_build from private.game_engine_runtime where singleton;
   if (select enabled or shadow_social_enabled from private.game_engine_runtime where singleton) then
     raise exception 'social_claim_contract_requires_dormant'; end if;
   if has_function_privilege('authenticated','private.canonical_social_claim_context(uuid,text,jsonb,timestamptz)','execute')
@@ -56,32 +58,32 @@ begin
   update private.game_engine_runtime set enabled=true,ruleset_sha256=rules where singleton;
   -- An ordinary shadow copy cannot consume a live social reward.
   leased := public.begin_revisioned_game_command(keeper,gen_random_uuid(),'claim_group_reward',
-    jsonb_build_object('lobbyId',lobby),10080,rules,revision);
+    jsonb_build_object('lobbyId',lobby),client_build,rules,revision);
   if leased->>'failure_code' <> 'game_social_claim_unavailable' then
     raise exception 'social_claim_contract_shadow_isolation'; end if;
   update private.game_engine_runtime set shadow_social_enabled=true where singleton;
-  if jsonb_array_length(public.read_canonical_game_state(keeper,10080,rules)->'social_claims') <> 3
-    or public.read_canonical_game_state(outsider,10080,rules)->'social_claims' <> '[]'::jsonb then
+  if jsonb_array_length(public.read_canonical_game_state(keeper,client_build,rules)->'social_claims') <> 3
+    or public.read_canonical_game_state(outsider,client_build,rules)->'social_claims' <> '[]'::jsonb then
     raise exception 'social_claim_contract_visible_offers'; end if;
   -- All three source lookups are owner-bound before evaluation begins.
   for action_value,source_id in select * from (values
       ('claim_group_reward',lobby),('claim_pair_reward',pair_id),('claim_podium_prize',prize_id)) as sources(a,s) loop
     payload_value := jsonb_build_object(case action_value when 'claim_group_reward' then 'lobbyId'
       when 'claim_pair_reward' then 'adventureId' else 'prizeId' end,source_id);
-    leased := public.begin_revisioned_game_command(outsider,gen_random_uuid(),action_value,payload_value,10080,rules,1);
+    leased := public.begin_revisioned_game_command(outsider,gen_random_uuid(),action_value,payload_value,client_build,rules,1);
     if leased->>'failure_code' <> 'game_social_claim_unavailable' then
       raise exception 'social_claim_contract_foreign_source'; end if;
   end loop;
   -- Future journeys cannot be claimed by advancing a client clock.
   update public.group_adventure_lobbies set ends_at=now()+interval '1 hour' where id=lobby;
   leased := public.begin_revisioned_game_command(keeper,gen_random_uuid(),'claim_group_reward',
-    jsonb_build_object('lobbyId',lobby),10080,rules,revision);
+    jsonb_build_object('lobbyId',lobby),client_build,rules,revision);
   if leased->>'failure_code' <> 'game_social_claim_unavailable' then
     raise exception 'social_claim_contract_early_claim'; end if;
   update public.group_adventure_lobbies set ends_at=now()-interval '1 hour' where id=lobby;
   command_id := gen_random_uuid();
   payload_value := jsonb_build_object('lobbyId',lobby);
-  leased := public.begin_revisioned_game_command(keeper,command_id,'claim_group_reward',payload_value,10080,rules,revision);
+  leased := public.begin_revisioned_game_command(keeper,command_id,'claim_group_reward',payload_value,client_build,rules,revision);
   facts := leased->'social_context';
   if facts->>'ownerId' <> keeper::text or facts->>'sourceId' <> lobby::text
     or facts->'facts'->>'xp' <> '400' or facts->'facts'->>'dragonId' <> 'claim-dragon'
@@ -92,7 +94,7 @@ begin
   update private.canonical_game_intents set leased_until=now()-interval '1 second'
     where owner_id=keeper and canonical_game_intents.request_id=command_id;
   update public.group_adventure_lobbies set xp=401 where id=lobby;
-  retried := public.begin_revisioned_game_command(keeper,command_id,'claim_group_reward',payload_value,10080,rules,revision);
+  retried := public.begin_revisioned_game_command(keeper,command_id,'claim_group_reward',payload_value,client_build,rules,revision);
   if retried->'social_context' <> facts then raise exception 'social_claim_contract_retry_changed_facts'; end if;
   result_value := jsonb_build_object('accepted',true,'alreadyApplied',false,'sourceId',lobby);
   next_state := jsonb_set(source_state,'{chestInventory,dragon}','1');
@@ -110,11 +112,14 @@ begin
     command_id := gen_random_uuid();
     payload_value := jsonb_build_object(case action_value when 'claim_group_reward' then 'lobbyId'
       when 'claim_pair_reward' then 'adventureId' else 'prizeId' end,source_id);
-    leased := public.begin_revisioned_game_command(keeper,command_id,action_value,payload_value,10080,rules,revision);
+    leased := public.begin_revisioned_game_command(keeper,command_id,action_value,payload_value,client_build,rules,revision);
     result_value := jsonb_build_object('accepted',true,'alreadyApplied',false,'sourceId',source_id);
     -- Domain reward amounts are verified by the Dart/JS and real Edge tests.
     -- This transaction checks exactly-once inventory/source commit semantics.
     next_state := jsonb_set(source_state,'{chestInventory,dragon}',to_jsonb(revision));
+    if action_value='claim_group_reward' then
+      next_state := jsonb_set(next_state,'{appliedOnlineGroupRewardIds}',jsonb_build_array(source_id));
+    end if;
     begin
       perform public.commit_canonical_game_command(keeper,command_id,(leased->>'lease_token')::uuid,next_state,
         result_value || jsonb_build_object('sourceId',outsider));
@@ -124,11 +129,24 @@ begin
     if receipt->>'server_revision' <> (revision+1)::text then raise exception 'social_claim_contract_revision'; end if;
     if public.commit_canonical_game_command(keeper,command_id,(leased->>'lease_token')::uuid,next_state,result_value) <> receipt then
       raise exception 'social_claim_contract_commit_replay'; end if;
-    retried := public.begin_revisioned_game_command(keeper,command_id,action_value,payload_value,10080,rules,revision);
+    retried := public.begin_revisioned_game_command(keeper,command_id,action_value,payload_value,client_build,rules,revision);
     if retried->>'status' <> 'succeeded' or retried ? 'social_context' then raise exception 'social_claim_contract_receipt_replay'; end if;
     revision := revision+1;
-    retried := public.begin_revisioned_game_command(keeper,gen_random_uuid(),action_value,payload_value,10080,rules,revision);
-    if retried->>'failure_code' <> 'game_social_claim_unavailable' then raise exception 'social_claim_contract_second_payout'; end if;
+    command_id := gen_random_uuid();
+    retried := public.begin_revisioned_game_command(keeper,command_id,action_value,payload_value,client_build,rules,revision);
+    if action_value='claim_group_reward' then
+      if retried->>'status'<>'processing' or retried->'social_context'->>'sourceId'<>source_id::text then
+        raise exception 'social_claim_contract_group_idempotent_lease'; end if;
+      result_value := jsonb_build_object('accepted',true,'alreadyApplied',true,'sourceId',source_id);
+      receipt := public.commit_canonical_game_command(keeper,command_id,
+        (retried->>'lease_token')::uuid,next_state,result_value);
+      if receipt->>'server_revision'<>(revision+1)::text
+          or (select state from private.canonical_game_states where owner_id=keeper)<>next_state then
+        raise exception 'social_claim_contract_group_idempotent_commit'; end if;
+      revision := revision+1;
+    elsif retried->>'failure_code' <> 'game_social_claim_unavailable' then
+      raise exception 'social_claim_contract_second_payout';
+    end if;
   end loop;
   if (select reward_acknowledged_at from public.group_adventure_participants where lobby_id=lobby and user_id=keeper) is null
     or (select reward_acknowledged_at from public.group_adventure_participants where lobby_id=lobby and user_id=partner) is not null
@@ -137,7 +155,7 @@ begin
     or (select count(*) from public.social_notifications where entity_id=pair_id and kind='seasonal_pair_ready') <> 2
     or (select claimed_at from public.seasonal_event_prizes where id=prize_id) is null then
     raise exception 'social_claim_contract_source_acknowledgments'; end if;
-  if public.read_canonical_game_state(keeper,10080,rules)->'social_claims' <> '[]'::jsonb then
+  if public.read_canonical_game_state(keeper,client_build,rules)->'social_claims' <> '[]'::jsonb then
     raise exception 'social_claim_contract_claimed_offer_visible'; end if;
   if (select state from public.cloud_game_saves where user_id=keeper) <> source_state
     or (select to_jsonb(w) from public.player_wallets w where user_id=keeper) <> original_wallet

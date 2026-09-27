@@ -5,6 +5,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -80,8 +81,13 @@ Duration canonicalRefreshDelay({
 /// The ordinary five-tab app over confirmed account state. No device save is
 /// constructed or mutated here; all changes use durable server commands.
 class ServerDragonHavenApp extends StatefulWidget {
-  const ServerDragonHavenApp({super.key, required this.auth});
+  const ServerDragonHavenApp({
+    super.key,
+    required this.auth,
+    this.exitApplication,
+  });
   final SupabaseClient auth;
+  final Future<void> Function()? exitApplication;
   @override
   State<ServerDragonHavenApp> createState() => _ServerDragonHavenAppState();
 }
@@ -399,7 +405,11 @@ class _ServerDragonHavenAppState extends State<ServerDragonHavenApp>
               : EventBackdrop(appearance: appearance, child: child!)),
       home: Builder(
           builder: (context) => view.profile.onboardingComplete
-              ? _ServerShell(auth: widget.auth, now: () => _now)
+              ? _ServerShell(
+                  auth: widget.auth,
+                  now: () => _now,
+                  exitApplication: widget.exitApplication,
+                )
               : OnboardingScreen(
                   completeOnboarding: (name) =>
                       runShopAction(context, () async {
@@ -415,9 +425,14 @@ class _ServerDragonHavenAppState extends State<ServerDragonHavenApp>
 }
 
 class _ServerShell extends StatefulWidget {
-  const _ServerShell({required this.auth, required this.now});
+  const _ServerShell({
+    required this.auth,
+    required this.now,
+    required this.exitApplication,
+  });
   final SupabaseClient auth;
   final DateTime Function() now;
+  final Future<void> Function()? exitApplication;
   @override
   State<_ServerShell> createState() => _ServerShellState();
 }
@@ -428,6 +443,7 @@ class _ServerShellState extends State<_ServerShell> {
   int _index = 2;
   final _visited = <int>{2};
   bool _tutorialShowing = false;
+  bool _exitDialogShowing = false;
   bool _showCompleted = false;
   int _adventureNavigationRevision = 0;
   Timer? _updateRetry;
@@ -537,6 +553,43 @@ class _ServerShellState extends State<_ServerShell> {
             ? HavenMusicScene.towerNight
             : HavenMusicScene.towerDay)
         : HavenMusicScene.towerDay));
+  }
+
+  Future<void> _confirmExit() async {
+    if (_exitDialogShowing || !mounted) return;
+    _exitDialogShowing = true;
+    try {
+      final strings = AppStrings.of(context);
+      final exit = await showDialog<bool>(
+            context: context,
+            builder: (dialogContext) => AlertDialog(
+              title: Text(
+                  strings.pick('Close DragonHaven?', 'DragonHaven afsluiten?')),
+              content: Text(strings.pick(
+                'Are you sure you want to close the game?',
+                'Weet je zeker dat je het spel wilt afsluiten?',
+              )),
+              actions: [
+                TextButton(
+                  key: const Key('cancel-app-exit'),
+                  onPressed: () => Navigator.pop(dialogContext, false),
+                  child: Text(strings.pick('Keep playing', 'Verder spelen')),
+                ),
+                FilledButton(
+                  key: const Key('confirm-app-exit'),
+                  onPressed: () => Navigator.pop(dialogContext, true),
+                  child: Text(strings.pick('Close game', 'Spel afsluiten')),
+                ),
+              ],
+            ),
+          ) ??
+          false;
+      if (exit && mounted) {
+        await (widget.exitApplication?.call() ?? SystemNavigator.pop());
+      }
+    } finally {
+      _exitDialogShowing = false;
+    }
   }
 
   Future<void> _tutorial() async {
@@ -704,8 +757,14 @@ class _ServerShellState extends State<_ServerShell> {
                       label: labels[i])
               ])),
     );
-    return NotificationDestinationListener(
-        onDestination: _notification, child: scaffold);
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) unawaited(_confirmExit());
+      },
+      child: NotificationDestinationListener(
+          onDestination: _notification, child: scaffold),
+    );
   }
 }
 

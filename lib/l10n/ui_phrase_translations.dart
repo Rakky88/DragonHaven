@@ -624,6 +624,38 @@ String? _translatedDynamicUiPhrase(String text, String languageCode) {
 }
 
 const uiPhraseTranslations = <String, List<String>>{
+  'Close DragonHaven?': [
+    'DragonHaven schließen?',
+    '¿Cerrar DragonHaven?',
+    'Fermer DragonHaven ?',
+    'Chiudere DragonHaven?',
+    'Fechar DragonHaven?',
+    'DragonHavenを終了しますか？',
+  ],
+  'Are you sure you want to close the game?': [
+    'Möchtest du das Spiel wirklich schließen?',
+    '¿Seguro que quieres cerrar el juego?',
+    'Voulez-vous vraiment fermer le jeu ?',
+    'Vuoi davvero chiudere il gioco?',
+    'Tem a certeza de que quer fechar o jogo?',
+    '本当にゲームを終了しますか？',
+  ],
+  'Keep playing': [
+    'Weiterspielen',
+    'Seguir jugando',
+    'Continuer à jouer',
+    'Continua a giocare',
+    'Continuar a jogar',
+    'プレイを続ける',
+  ],
+  'Close game': [
+    'Spiel schließen',
+    'Cerrar juego',
+    'Fermer le jeu',
+    'Chiudi il gioco',
+    'Fechar o jogo',
+    'ゲームを終了',
+  ],
   'Tower room': [
     'Turmzimmer',
     'Sala de la torre',

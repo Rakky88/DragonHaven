@@ -1,5 +1,41 @@
 # DragonHaven audit
 
+## v0.06.13 release preparation - 27 September 2026
+
+Candidate display/package version 0.06.13, Android build 10106. Group Adventure
+claim validation now treats a delayed repeat as an idempotent replay when the
+canonical state already contains the lobby reward. The commit still verifies
+the immutable server facts and acknowledges the participant in the same
+transaction; it cannot add the reward twice. Belka's unclaimed reward remains
+open. The already-applied reward for Your Wildest Dreams was requeued once so
+the client can clear its stale claim through that safe replay path. A targeted
+production query verified one ready claim for each Keeper, with only Your
+Wildest Dreams present in the applied-reward ledger. The rollback-only staging
+contract also completed a first Group claim and a separate later replay,
+verified an unchanged canonical state on the replay, and removed all synthetic
+records by rollback.
+
+The Friends-list trade shortcut now enters the canonical server-owned trade
+screen, matching the friend-profile path. Friend RPCs return the existing three
+Ascended Trial records and profiles render those records when present. Android
+back navigation at the root shell now asks before closing the game. Migration
+103 was rehearsed on staging, then applied to production; both environments
+report zero database lint errors. The RPC additions are backward-compatible
+with older clients and the game worker, runtime switches, reward rules and
+economy values are unchanged.
+
+Release validation passed: clean Flutter analysis; 1,330 Flutter tests with one
+intentional opt-in skip; 13 Android unit tests; 20 rewarded-ad SSV tests; 33
+Edge command tests; synchronized reference documentation; MIDI normalization;
+and clean diff checks. Production preflight confirmed 103 exact migrations,
+zero database lint errors, healthy Auth/application endpoints and the active
+SSV function/version/ad-unit contract. The signed `nl.dragonhaven.app` APK is
+583,650,429 bytes with SHA-256
+`2092014ee441082ff408b2208c99a07b35f819dbc3b54dbd938f3cafc34d087a`;
+its package version is 0.06.13/build 10106, its expected signing certificate
+matches, and all three Android ABIs are present. A clean emulator install
+opened the production account screen without Flutter or Android runtime errors.
+
 ## One-time Rune Orbit score correction - 27 September 2026
 
 On the owner's explicit request, existing Rune Orbit dragon records of 50 or

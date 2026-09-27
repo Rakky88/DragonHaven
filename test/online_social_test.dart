@@ -34,6 +34,24 @@ import 'package:shared_preferences/shared_preferences.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
+  test('friend profiles decode Ascended Trial scores', () {
+    final profile = KeeperProfile.fromJson(const {
+      'user_id': 'friend',
+      'keeper_code': 'DH-12345678',
+      'display_name': 'Keeper',
+      'title': 'title_001',
+      'portrait_key': 'portrait_001',
+      'discovered_dragon_count': 1,
+      'inventory_imported': true,
+      'spirit_alignment_best': 297,
+      'ruin_guard_best': 18,
+      'rune_orbit_best': 42,
+    });
+    expect(profile.spiritAlignmentBest, 297);
+    expect(profile.ruinGuardBest, 18);
+    expect(profile.runeOrbitBest, 42);
+  });
+
   test('server-owned social mode permits Aerie tending and ranking reads',
       () async {
     SharedPreferences.setMockInitialValues({});
@@ -2969,6 +2987,9 @@ void main() {
     await tester.tap(find.byKey(const Key('toggle-account-trial-records')));
     await tester.pump(const Duration(milliseconds: 250));
     expect(find.text('Cavern Flight'), findsOneWidget);
+    expect(find.text('Spirit Alignment'), findsOneWidget);
+    expect(find.text('Ruin Guard'), findsOneWidget);
+    expect(find.text('Rune Orbit'), findsOneWidget);
     await tester.fling(
       find.byKey(const Key('friend-profile-friend-user')),
       const Offset(0, -700),
@@ -3775,6 +3796,9 @@ class _FakeSocialRepository implements SocialRepository {
     cavernFlightBest: 211,
     ruinBreakerBest: 1200,
     runeweaverBest: 11,
+    spiritAlignmentBest: 296,
+    ruinGuardBest: 19,
+    runeOrbitBest: 37,
     favoriteDragon: _favorite,
   );
 

@@ -438,6 +438,9 @@ class KeeperProfile {
     this.cavernFlightBest = 0,
     this.ruinBreakerBest = 0,
     this.runeweaverBest = 0,
+    this.spiritAlignmentBest = 0,
+    this.ruinGuardBest = 0,
+    this.runeOrbitBest = 0,
     this.favoriteDragon,
   });
 
@@ -460,6 +463,9 @@ class KeeperProfile {
   final int cavernFlightBest;
   final int ruinBreakerBest;
   final int runeweaverBest;
+  final int spiritAlignmentBest;
+  final int ruinGuardBest;
+  final int runeOrbitBest;
   final FavoriteDragonSummary? favoriteDragon;
 
   factory KeeperProfile.fromJson(Map<String, dynamic> json) {
@@ -481,6 +487,9 @@ class KeeperProfile {
       cavernFlightBest: _int(json['cavern_flight_best']),
       ruinBreakerBest: _int(json['ruin_breaker_best']),
       runeweaverBest: _int(json['runeweaver_best']),
+      spiritAlignmentBest: _int(json['spirit_alignment_best']),
+      ruinGuardBest: _int(json['ruin_guard_best']),
+      runeOrbitBest: _int(json['rune_orbit_best']),
       favoriteDragon: favoriteId == null || favoriteId.isEmpty
           ? null
           : FavoriteDragonSummary.fromJson(json),

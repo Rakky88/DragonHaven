@@ -528,9 +528,11 @@ class _FriendTile extends StatelessWidget {
             tooltip: activeTrades.isEmpty
                 ? strings.pick('Start trade', 'Ruil starten')
                 : strings.pick('Open trade', 'Ruil openen'),
-            onPressed: () => activeTrades.isEmpty
-                ? _startTrade(context, friend)
-                : _showTrade(context, activeTrades.first),
+            onPressed: () => online.serverOwned
+                ? _openCanonicalTrades(context, friend)
+                : activeTrades.isEmpty
+                    ? _startTrade(context, friend)
+                    : _showTrade(context, activeTrades.first),
             icon: Badge.count(
                 count: activeTrades.length,
                 isLabelVisible: activeTrades.isNotEmpty,
@@ -697,6 +699,9 @@ Future<void> _showFriendProfile(
               cavernFlightBest: friend.cavernFlightBest,
               ruinBreakerBest: friend.ruinBreakerBest,
               runeweaverBest: friend.runeweaverBest,
+              spiritAlignmentBest: friend.spiritAlignmentBest,
+              ruinGuardBest: friend.ruinGuardBest,
+              runeOrbitBest: friend.runeOrbitBest,
             ),
             const SizedBox(height: 14),
             if (friend.favoriteDragon case final dragon?)
@@ -1081,6 +1086,17 @@ Future<void> _startTrade(BuildContext context, KeeperProfile friend) async {
   await online.createTrade(friend.userId, item);
   if (context.mounted) _showProviderMessage(context, online);
 }
+
+Future<void> _openCanonicalTrades(
+  BuildContext context,
+  KeeperProfile friend,
+) =>
+    Navigator.of(context).push(MaterialPageRoute<void>(
+        builder: (_) => Scaffold(
+              appBar: AppBar(
+                  title: Text(AppStrings.of(context).pick('Trades', 'Ruilen'))),
+              body: CanonicalTradesScreen(keeperCode: friend.keeperCode),
+            )));
 
 Future<TradeItem?> _pickTradeItem(BuildContext context) async {
   final online = context.read<OnlineAccountProvider>();
