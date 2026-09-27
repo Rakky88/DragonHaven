@@ -19,9 +19,10 @@ Special Event, event calendar, event points target or Special Adventure.
 
 ## Standard Trial scoring and acceleration - 27 September 2026 (prepared)
 
-New ordinary Spirit Alignment v3 scores the portion of a smaller shape inside
-the golden contour's interior; full containment earns 100% and the existing
-five-second bonus. Rune Orbit v2 speeds up 4.5% per point without a minimum
+New ordinary Spirit Alignment v4 scores the portion of a smaller shape inside
+the golden contour's interior; full containment earns 100%, and three
+consecutive 100% placements earn one five-second bonus. Rune Orbit v2 speeds up
+4.5% per point without a minimum
 step duration. Versioned checkpoints preserve old runs and capability checks
 prevent an old app from resuming rules it cannot replay. Event minigames,
 offer/category chances, grade thresholds, rewards and Special Chest contents
@@ -56,8 +57,9 @@ is required before production uses them.
 ## Timed standard Spirit Alignment - 27 September 2026 (unreleased)
 
 The ordinary Spirit Alignment Trial now starts with 60 seconds and accepts
-successive shapes until that time expires. Each perfect placement adds five
-seconds. Its old checkpoints retain their previous rules through explicit
+successive shapes until that time expires. Three consecutive perfect placements
+add five seconds; any lower score resets that streak. Its old checkpoints retain
+their previous rules through explicit
 client capability routing. This is not an Event Trial: event-category odds,
 event schedules, Special Adventure requirements, chest pools, egg contents
 and event rewards remain unchanged. The shared command schema and replay
@@ -519,7 +521,7 @@ descending; existing recommendation/acquisition order breaks ties. Ordinary
 Adventures keep their single-focus display and ordering. Inspecting Expertise
 does not select or start a dragon. Duration formulas and rewards are unchanged.
 
-<!-- reference-source-fingerprint: 027a7c5530b678f1 -->
+<!-- reference-source-fingerprint: a44f48ca16cb6a1c -->
 
 Calendar hardening after v0.05.29: canonical commands normalize the database
 instant to UTC. Legacy offline play retains its local day. Long-adventure

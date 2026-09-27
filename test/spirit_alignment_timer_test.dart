@@ -33,6 +33,8 @@ void main() {
       expect(game.timed, isTrue);
       expect(game.remainingMs, 60000);
       expect(game.perfectPlacements, 0);
+      expect(game.consecutivePerfects, 0);
+      expect(game.earnedTimeBonuses, 0);
       game.advanceTo(59999);
       expect(game.ended, isFalse);
       expect(game.remainingMs, 1);
@@ -63,13 +65,14 @@ void main() {
     expect(game.round, 9);
     expect(game.score, 0);
     expect(game.perfectPlacements, 0);
+    expect(game.consecutivePerfects, 0);
+    expect(game.earnedTimeBonuses, 0);
     expect(game.remainingMs, 60000 - at);
     game.advanceTo(60000);
     expect(game.ended, isTrue);
   });
 
-  test(
-      'each individual perfect adds five seconds once, including after restore',
+  test('three consecutive perfects add five seconds once and survive restore',
       () {
     var game = SpiritAlignmentGame(seed: 41, spirit: 300);
     var at = 0;
@@ -77,7 +80,10 @@ void main() {
       at = _perfect(game, at);
       expect(game.perfectPlacements, i);
       expect(game.score, i * 100);
-      expect(game.remainingMs, 60000 + i * 5000 - at);
+      expect(game.consecutivePerfects, i % 3);
+      expect(game.earnedTimeBonuses, i ~/ 3);
+      expect(game.remainingMs, 60000 + (i ~/ 3) * 5000 - at);
+      expect(game.latestPlacementEarnedBonus, i % 3 == 0);
       expect(game.tap(at), isFalse);
       expect(game.perfectPlacements, i);
       final checkpoint = jsonDecode(jsonEncode(game.checkpoint()));
@@ -89,12 +95,35 @@ void main() {
     }
     expect(game.round, 3);
     expect(game.roundSpeed, 1);
-    game.advanceTo(89999);
+    game.advanceTo(69999);
     expect(game.ended, isFalse);
-    game.advanceTo(90000);
+    game.advanceTo(70000);
     expect(game.ended, isTrue);
     expect(game.remainingMs, 0);
     expect(game.score, 600);
+  });
+
+  test('an imperfect placement breaks the perfect streak', () {
+    final game = SpiritAlignmentGame(seed: 41, spirit: 300);
+    var at = _perfect(game, 0);
+    game.advanceTo(at += 700);
+    at = _perfect(game, at);
+    game.advanceTo(at += 700);
+    expect(game.consecutivePerfects, 2);
+
+    expect(game.tap(at), isTrue);
+    expect(game.tap(at), isTrue);
+    expect(game.latestOverlap, 0);
+    expect(game.consecutivePerfects, 0);
+    expect(game.earnedTimeBonuses, 0);
+    game.advanceTo(at += 700);
+
+    for (var i = 0; i < 3; i++) {
+      at = _perfect(game, at);
+      game.advanceTo(at += 700);
+    }
+    expect(game.earnedTimeBonuses, 1);
+    expect(game.consecutivePerfects, 0);
   });
 
   test('time can expire while showing a result or while aligning horizontally',
@@ -115,6 +144,7 @@ void main() {
     expect(horizontal.ended, isTrue);
     expect(horizontal.score, 0);
     expect(horizontal.perfectPlacements, 0);
+    expect(horizontal.earnedTimeBonuses, 0);
   });
 
   test('timer and bonus replay identically with bounded checkpoint state', () {
@@ -143,8 +173,10 @@ void main() {
     expect(live.ended, isFalse);
     expect(live.score, 4000);
     expect(live.perfectPlacements, 40);
-    live.advanceTo(260000);
-    replay.advanceTo(260000);
+    expect(live.earnedTimeBonuses, 13);
+    expect(live.consecutivePerfects, 1);
+    live.advanceTo(125000);
+    replay.advanceTo(125000);
     expect(live.ended, isTrue);
     expect(replay.ended, isTrue);
     expect(replay.alignment!.checkpoint(), live.checkpoint());
@@ -181,6 +213,19 @@ void main() {
       expect(
           () => SpiritAlignmentGame.fromCheckpoint(
               {...checkpoint, 'perfectPlacements': value},
+              spirit: 0),
+          throwsFormatException);
+    }
+    for (final entry in [
+      ('consecutivePerfects', -1),
+      ('consecutivePerfects', 3),
+      ('consecutivePerfects', null),
+      ('earnedTimeBonuses', -1),
+      ('earnedTimeBonuses', null),
+    ]) {
+      expect(
+          () => SpiritAlignmentGame.fromCheckpoint(
+              {...checkpoint, entry.$1: entry.$2},
               spirit: 0),
           throwsFormatException);
     }

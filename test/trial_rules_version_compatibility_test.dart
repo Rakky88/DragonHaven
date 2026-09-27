@@ -27,7 +27,7 @@ void main() {
       final capability = kind == TrialKind.spiritAlignment
           ? 'spiritAlignmentVersion'
           : 'runeOrbitVersion';
-      final version = kind == TrialKind.spiritAlignment ? 3 : 2;
+      final version = kind == TrialKind.spiritAlignment ? 4 : 2;
 
       setUp(() async {
         directory = await Directory.systemTemp.createTemp('dh-trial-rules-');
@@ -60,7 +60,7 @@ void main() {
           TrialRunModel.fromCheckpoint(Map<String, dynamic>.from(
               server.state['_activeGameAttempt']['checkpoint'] as Map));
       bool newRules(TrialRunModel model) => kind == TrialKind.spiritAlignment
-          ? model.alignment!.containedScoring
+          ? model.alignment!.streakBonus
           : model.orbit!.uncappedSpeed;
 
       test('new starts use new rules and recover the same rules after restart',
@@ -158,6 +158,26 @@ void main() {
                   ['version'],
               2);
         });
+
+        test('version 3 keeps its per-perfect bonus across an upgrade',
+            () async {
+          final receipt = await session.execute('start_trial', {
+            'offerId': offer.id,
+            'dragonId': dragonId,
+            capability: 3,
+          });
+          expect(receipt!.succeeded, true);
+          expect(serverModel().alignment!.timed, true);
+          expect(serverModel().alignment!.containedScoring, true);
+          expect(serverModel().alignment!.streakBonus, false);
+          final resumed = CanonicalTrialRunSource(session, offer, dragonId);
+          await resumed.start();
+          expect(resumed.restoredModel!.alignment!.streakBonus, false);
+          expect(
+              server.state['_activeGameAttempt']['checkpoint']['alignment']
+                  ['version'],
+              3);
+        });
       }
     });
   }
@@ -178,8 +198,9 @@ void main() {
         <String, dynamic>{},
         {'spiritAlignmentVersion': 2},
         {'spiritAlignmentVersion': 3},
+        {'spiritAlignmentVersion': 4},
         {'runeOrbitVersion': 2},
-        {'spiritAlignmentVersion': 3, 'runeOrbitVersion': 2},
+        {'spiritAlignmentVersion': 4, 'runeOrbitVersion': 2},
       ]) {
         final payload = {...base, ...optional};
         expect(
@@ -193,7 +214,7 @@ void main() {
       expect(
           () => intent(action, {
                 ...base,
-                'spiritAlignmentVersion': 3,
+                'spiritAlignmentVersion': 4,
                 'runeOrbitVersion': 2,
                 'score': 999,
               }),

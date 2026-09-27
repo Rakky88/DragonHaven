@@ -15,6 +15,7 @@ abstract final class TrialAttempts {
       required String dragonId,
       bool timedSpiritAlignment = false,
       bool containedSpiritAlignment = false,
+      bool streakBonusSpiritAlignment = false,
       bool uncappedRuneOrbit = false,
       required DateTime now}) async {
     final dragon = game.ownedDragons.where((d) => d.id == dragonId).firstOrNull;
@@ -37,6 +38,7 @@ abstract final class TrialAttempts {
         seed: seed,
         timedSpiritAlignment: timedSpiritAlignment,
         containedSpiritAlignment: containedSpiritAlignment,
+        streakBonusSpiritAlignment: streakBonusSpiritAlignment,
         uncappedRuneOrbit: uncappedRuneOrbit,
         training: {
           for (final focus in TrainingFocus.values)
@@ -68,6 +70,7 @@ abstract final class TrialAttempts {
       required String replacementId,
       bool supportsTimedSpiritAlignment = false,
       bool supportsContainedSpiritAlignment = false,
+      bool supportsStreakBonusSpiritAlignment = false,
       bool supportsUncappedRuneOrbit = false,
       required DateTime now}) {
     if (attempt == null || attempt['type'] != 'trial' || attempt['id'] != id) {
@@ -84,6 +87,8 @@ abstract final class TrialAttempts {
     if ((!supportsTimedSpiritAlignment && model.alignment?.timed == true) ||
         (!supportsContainedSpiritAlignment &&
             model.alignment?.containedScoring == true) ||
+        (!supportsStreakBonusSpiritAlignment &&
+            model.alignment?.streakBonus == true) ||
         (!supportsUncappedRuneOrbit && model.orbit?.uncappedSpeed == true)) {
       throw const TrialAttemptException('game_attempt_unavailable');
     }

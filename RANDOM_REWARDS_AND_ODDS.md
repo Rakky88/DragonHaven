@@ -305,7 +305,7 @@ Ruleset: v0.05.29 published and verified; production schema 65, economy activati
 
 Source baseline: v0.05.16, with subsequent changes and dormant server rules below
 
-<!-- reference-source-fingerprint: b0f6af64ba666a3d -->
+<!-- reference-source-fingerprint: 47af8b3ee247a3c4 -->
 
 Calendar hardening after v0.05.29: canonical commands normalize the database
 instant to UTC. Legacy offline play retains its local day. Long-adventure
@@ -1106,11 +1106,12 @@ These systems use randomness but do not directly choose a reward item. Rewards r
   center. Circle, square and triangle appear in that fixed order, moving first
   vertically at the left and then horizontally after the first tap. New timed
   runs start with exactly 60 seconds and continue cycling shapes regardless of
-  the previous percentages. Every individual displayed 100% immediately adds
-  exactly five seconds, once per placement; partial overlaps add no time. The
+  the previous percentages. Three consecutive displayed 100% placements add
+  exactly five seconds once; any partial placement breaks that streak and adds
+  no time. A new three-perfect streak can then earn the next bonus. The
   score remains the sum of all placement percentages. The clock includes the
   700 ms result display, and input at or after expiry cannot add time or score.
-  Movement speed stays constant across sets of three. In prepared version 3,
+  Movement speed stays constant across sets of three. In prepared version 4,
   the filled shape is 86% of the target's linear size, centered within the same
   logical shape box. The percentage is the fraction of that player shape inside
   the target's interior; the gold outline is drawn entirely outside that area.
@@ -1122,7 +1123,8 @@ These systems use randomness but do not directly choose a reward item. Rewards r
   changes the measured overlap or the 60-second starting time. Existing version
   1 checkpoints and starts from older apps retain their untimed, three-perfect
   continuation rule and 1.10 speed multiplier. Version 2 retains the timed rules
-  with equal-sized shapes. Capabilities select new versions at start, and
+  with equal-sized shapes; version 3 retains contained scoring with its former
+  bonus after every perfect placement. Capabilities select new versions at start, and
   restored checkpoints keep their original version. This compatibility does not
   change offer probabilities, grade thresholds or reward pools.
 - Ruin Guard selects each falling boulder's lane uniformly from three lanes.

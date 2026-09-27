@@ -249,7 +249,10 @@ abstract final class GameCommandEngine {
               dragonId: args.text('dragonId'),
               timedSpiritAlignment:
                   payload.containsKey('spiritAlignmentVersion'),
-              containedSpiritAlignment: payload['spiritAlignmentVersion'] == 3,
+              containedSpiritAlignment:
+                  const {3, 4}.contains(payload['spiritAlignmentVersion']),
+              streakBonusSpiritAlignment:
+                  payload['spiritAlignmentVersion'] == 4,
               uncappedRuneOrbit: payload['runeOrbitVersion'] == 2,
               now: now);
           result = TrialAttempts.display(activeAttempt);
@@ -262,7 +265,9 @@ abstract final class GameCommandEngine {
               supportsTimedSpiritAlignment:
                   payload.containsKey('spiritAlignmentVersion'),
               supportsContainedSpiritAlignment:
-                  payload['spiritAlignmentVersion'] == 3,
+                  const {3, 4}.contains(payload['spiritAlignmentVersion']),
+              supportsStreakBonusSpiritAlignment:
+                  payload['spiritAlignmentVersion'] == 4,
               supportsUncappedRuneOrbit: payload['runeOrbitVersion'] == 2,
               now: now);
           result = {

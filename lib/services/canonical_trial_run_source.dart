@@ -76,7 +76,7 @@ class CanonicalTrialRunSource {
         'offerId': offer.id,
         'dragonId': dragonId,
         if (offer.kind == TrialKind.spiritAlignment)
-          'spiritAlignmentVersion': 3,
+          'spiritAlignmentVersion': 4,
         if (offer.kind == TrialKind.runeOrbit) 'runeOrbitVersion': 2,
       });
     }
@@ -118,7 +118,7 @@ class CanonicalTrialRunSource {
             ? current.id
             : resumeAttemptId ?? _recoveredStartAttemptId!,
         if (offer.kind == TrialKind.spiritAlignment)
-          'spiritAlignmentVersion': 3,
+          'spiritAlignmentVersion': 4,
         if (offer.kind == TrialKind.runeOrbit) 'runeOrbitVersion': 2,
       });
     }

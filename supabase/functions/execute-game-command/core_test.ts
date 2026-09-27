@@ -590,14 +590,15 @@ Deno.test("Trial capabilities preserve legacy payloads and accept only supported
       ? {offerId: "trial-offer", dragonId: "owned-dragon"}
       : {attemptId: requestId};
     for (const candidate of [payload, {...payload, spiritAlignmentVersion: 2},
-      {...payload, spiritAlignmentVersion: 3}, {...payload, runeOrbitVersion: 2},
-      {...payload, spiritAlignmentVersion: 3, runeOrbitVersion: 2}]) {
+      {...payload, spiritAlignmentVersion: 3}, {...payload, spiritAlignmentVersion: 4},
+      {...payload, runeOrbitVersion: 2},
+      {...payload, spiritAlignmentVersion: 4, runeOrbitVersion: 2}]) {
       const accepted = setup();
       assert((await handleCommand(request({...body, action, payload: candidate}), accepted.deps)).status === 200);
       equal(accepted.inputs[0].payload, candidate);
       equal(accepted.calls[0].payload.p_payload, candidate);
     }
-    for (const capability of [null, 0, 1, 4, "2", true, 2.5]) {
+    for (const capability of [null, 0, 1, 5, "2", true, 2.5]) {
       const denied = setup();
       assert((await handleCommand(request({...body, action,
         payload: {...payload, spiritAlignmentVersion: capability}}), denied.deps)).status === 400);
@@ -611,7 +612,7 @@ Deno.test("Trial capabilities preserve legacy payloads and accept only supported
     }
     const denied = setup();
     assert((await handleCommand(request({...body, action,
-      payload: {...payload, spiritAlignmentVersion: 3, runeOrbitVersion: 2, score: 999}}), denied.deps)).status === 400);
+      payload: {...payload, spiritAlignmentVersion: 4, runeOrbitVersion: 2, score: 999}}), denied.deps)).status === 400);
     equal(denied.calls, []);
   }
   const denied = setup();

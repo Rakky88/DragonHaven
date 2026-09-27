@@ -220,7 +220,7 @@ void main() {
       final start = await command(state, 'start_trial', {
         'offerId': offerId,
         'dragonId': dragonId,
-        if (kind == TrialKind.spiritAlignment) 'spiritAlignmentVersion': 3,
+        if (kind == TrialKind.spiritAlignment) 'spiritAlignmentVersion': 4,
         if (kind == TrialKind.runeOrbit) 'runeOrbitVersion': 2,
       });
       state = start['state'];

@@ -261,7 +261,7 @@ class _SpiritAlignmentTrialGameState extends State<SpiritAlignmentTrialGame>
                                         fontWeight: FontWeight.w900,
                                       ),
                                     ),
-                                    if (game.timed && overlap == 100)
+                                    if (game.latestPlacementEarnedBonus)
                                       const Text(
                                         '+5s',
                                         key: Key('spirit-time-bonus'),
@@ -325,20 +325,25 @@ class _SpiritAlignmentTrialGameState extends State<SpiritAlignmentTrialGame>
                                 'Lijn zoveel mogelijk vormen uit')
                             : strings.pick('Align all three shapes',
                                 'Lijn alle drie vormen uit'),
-                        body: game.containedScoring
+                        body: game.streakBonus
                             ? strings.pick(
-                                'Start with 60 seconds. Tap once to lock the height, then again to stop inside the golden outline. A shape entirely inside earns 100% and 5 extra seconds!',
-                                'Je begint met 60 seconden. Tik eenmaal om de hoogte vast te zetten en nogmaals om binnen de gouden omtrek te stoppen. Een vorm die helemaal binnen zit geeft 100% en 5 seconden extra!',
+                                'Start with 60 seconds. Tap once to lock the height, then again to stop inside the golden outline. Three 100% scores in a row add 5 seconds!',
+                                'Je begint met 60 seconden. Tik eenmaal om de hoogte vast te zetten en nogmaals om binnen de gouden omtrek te stoppen. Drie scores van 100% achter elkaar geven 5 seconden extra!',
                               )
-                            : game.timed
+                            : game.containedScoring
                                 ? strings.pick(
-                                    'Start with 60 seconds. Tap once to lock the height, then tap again on the golden outline. Every 100% overlap adds 5 seconds. Keep going until time runs out!',
-                                    'Je begint met 60 seconden. Tik eenmaal om de hoogte vast te zetten en nogmaals op de gouden omtrek. Elke overlap van 100% geeft 5 seconden extra. Ga door tot de tijd om is!',
+                                    'Start with 60 seconds. Tap once to lock the height, then again to stop inside the golden outline. A shape entirely inside earns 100% and 5 extra seconds!',
+                                    'Je begint met 60 seconden. Tik eenmaal om de hoogte vast te zetten en nogmaals om binnen de gouden omtrek te stoppen. Een vorm die helemaal binnen zit geeft 100% en 5 seconden extra!',
                                   )
-                                : strings.pick(
-                                    'Tap once to lock the height, then tap again on the golden outline. Three displayed 100% scores make the next round 10% faster.',
-                                    'Tik eenmaal om de hoogte vast te zetten en nogmaals op de gouden omtrek. Drie zichtbare scores van 100% maken de volgende ronde 10% sneller.',
-                                  ),
+                                : game.timed
+                                    ? strings.pick(
+                                        'Start with 60 seconds. Tap once to lock the height, then tap again on the golden outline. Every 100% overlap adds 5 seconds. Keep going until time runs out!',
+                                        'Je begint met 60 seconden. Tik eenmaal om de hoogte vast te zetten en nogmaals op de gouden omtrek. Elke overlap van 100% geeft 5 seconden extra. Ga door tot de tijd om is!',
+                                      )
+                                    : strings.pick(
+                                        'Tap once to lock the height, then tap again on the golden outline. Three displayed 100% scores make the next round 10% faster.',
+                                        'Tik eenmaal om de hoogte vast te zetten en nogmaals op de gouden omtrek. Drie zichtbare scores van 100% maken de volgende ronde 10% sneller.',
+                                      ),
                       ),
                     ),
                   ),

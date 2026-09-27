@@ -51,7 +51,8 @@ void main() {
     expect(_score(SpiritAlignmentShape.square, .14, .14), 84);
   });
 
-  test('contained off-centre placement awards five seconds only once', () {
+  test('one contained off-centre placement starts a streak without a bonus',
+      () {
     final game = SpiritAlignmentGame(seed: 17, spirit: 0);
     // Lock slightly off centre, outside the existing exact-centre snap.
     var at = 0;
@@ -66,12 +67,18 @@ void main() {
     game.tap(at);
     expect(game.latestOverlap, 100);
     expect(game.perfectPlacements, 1);
-    expect(game.remainingMs, 65000 - at);
+    expect(game.consecutivePerfects, 1);
+    expect(game.earnedTimeBonuses, 0);
+    expect(game.remainingMs, 60000 - at);
+    expect(game.latestPlacementEarnedBonus, false);
     expect(game.tap(at), isFalse);
     final restored =
         SpiritAlignmentGame.fromCheckpoint(game.checkpoint(), spirit: 0);
     expect(restored.containedScoring, true);
+    expect(restored.streakBonus, true);
     expect(restored.perfectPlacements, 1);
+    expect(restored.consecutivePerfects, 1);
+    expect(restored.earnedTimeBonuses, 0);
     expect(restored.remainingMs, game.remainingMs);
   });
 
@@ -87,6 +94,6 @@ void main() {
     }
     expect(_score(SpiritAlignmentShape.square, .012, .015, contained: false),
         lessThan(100));
-    expect(SpiritAlignmentGame(seed: 5, spirit: 0).checkpoint()['version'], 3);
+    expect(SpiritAlignmentGame(seed: 5, spirit: 0).checkpoint()['version'], 4);
   });
 }

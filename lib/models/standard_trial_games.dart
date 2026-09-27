@@ -30,16 +30,19 @@ abstract final class SpiritAlignmentGeometry {
 }
 
 /// Two-tap shape alignment with a one-minute clock and five seconds awarded
-/// for each perfect placement. Legacy runs retain their original round rules.
+/// after three consecutive perfect placements. Legacy runs retain the exact
+/// rules they started with.
 class SpiritAlignmentGame {
   SpiritAlignmentGame(
       {required int seed,
       required int spirit,
       TrialRandom? random,
       bool containedScoring = true,
+      bool streakBonus = true,
       this.timed = true})
       : _random = random ?? TrialRandom(seed),
         containedScoring = timed && containedScoring,
+        streakBonus = timed && containedScoring && streakBonus,
         _assist = 1 - cavernFlightHitboxScale(spirit);
 
   static const initialTimeMs = 60000;
@@ -48,8 +51,10 @@ class SpiritAlignmentGame {
   final double _assist;
   final bool timed;
   final bool containedScoring;
+  final bool streakBonus;
   int milliseconds = 0, round = 1, shapeIndex = 0, score = 0;
   int perfectPlacements = 0;
+  int consecutivePerfects = 0, earnedTimeBonuses = 0;
   int phaseStartedAt = 0;
   int? resultUntil;
   double lockedY = .5, stoppedX = .14;
@@ -59,8 +64,12 @@ class SpiritAlignmentGame {
 
   SpiritAlignmentShape get shape => SpiritAlignmentShape.values[shapeIndex];
   double get roundSpeed => timed ? 1.0 : pow(1.1, round - 1).toDouble();
-  int get remainingMs =>
-      max(0, initialTimeMs + perfectPlacements * perfectBonusMs - milliseconds);
+  int get remainingMs => max(
+      0,
+      initialTimeMs +
+          (streakBonus ? earnedTimeBonuses : perfectPlacements) *
+              perfectBonusMs -
+          milliseconds);
   double get playerY => phase == SpiritAlignmentPhase.vertical
       ? .18 +
           _triangle(milliseconds - phaseStartedAt,
@@ -79,6 +88,11 @@ class SpiritAlignmentGame {
   double get targetY => .5;
   int? get latestOverlap => roundOverlaps.isEmpty ? null : roundOverlaps.last;
   bool get waitingForResult => phase == SpiritAlignmentPhase.result;
+  bool get latestPlacementEarnedBonus =>
+      timed &&
+      waitingForResult &&
+      latestOverlap == 100 &&
+      (!streakBonus || consecutivePerfects == 0);
 
   static double _triangle(int elapsedMs, double periodMs) {
     final progress = (elapsedMs / periodMs) % 2;
@@ -312,19 +326,31 @@ class SpiritAlignmentGame {
     );
     roundOverlaps.add(overlap);
     score += overlap;
-    if (timed && overlap == 100) perfectPlacements++;
+    if (timed && overlap == 100) {
+      perfectPlacements++;
+      if (streakBonus && ++consecutivePerfects == 3) {
+        earnedTimeBonuses++;
+        consecutivePerfects = 0;
+      }
+    } else if (streakBonus) {
+      consecutivePerfects = 0;
+    }
     phase = SpiritAlignmentPhase.result;
     resultUntil = at + 700;
     return true;
   }
 
   Map<String, dynamic> checkpoint() => {
-        'version': containedScoring
-            ? 3
-            : timed
-                ? 2
-                : 1,
+        'version': streakBonus
+            ? 4
+            : containedScoring
+                ? 3
+                : timed
+                    ? 2
+                    : 1,
         if (timed) 'perfectPlacements': perfectPlacements,
+        if (streakBonus) 'consecutivePerfects': consecutivePerfects,
+        if (streakBonus) 'earnedTimeBonuses': earnedTimeBonuses,
         'random': _random.state,
         'milliseconds': milliseconds,
         'round': round,
@@ -344,7 +370,8 @@ class SpiritAlignmentGame {
       {required int spirit}) {
     if (state['version'] != 1 &&
         state['version'] != 2 &&
-        state['version'] != 3) {
+        state['version'] != 3 &&
+        state['version'] != 4) {
       throw const FormatException('spirit_alignment_checkpoint_invalid');
     }
     final random = TrialRandom(state['random'] as int);
@@ -353,7 +380,8 @@ class SpiritAlignmentGame {
         spirit: spirit,
         random: random,
         timed: state['version'] != 1,
-        containedScoring: state['version'] == 3);
+        containedScoring: state['version'] == 3 || state['version'] == 4,
+        streakBonus: state['version'] == 4);
     random.state = state['random'] as int;
     game.milliseconds = state['milliseconds'] as int;
     game.round = state['round'] as int;
@@ -365,6 +393,20 @@ class SpiritAlignmentGame {
         throw const FormatException('spirit_alignment_checkpoint_invalid');
       }
       game.perfectPlacements = perfect;
+      if (game.streakBonus) {
+        final streak = state['consecutivePerfects'];
+        final bonuses = state['earnedTimeBonuses'];
+        if (streak is! int ||
+            streak < 0 ||
+            streak > 2 ||
+            bonuses is! int ||
+            bonuses < 0 ||
+            bonuses * 3 + streak > perfect) {
+          throw const FormatException('spirit_alignment_checkpoint_invalid');
+        }
+        game.consecutivePerfects = streak;
+        game.earnedTimeBonuses = bonuses;
+      }
     }
     game.phase = SpiritAlignmentPhase.values[state['phase'] as int];
     game.phaseStartedAt = state['phaseStartedAt'] as int;

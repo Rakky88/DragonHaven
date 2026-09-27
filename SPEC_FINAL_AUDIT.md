@@ -1,5 +1,32 @@
 # DragonHaven audit
 
+## Spirit Alignment streak bonus and score reset - 27 September 2026
+
+Prepared locally after v0.06.13; no app release or production game-worker
+deployment has been performed for this section. New Spirit Alignment attempts
+use version 4: only three consecutive displayed 100% placements award one
+five-second bonus, and every lower placement resets the streak. After a bonus,
+the next streak starts at zero. Versioned recovery preserves version 1, 2 and 3
+attempts with the exact rules under which they started, so an interrupted older
+attempt is not silently converted.
+
+On the owner's explicit request, every existing positive Spirit Alignment
+high score was reset to numeric zero on production. The correction affected
+three dragon score fields across two prepared server-owned accounts. It was
+first rehearsed inside a rolled-back transaction and then applied under the
+same per-account advisory locks, exact revision/hash guards, canonical-state
+validation and social-projection checks used by normal server writes. The final
+comparison proves that only those Spirit Alignment score fields changed in the
+JSON states; both canonical revisions advanced once. There are zero remaining
+positive canonical scores, zero positive Spirit Alignment rankings, zero
+inconsistent projections and zero affected legacy backup saves. Wallets, other
+Trial records, game runtime settings and the active ruleset remained unchanged.
+
+The complete Flutter suite passes with 1,339 tests and one intentional opt-in
+skip. Flutter analysis and synchronized living-reference checks are clean. The
+generated candidate server bundle is 1,322,208 bytes with SHA-256
+`45001d0de4006023d243e96e94e3494772f95c9a9a361440b0b3592bf7d6a4ba`.
+
 ## Keeper account progression prepared - 27 September 2026
 
 Prepared locally after v0.06.13; no release, migration or production worker

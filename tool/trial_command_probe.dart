@@ -68,7 +68,7 @@ Future<List<Object?>> trialCommandProbe() async {
         {
           'offerId': offer.id,
           'dragonId': state['pet']['id'],
-          if (kind == TrialKind.spiritAlignment) 'spiritAlignmentVersion': 3,
+          if (kind == TrialKind.spiritAlignment) 'spiritAlignmentVersion': 4,
           if (kind == TrialKind.runeOrbit) 'runeOrbitVersion': 2,
         },
         0);
@@ -123,7 +123,7 @@ Future<List<Object?>> trialCommandProbe() async {
               {
                 'attemptId': oldId,
                 if (kind == TrialKind.spiritAlignment)
-                  'spiritAlignmentVersion': 3,
+                  'spiritAlignmentVersion': 4,
                 if (kind == TrialKind.runeOrbit) 'runeOrbitVersion': 2,
               },
               at + 1000);

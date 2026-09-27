@@ -35,15 +35,17 @@ Pride komt daar bovenop. Cavern Flight, Runeweaver, Sunwake,
 New Year en Birthday hebben geen tijdslimiet. Ruin Breaker behoudt zijn 30 slagen
 of drie missers. Spirit Alignment begint met 60 seconden en blijft vormen
 aanbieden tot de tijd om is. Elke volledig passende vorm geeft 100 punten en
-5 seconden extra. De gouden lijn ligt buiten het meetgebied: op de lijn is
+drie scores van 100% achter elkaar geven samen 5 seconden extra. Een lagere
+score verbreekt die reeks. De gouden lijn ligt buiten het meetgebied: op de lijn is
 niet volledig binnen. Een bijna volledige plaatsing kan niet naar 100% worden
 afgerond. Ruin Guard en Rune Orbit eindigen na drie missers.
 Birthday eindigt bij één misser; Sunwake en New Year bij drie.
 
-Deze voorbereide regels gelden voor nieuwe Spirit-v3- en Orbit-v2-pogingen.
+Deze voorbereide regels gelden voor nieuwe Spirit-v4- en Orbit-v2-pogingen.
 Lopende oude pogingen behouden hun oorspronkelijke timing en scoreberekening:
 Spirit v1 gebruikt drie perfecte vormen en 10% versnelling per ronde; v2 heeft
-de minuutklok maar vormen van gelijke grootte. Orbit v1 behoudt zijn bestaande
+de minuutklok maar vormen van gelijke grootte en v3 houdt de bonus per losse
+perfecte plaatsing. Orbit v1 behoudt zijn bestaande
 afgeronde duur met een minimum van 260 ms.
 
 Geen van de eventtrials heeft een scoreplafond of een maximumaantal scoreacties.

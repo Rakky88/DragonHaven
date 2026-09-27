@@ -75,7 +75,7 @@ class CanonicalGameIntent {
           .hasMatch(value);
   static bool _argument(String action, String key, Object? value) {
     if (key == 'spiritAlignmentVersion') {
-      return value is int && (value == 2 || value == 3);
+      return value is int && const {2, 3, 4}.contains(value);
     }
     if (key == 'runeOrbitVersion') return value is int && value == 2;
     if (key == 'inputs') {

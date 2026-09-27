@@ -63,9 +63,7 @@ void main() {
     final scores = <int>[];
     await pumpGame(tester, onFinished: (score) async => scores.add(score));
     expect(time('01:00'), findsOneWidget);
-    expect(
-        find.textContaining(
-            'A shape entirely inside earns 100% and 5 extra seconds'),
+    expect(find.textContaining('Three 100% scores in a row add 5 seconds'),
         findsOneWidget);
     await tester.pump(const Duration(seconds: 5));
     expect(time('01:00'), findsOneWidget);
@@ -114,14 +112,14 @@ void main() {
     await tester.pumpWidget(const SizedBox.shrink());
   });
 
-  testWidgets('each individual perfect shape shows its own five-second bonus',
+  testWidgets('only the third consecutive perfect shows a five-second bonus',
       (tester) async {
     await pumpGame(tester);
     final model = SpiritAlignmentGame(seed: _offerId.hashCode, spirit: _spirit);
     await tester.tap(board);
     await tester.pump();
     var elapsed = 0;
-    for (var attempt = 0; attempt < 2; attempt++) {
+    for (var attempt = 0; attempt < 3; attempt++) {
       var at = elapsed;
       while ((model.playerY - model.targetY).abs() >
           SpiritAlignmentGeometry.snapTolerance * .75) {
@@ -141,9 +139,12 @@ void main() {
       model.tap(at);
       await tester.tap(board);
       await tester.pump();
-      expect(model.remainingMs, beforeBonus + 5000);
+      expect(
+          model.remainingMs,
+          beforeBonus +
+              (attempt == 2 ? SpiritAlignmentGame.perfectBonusMs : 0));
       expect(find.text('100%'), findsOneWidget);
-      expect(find.text('+5s'), findsOneWidget);
+      expect(find.text('+5s'), attempt == 2 ? findsOneWidget : findsNothing);
       final seconds = (model.remainingMs / 1000).ceil();
       expect(
         time('${(seconds ~/ 60).toString().padLeft(2, '0')}:'
@@ -154,7 +155,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 700));
       expect(find.byKey(const Key('spirit-time-bonus')), findsNothing);
     }
-    expect(find.text('Shape 3'), findsOneWidget);
+    expect(find.text('Shape 4'), findsOneWidget);
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox.shrink());
   });

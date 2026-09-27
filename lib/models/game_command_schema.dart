@@ -14,7 +14,7 @@ abstract final class GameCommandSchema {
       if (requiredKeys.contains(entry.key)) return true;
       return switch (entry.key) {
         'spiritAlignmentVersion' =>
-          entry.value is int && (entry.value == 2 || entry.value == 3),
+          entry.value is int && const {2, 3, 4}.contains(entry.value),
         'runeOrbitVersion' => entry.value is int && entry.value == 2,
         _ => false,
       };

@@ -26,6 +26,15 @@ const trialPhraseTranslations = <String, List<String>>{
     'Toca para parar dentro do contorno',
     'タップして輪郭の内側で止めよう'
   ],
+  'Start with 60 seconds. Tap once to lock the height, then again to stop inside the golden outline. Three 100% scores in a row add 5 seconds!':
+      [
+    'Du beginnst mit 60 Sekunden. Tippe einmal, um die Höhe festzulegen, und erneut, um innerhalb des goldenen Umrisses anzuhalten. Drei 100%-Wertungen hintereinander geben 5 Sekunden extra!',
+    'Empiezas con 60 segundos. Toca una vez para fijar la altura y otra para detener la figura dentro del contorno dorado. ¡Tres puntuaciones del 100% seguidas añaden 5 segundos!',
+    'Vous commencez avec 60 secondes. Touchez une fois pour fixer la hauteur, puis à nouveau pour arrêter la forme dans le contour doré. Trois scores de 100% consécutifs ajoutent 5 secondes !',
+    'Inizi con 60 secondi. Tocca una volta per fissare l’altezza e di nuovo per fermare la forma dentro il contorno dorato. Tre punteggi del 100% consecutivi aggiungono 5 secondi!',
+    'Começas com 60 segundos. Toca uma vez para fixar a altura e outra para parar a forma dentro do contorno dourado. Três pontuações de 100% seguidas dão mais 5 segundos!',
+    '制限時間は60秒。1回タップして高さを決め、もう1回タップして金色の輪郭の内側で止めよう。100%を3回連続で取ると5秒追加されます！'
+  ],
   'Start with 60 seconds. Tap once to lock the height, then again to stop inside the golden outline. A shape entirely inside earns 100% and 5 extra seconds!':
       [
     'Du beginnst mit 60 Sekunden. Tippe einmal, um die Höhe festzulegen, und erneut, um innerhalb des goldenen Umrisses anzuhalten. Eine vollständig enthaltene Form bringt 100% und 5 zusätzliche Sekunden!',

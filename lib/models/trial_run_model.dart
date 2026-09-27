@@ -22,6 +22,7 @@ class TrialRunModel {
       required Map<TrainingFocus, int> training,
       bool timedSpiritAlignment = true,
       bool containedSpiritAlignment = true,
+      bool streakBonusSpiritAlignment = true,
       bool uncappedRuneOrbit = true})
       : training = Map.unmodifiable(training),
         _random = Random(seed) {
@@ -47,6 +48,7 @@ class TrialRunModel {
           spirit: stat(TrainingFocus.spirit),
           timed: timedSpiritAlignment,
           containedScoring: containedSpiritAlignment,
+          streakBonus: streakBonusSpiritAlignment,
           random: TrialRandom(seed));
     }
     if (kind == TrialKind.ruinGuard) {
