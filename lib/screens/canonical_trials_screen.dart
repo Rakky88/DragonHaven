@@ -26,14 +26,18 @@ import 'canonical_dragons_screen.dart';
 import 'trial_game_screen.dart';
 
 class CanonicalTrialsScreen extends StatelessWidget {
-  const CanonicalTrialsScreen({super.key});
+  const CanonicalTrialsScreen({super.key, this.showEventProgress = true});
+
+  final bool showEventProgress;
+
   @override
   Widget build(BuildContext context) =>
-      const ShopEconomyBoundary(child: _Trials());
+      ShopEconomyBoundary(child: _Trials(showEventProgress: showEventProgress));
 }
 
 class _Trials extends StatefulWidget {
-  const _Trials();
+  const _Trials({required this.showEventProgress});
+  final bool showEventProgress;
   @override
   State<_Trials> createState() => _TrialsState();
 }
@@ -135,17 +139,18 @@ class _TrialsState extends State<_Trials> {
                             })
                         : null),
               ])),
-          for (final progress in view.adventures.eventProgress.where((p) =>
-              p.activeAt(now) &&
-              view.adventures.activeEvents.any((w) => w.key == p.key)))
-            EventProgressBar(
-                key: ValueKey(progress.key),
-                progress: progress,
-                onClaim: () => Navigator.push(
-                    context,
-                    MaterialPageRoute<void>(
-                        builder: (_) => const Scaffold(
-                            body: CanonicalAdventuresScreen())))),
+          if (widget.showEventProgress)
+            for (final progress in view.adventures.eventProgress.where((p) =>
+                p.activeAt(now) &&
+                view.adventures.activeEvents.any((w) => w.key == p.key)))
+              EventProgressBar(
+                  key: ValueKey(progress.key),
+                  progress: progress,
+                  onClaim: () => Navigator.push(
+                      context,
+                      MaterialPageRoute<void>(
+                          builder: (_) => const Scaffold(
+                              body: CanonicalAdventuresScreen())))),
           const SizedBox(height: 8),
           if (active != null)
             Card(

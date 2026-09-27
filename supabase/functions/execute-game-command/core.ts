@@ -124,6 +124,13 @@ export function object(value: unknown): value is JsonObject {
 function exactKeys(value: JsonObject, keys: readonly string[]) {
   return Object.keys(value).length === keys.length && keys.every((key) => Object.hasOwn(value, key));
 }
+function validCommandPayload(action: string, payload: JsonObject) {
+  const keys = commandKeys[action];
+  return exactKeys(payload, keys) ||
+    ((action === "start_trial" || action === "resume_trial") &&
+      payload.spiritAlignmentVersion === 2 &&
+      exactKeys(payload, [...keys, "spiritAlignmentVersion"]));
+}
 function positiveInteger(value: unknown): value is number {
   return Number.isSafeInteger(value) && (value as number) > 0;
 }
@@ -133,7 +140,7 @@ export function parseCommand(value: unknown): Command | null {
     !positiveInteger(value.clientBuild) || value.clientBuild > 2147483647 ||
     !positiveInteger(value.expectedRevision) ||
     typeof value.action !== "string" || !Object.hasOwn(commandKeys, value.action) ||
-    !object(value.payload) || !exactKeys(value.payload, commandKeys[value.action]) ||
+    !object(value.payload) || !validCommandPayload(value.action, value.payload) ||
     encoder.encode(JSON.stringify(value.payload)).length > 4096 ||
     Object.values(value.payload).some((item) => item !== null &&
       typeof item !== "string" && typeof item !== "boolean" && typeof item !== "number")) return null;

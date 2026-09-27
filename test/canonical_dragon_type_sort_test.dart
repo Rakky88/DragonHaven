@@ -1,8 +1,10 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
 import 'package:dragon_haven/models/dragon_lineage.dart';
 import 'package:dragon_haven/screens/canonical_dragons_screen.dart';
+import 'package:dragon_haven/services/canonical_game_reconciler.dart';
 import 'package:dragon_haven/services/canonical_game_session.dart';
 import 'package:dragon_haven/theme/app_theme.dart';
 import 'package:flutter/material.dart';
@@ -12,6 +14,25 @@ import 'package:provider/provider.dart';
 
 import '../tool/game_domain_probe.dart';
 import 'support/canonical_ui_server.dart';
+
+class _PreferenceTrackingSession extends CanonicalGameSession {
+  _PreferenceTrackingSession(
+      {required super.connection, required super.directory});
+
+  // Constructed in runAsync so journal I/O can complete outside fake time.
+  final _ioZone = Zone.current;
+  Future<CanonicalGameReceipt?>? preferenceSave;
+
+  @override
+  Future<CanonicalGameReceipt?> execute(
+      String action, Map<String, dynamic> payload,
+      {bool optimistic = true}) {
+    final result = _ioZone
+        .run(() => super.execute(action, payload, optimistic: optimistic));
+    if (action == 'set_preferences') preferenceSave = result;
+    return result;
+  }
+}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -25,7 +46,7 @@ void main() {
       'My Dragons sorts dragon types alphabetically in both directions and saves the choice',
       (tester) async {
     late Directory directory;
-    late CanonicalGameSession session;
+    late _PreferenceTrackingSession session;
     late CanonicalUiServer server;
     late String auroracrownId;
     const mossproutId = 'sort-mossprout';
@@ -63,7 +84,7 @@ void main() {
         ..['myDragonsSortMode'] = 'acquiredAt'
         ..['myDragonsSortDescending'] = true;
       server = CanonicalUiServer(state);
-      session = CanonicalGameSession(
+      session = _PreferenceTrackingSession(
         connection: CanonicalUiConnection(server),
         directory: directory,
       );
@@ -76,7 +97,7 @@ void main() {
     await tester.binding.setSurfaceSize(const Size(420, 850));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(
-      ChangeNotifierProvider.value(
+      ChangeNotifierProvider<CanonicalGameSession>.value(
         value: session,
         child: MaterialApp(
           theme: buildAppTheme(),
@@ -88,12 +109,13 @@ void main() {
     await tester.pump(const Duration(milliseconds: 400));
 
     Future<void> finishPreferenceSave() async {
-      for (var attempt = 0; attempt < 300 && session.busy; attempt++) {
-        await tester.runAsync(
-          () => Future<void>.delayed(const Duration(milliseconds: 10)),
-        );
-        await tester.pump();
-      }
+      final preferenceSave = session.preferenceSave;
+      expect(preferenceSave, isNotNull);
+      session.preferenceSave = null;
+      await tester.runAsync(() async {
+        final receipt = await preferenceSave;
+        expect(receipt?.succeeded, isTrue);
+      });
       expect(session.busy, isFalse, reason: session.errorCode);
       await tester.pump(const Duration(milliseconds: 400));
     }

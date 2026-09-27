@@ -1,9 +1,33 @@
 # Rewarded ads activeren
 
-Status op 23 september 2026: de integratie is voorbereid en staat veilig uit.
-De app laadt zonder expliciete productieconfiguratie geen advertenties en de
-server geeft geen nieuwe advertentieclaims uit. Het configuratiescript voert
-zelf geen deploy, release of serverwijziging uit.
+Status op 27 september 2026: v0.06.10 heeft de productie-integratie geactiveerd.
+Bij twee recente pogingen ontving de server geen Google-SSV-bevestiging; de
+gebruiker bevestigde dat de callback-URL bij een of beide advertentieblokken
+ontbrak. De gebruiker heeft beide instellingen inmiddels opgeslagen en de
+twee installatiecontroles geven HTTP 200. Daarna werd een aparte databasefout
+zichtbaar: een niet-ondersteunde regexgrens liet de echte callback mislukken.
+Migratie 100 repareert dit en is op productie toegepast. De oorspronkelijke
+ondertekende Coins-bevestiging is opnieuw aangeboden en staat nu als bevestigd
+klaar voor 150 coins; de app moet die nog ophalen. De verificatiestappen staan
+in paragraaf 4, stap 6. Rechtstreeks openen van de kale callback-URL in een
+browser geeft terecht `invalid callback`: de ondertekende Google-gegevens
+ontbreken. Zie REWARDED_ADS_RECOVERY_VERIFICATION.md.
+
+De nog niet uitgebrachte herstelwijziging laadt advertenties vooraf en toont
+na de SDK-beloning direct een voorlopig saldo. De server bevestigt dat saldo
+op de achtergrond via SSV; bij definitieve afwijzing wordt de preview met een
+melding teruggedraaid. Voorlopige valuta kan niet worden uitgegeven voordat de
+server de beloning heeft bevestigd. De herstelregistratie bewaart alleen
+claim-ID en valuta, geen token of definitief saldo. Voor eerdere pogingen
+zonder SSV is nog geen definitieve beloning toegekend. De Android-aanpassing
+voorkomt daarnaast dat een eventicoon wordt gewijzigd terwijl een
+advertentie-Activity zichtbaar is. Deze appwijzigingen zijn nog niet
+uitgebracht of op de telefoon getest.
+
+De onderstaande installatieprocedure beschrijft ook de oorspronkelijke,
+inmiddels uitgevoerde serverinstallatie. Voer die migratie- en activatiestappen
+niet opnieuw uit om alleen een ontbrekende AdMob-URL op te slaan. Het
+configuratiescript voert zelf geen deploy, release of serverwijziging uit.
 
 De ingestelde beloningen zijn:
 

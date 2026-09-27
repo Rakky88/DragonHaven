@@ -25,17 +25,24 @@ abstract final class SpiritAlignmentGeometry {
       (from - to) * travelExtent / shapeExtent;
 }
 
-/// Two-tap shape alignment. A round only continues when all three percentages
-/// displayed to the player are exactly 100.
+/// Two-tap shape alignment with a one-minute clock and five seconds awarded
+/// for each perfect placement. Legacy runs retain their original round rules.
 class SpiritAlignmentGame {
   SpiritAlignmentGame(
-      {required int seed, required int spirit, TrialRandom? random})
+      {required int seed,
+      required int spirit,
+      TrialRandom? random,
+      this.timed = true})
       : _random = random ?? TrialRandom(seed),
         _assist = 1 - cavernFlightHitboxScale(spirit);
 
+  static const initialTimeMs = 60000;
+  static const perfectBonusMs = 5000;
   final TrialRandom _random;
   final double _assist;
+  final bool timed;
   int milliseconds = 0, round = 1, shapeIndex = 0, score = 0;
+  int perfectPlacements = 0;
   int phaseStartedAt = 0;
   int? resultUntil;
   double lockedY = .5, stoppedX = .14;
@@ -44,7 +51,9 @@ class SpiritAlignmentGame {
   bool ended = false;
 
   SpiritAlignmentShape get shape => SpiritAlignmentShape.values[shapeIndex];
-  double get roundSpeed => pow(1.1, round - 1).toDouble();
+  double get roundSpeed => timed ? 1.0 : pow(1.1, round - 1).toDouble();
+  int get remainingMs =>
+      max(0, initialTimeMs + perfectPlacements * perfectBonusMs - milliseconds);
   double get playerY => phase == SpiritAlignmentPhase.vertical
       ? .18 +
           _triangle(milliseconds - phaseStartedAt,
@@ -167,6 +176,12 @@ class SpiritAlignmentGame {
     if (at < milliseconds) throw const FormatException('input_reversed');
     if (ended) return;
     milliseconds = at;
+    // Resolve timeout before accepting a tap or moving to the next shape. A
+    // placement at/after zero cannot resurrect an expired run with bonus time.
+    if (timed && remainingMs == 0) {
+      ended = true;
+      return;
+    }
     if (phase != SpiritAlignmentPhase.result ||
         resultUntil == null ||
         at < resultUntil!) {
@@ -174,8 +189,9 @@ class SpiritAlignmentGame {
     }
     final nextAt = resultUntil!;
     if (shapeIndex == SpiritAlignmentShape.values.length - 1) {
-      if (roundOverlaps.length == 3 &&
-          roundOverlaps.every((value) => value == 100)) {
+      if (timed ||
+          (roundOverlaps.length == 3 &&
+              roundOverlaps.every((value) => value == 100))) {
         round++;
         shapeIndex = 0;
         roundOverlaps.clear();
@@ -220,13 +236,15 @@ class SpiritAlignmentGame {
     );
     roundOverlaps.add(overlap);
     score += overlap;
+    if (timed && overlap == 100) perfectPlacements++;
     phase = SpiritAlignmentPhase.result;
     resultUntil = at + 700;
     return true;
   }
 
   Map<String, dynamic> checkpoint() => {
-        'version': 1,
+        'version': timed ? 2 : 1,
+        if (timed) 'perfectPlacements': perfectPlacements,
         'random': _random.state,
         'milliseconds': milliseconds,
         'round': round,
@@ -244,16 +262,24 @@ class SpiritAlignmentGame {
 
   factory SpiritAlignmentGame.fromCheckpoint(Map<String, dynamic> state,
       {required int spirit}) {
-    if (state['version'] != 1) {
+    if (state['version'] != 1 && state['version'] != 2) {
       throw const FormatException('spirit_alignment_checkpoint_invalid');
     }
     final random = TrialRandom(state['random'] as int);
-    final game = SpiritAlignmentGame(seed: 1, spirit: spirit, random: random);
+    final game = SpiritAlignmentGame(
+        seed: 1, spirit: spirit, random: random, timed: state['version'] == 2);
     random.state = state['random'] as int;
     game.milliseconds = state['milliseconds'] as int;
     game.round = state['round'] as int;
     game.shapeIndex = state['shapeIndex'] as int;
     game.score = state['score'] as int;
+    if (game.timed) {
+      final perfect = state['perfectPlacements'];
+      if (perfect is! int || perfect < 0 || perfect * 100 > game.score) {
+        throw const FormatException('spirit_alignment_checkpoint_invalid');
+      }
+      game.perfectPlacements = perfect;
+    }
     game.phase = SpiritAlignmentPhase.values[state['phase'] as int];
     game.phaseStartedAt = state['phaseStartedAt'] as int;
     game.resultUntil = state['resultUntil'] as int?;

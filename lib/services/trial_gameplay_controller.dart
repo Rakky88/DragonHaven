@@ -43,6 +43,15 @@ class TrialGameplayController extends ChangeNotifier {
           ? _clock.elapsedMilliseconds
           : elapsedMilliseconds!() - _testOrigin);
 
+  /// Read-only time for frame-synced presentation between controller updates.
+  /// Bound prediction to two normal simulation ticks, and freeze while paused.
+  /// Reading this never advances the model or records an input.
+  int get presentationElapsedMs {
+    if (!ready) return 0;
+    if (!running) return model.elapsedMs;
+    return _nowMs.clamp(model.elapsedMs, model.elapsedMs + 32);
+  }
+
   Future<void> prepare() async {
     if (_starting || ready) return;
     _starting = true;
@@ -116,6 +125,16 @@ class TrialGameplayController extends ChangeNotifier {
   }
 
   void input(TrialControl control, [int a = 0, int b = 0]) {
+    _input(control, a, b);
+  }
+
+  /// Resolve the displayed gate from the same authoritative instant used for
+  /// its transcript entry, including taps exactly across a rune boundary.
+  void inputOrbitRune() {
+    _input(TrialControl.tapRune, 0, 0, useOrbitGate: true);
+  }
+
+  void _input(TrialControl control, int a, int b, {bool useOrbitGate = false}) {
     if (!running) return;
     _advance();
     if (paused || model.ended) {
@@ -123,7 +142,12 @@ class TrialGameplayController extends ChangeNotifier {
       _notify();
       return;
     }
-    final input = TrialInput(model.elapsedMs, control, a, b);
+    if (useOrbitGate && model.orbit?.accepting != true) {
+      _notify();
+      return;
+    }
+    final input = TrialInput(
+        model.elapsedMs, control, useOrbitGate ? model.orbit!.gateRune : a, b);
     model.apply(input);
     _inputs.add(input);
     if (model.ended || _inputs.length >= 140) unawaited(flush());

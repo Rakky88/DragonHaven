@@ -105,6 +105,10 @@ void main() {
       'Watch an ad 2/3',
       'Watch an ad to receive 15 gems. Up to 3 per UTC day in this shop.',
       'Watch an ad to receive 150 coins. Up to 3 per UTC day in this shop.',
+      'Shape 17',
+      '23 matched',
+      "Time's up!",
+      'Align as many shapes as you can in 60 seconds. Every 100% adds 5 seconds.',
     ];
     for (final language in translatedLanguages) {
       for (final sample in samples) {

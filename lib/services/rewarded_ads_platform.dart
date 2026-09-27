@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/widgets.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 final class RewardedAdsConsentState {
@@ -69,7 +70,7 @@ final class RewardedAdShowCompletion {
 }
 
 abstract interface class LoadedRewardedAd {
-  Future<bool> show({required String customData});
+  Future<bool> show({required String customData, bool Function()? mayShow});
   Future<void> dispose();
 }
 
@@ -80,7 +81,32 @@ abstract interface class RewardedAdsPlatform {
 }
 
 final class GoogleRewardedAdsPlatform implements RewardedAdsPlatform {
+  GoogleRewardedAdsPlatform()
+      : _loadAd = _loadGoogleAd,
+        _loadTimeout = const Duration(seconds: 30),
+        _foregroundTimeout = const Duration(seconds: 5);
+
+  @visibleForTesting
+  GoogleRewardedAdsPlatform.forTesting({
+    required Future<void> Function(String, RewardedAdLoadCallback) loadAd,
+    Duration loadTimeout = const Duration(seconds: 30),
+    Duration foregroundTimeout = const Duration(seconds: 5),
+  })  : _loadAd = loadAd,
+        _loadTimeout = loadTimeout,
+        _foregroundTimeout = foregroundTimeout;
+
+  final Future<void> Function(String, RewardedAdLoadCallback) _loadAd;
+  final Duration _loadTimeout;
+  final Duration _foregroundTimeout;
   Future<void>? _mobileAdsInitialization;
+
+  static Future<void> _loadGoogleAd(
+          String adUnitId, RewardedAdLoadCallback callback) =>
+      RewardedAd.load(
+        adUnitId: adUnitId,
+        request: const AdRequest(),
+        rewardedAdLoadCallback: callback,
+      );
 
   @override
   Future<RewardedAdsConsentState> initializeConsent() async {
@@ -150,57 +176,120 @@ final class GoogleRewardedAdsPlatform implements RewardedAdsPlatform {
   @override
   Future<LoadedRewardedAd> load(String adUnitId) async {
     final loaded = Completer<RewardedAd>();
-    await RewardedAd.load(
-      adUnitId: adUnitId,
-      request: const AdRequest(),
-      rewardedAdLoadCallback: RewardedAdLoadCallback(
-        onAdLoaded: loaded.complete,
-        onAdFailedToLoad: (error) =>
-            loaded.completeError(StateError('rewarded_ad_load_${error.code}')),
-      ),
-    );
-    return _GoogleLoadedRewardedAd(
-        await loaded.future.timeout(const Duration(seconds: 30)));
+    var abandoned = false;
+    void failed(Object error, StackTrace stack) {
+      if (!abandoned && !loaded.isCompleted) {
+        loaded.completeError(error, stack);
+      }
+    }
+
+    // The timeout covers both the platform-channel invocation and the SDK's
+    // callback. An ad delivered after that deadline has no owner and is freed.
+    unawaited(() async {
+      try {
+        await _loadAd(
+          adUnitId,
+          RewardedAdLoadCallback(
+            onAdLoaded: (ad) {
+              if (abandoned || loaded.isCompleted) {
+                unawaited(ad.dispose().catchError((Object _) {}));
+              } else {
+                loaded.complete(ad);
+              }
+            },
+            onAdFailedToLoad: (error) => failed(
+                StateError('rewarded_ad_load_${error.code}'),
+                StackTrace.current),
+          ),
+        );
+      } on Object catch (error, stack) {
+        failed(error, stack);
+      }
+    }());
+    try {
+      return _GoogleLoadedRewardedAd(await loaded.future.timeout(_loadTimeout),
+          foregroundTimeout: _foregroundTimeout);
+    } on Object {
+      abandoned = true;
+      rethrow;
+    }
   }
 }
 
 final class _GoogleLoadedRewardedAd implements LoadedRewardedAd {
-  _GoogleLoadedRewardedAd(this.ad);
+  _GoogleLoadedRewardedAd(this.ad, {required this.foregroundTimeout});
   final RewardedAd ad;
+  final Duration foregroundTimeout;
   bool _used = false;
+  Future<void>? _disposal;
+
+  Future<void> _waitForForeground() async {
+    final binding = WidgetsBinding.instance;
+    if (binding.lifecycleState == AppLifecycleState.resumed) return;
+    final resumed = Completer<void>();
+    final listener = AppLifecycleListener(
+      binding: binding,
+      onResume: () {
+        if (!resumed.isCompleted) resumed.complete();
+      },
+    );
+    try {
+      if (binding.lifecycleState != AppLifecycleState.resumed) {
+        await resumed.future.timeout(foregroundTimeout,
+            onTimeout: () => throw const RewardedAdShowException(
+                'rewarded_ad_not_foreground',
+                claimMayHaveBeenShown: false));
+      }
+    } finally {
+      listener.dispose();
+    }
+  }
 
   @override
-  Future<bool> show({required String customData}) async {
+  Future<bool> show(
+      {required String customData, bool Function()? mayShow}) async {
     if (_used) throw StateError('rewarded_ad_already_used');
     _used = true;
     final completion = RewardedAdShowCompletion();
     var handedToSdk = false;
+    void requireAccount() {
+      if (_disposal != null || mayShow?.call() == false) {
+        throw const RewardedAdShowException('rewarded_ad_account_changed',
+            claimMayHaveBeenShown: false);
+      }
+    }
+
     try {
+      requireAccount();
+      await _waitForForeground();
+      requireAccount();
       await ad.setServerSideOptions(
           ServerSideVerificationOptions(customData: customData));
+      await _waitForForeground();
+      requireAccount();
       ad.fullScreenContentCallback = FullScreenContentCallback<RewardedAd>(
         onAdFailedToShowFullScreenContent: (shownAd, error) {
-          unawaited(shownAd.dispose());
+          unawaited(dispose());
           completion.failed(RewardedAdShowException(
               'rewarded_ad_show_${error.code}',
               claimMayHaveBeenShown: false));
         },
         onAdDismissedFullScreenContent: (shownAd) {
-          unawaited(shownAd.dispose());
+          unawaited(dispose());
           completion.dismissed();
         },
       );
-      await ad.show(onUserEarnedReward: (_, __) => completion.rewardEarned());
       handedToSdk = true;
+      await ad.show(onUserEarnedReward: (_, __) => completion.rewardEarned());
       return await completion.future.timeout(const Duration(minutes: 10),
           onTimeout: () => throw const RewardedAdShowException(
               'rewarded_ad_show_timeout',
               claimMayHaveBeenShown: true));
     } on RewardedAdShowException {
-      await ad.dispose();
+      await dispose();
       rethrow;
     } on Object catch (_, stack) {
-      await ad.dispose();
+      await dispose();
       Error.throwWithStackTrace(
           RewardedAdShowException('rewarded_ad_show_setup_failed',
               claimMayHaveBeenShown: handedToSdk),
@@ -211,5 +300,5 @@ final class _GoogleLoadedRewardedAd implements LoadedRewardedAd {
   }
 
   @override
-  Future<void> dispose() => ad.dispose();
+  Future<void> dispose() => _disposal ??= ad.dispose();
 }

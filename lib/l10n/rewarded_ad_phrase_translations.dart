@@ -1,6 +1,22 @@
 /// Rewarded-ad phrases. Order: German, Spanish, French, Italian, Portuguese,
 /// Japanese.
 const rewardedAdPhraseTranslations = <String, List<String>>{
+  'Reward received': [
+    'Belohnung erhalten',
+    'Recompensa recibida',
+    'Récompense reçue',
+    'Ricompensa ricevuta',
+    'Recompensa recebida',
+    '報酬を獲得しました',
+  ],
+  'The ad reward could not be verified. Your balance has been restored.': [
+    'Die Werbebelohnung konnte nicht bestätigt werden. Dein Guthaben wurde wiederhergestellt.',
+    'No se pudo verificar la recompensa del anuncio. Se ha restablecido tu saldo.',
+    'La récompense publicitaire n’a pas pu être vérifiée. Votre solde a été rétabli.',
+    'Non è stato possibile verificare la ricompensa. Il saldo è stato ripristinato.',
+    'Não foi possível verificar a recompensa do anúncio. O saldo foi reposto.',
+    '広告の報酬を確認できませんでした。残高を元に戻しました。',
+  ],
   'Ad privacy choices': [
     'Datenschutzoptionen für Werbung',
     'Opciones de privacidad de anuncios',

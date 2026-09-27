@@ -55,6 +55,7 @@ class TrialDefinition {
       kind == TrialKind.wishcakeTower;
 
   int durationMilliseconds(Map<TrainingFocus, int> training) {
+    if (kind == TrialKind.spiritAlignment) return duration.inMilliseconds;
     final total = training.values.fold(0, (sum, value) => sum + value);
     final spirit = training[TrainingFocus.spirit] ?? 0;
     return duration.inMilliseconds +
@@ -142,9 +143,10 @@ const trialDefinitions = <TrialKind, TrialDefinition>{
     titleEn: 'Spirit Alignment',
     titleNl: 'Geestuitlijning',
     subtitleEn:
-        'Align circle, square and triangle perfectly before the rhythm quickens.',
+        'Align as many shapes as you can in 60 seconds. Every 100% adds 5 seconds.',
     subtitleNl:
-        'Lijn cirkel, vierkant en driehoek perfect uit voordat het ritme versnelt.',
+        'Lijn zoveel mogelijk vormen uit in 60 seconden. Elke 100% geeft 5 seconden extra.',
+    duration: Duration(seconds: 60),
   ),
   TrialKind.ruinGuard: TrialDefinition(
     kind: TrialKind.ruinGuard,

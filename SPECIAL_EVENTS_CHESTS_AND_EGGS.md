@@ -1,3 +1,29 @@
+## Timed standard Spirit Alignment - 27 September 2026 (unreleased)
+
+The ordinary Spirit Alignment Trial now starts with 60 seconds and accepts
+successive shapes until that time expires. Each perfect placement adds five
+seconds. Its old checkpoints retain their previous rules through explicit
+client capability routing. This is not an Event Trial: event-category odds,
+event schedules, Special Adventure requirements, chest pools, egg contents
+and event rewards remain unchanged. The shared command schema and replay
+model now support both rulesets; no database migration is required.
+
+## Shared Adventure event header - 27 September 2026 (unreleased)
+
+The canonical Adventure screen places one event progress bar above Available,
+Trials, Active and Completed. Swiping or scrolling a tab keeps that same event
+bar in place; the embedded Trials pane suppresses its duplicate. Standalone
+Trials retains its own event bar. Event dates, point targets, earning rates,
+Special Chest contents and probabilities are unchanged. Ranking selectors now
+scroll horizontally with readable names; the existing event visibility window
+is unchanged.
+
+Android launcher branding now treats all app Activities, including Google's
+full-screen ad Activity, as visible. Pending icon changes wait for a real
+background transition, with a short handoff grace and configuration-change
+guard. This prevents an icon-alias switch from interrupting an in-app overlay;
+the event calendar and choice of icon remain unchanged.
+
 ## Egg picker presentation restoration - 23 September 2026
 
 The Rooftop Nest egg picker again uses the v0.05.40 tile/list layouts, saved
@@ -438,7 +464,7 @@ descending; existing recommendation/acquisition order breaks ties. Ordinary
 Adventures keep their single-focus display and ordering. Inspecting Expertise
 does not select or start a dragon. Duration formulas and rewards are unchanged.
 
-<!-- reference-source-fingerprint: cc283d3164395191 -->
+<!-- reference-source-fingerprint: 606838db2d7ff1a4 -->
 
 Calendar hardening after v0.05.29: canonical commands normalize the database
 instant to UTC. Legacy offline play retains its local day. Long-adventure

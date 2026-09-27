@@ -1657,28 +1657,31 @@ class _RewardedChestPreview extends StatelessWidget {
     final remaining = offer?.remaining ?? 3;
     final limit = status?.dailyLimit ?? 3;
     final pending = offer?.activeClaim != null;
+    final earned = ads?.earnedPending(rewardCurrency) ?? false;
     final busy = ads?.busy(rewardCurrency) ?? false;
     final ready = status?.enabled == true &&
         ads?.canRequestAds == true &&
         remaining > 0 &&
         !pending &&
         !busy;
-    final buttonText = busy
-        ? s.pick('Verifying reward…', 'Beloning controleren…')
-        : pending
-            ? s.pick('Reward pending', 'Beloning in behandeling')
-            : ads?.initializing == true
-                ? s.pick('Preparing ads…', 'Advertenties voorbereiden…')
-                : status?.enabled == true && remaining == 0
-                    ? s.pick('Daily limit reached', 'Daglimiet bereikt')
-                    : status?.enabled == true && ads?.canRequestAds == true
-                        ? s.pick('Watch an ad $remaining/$limit',
-                            'Bekijk een advertentie $remaining/$limit')
-                        : status?.enabled != true
-                            ? s.pick(
-                                'Watch an ad 3/3', 'Bekijk een advertentie 3/3')
-                            : s.pick(
-                                'Not available yet', 'Nog niet beschikbaar');
+    final buttonText = earned
+        ? s.pick('Reward received', 'Beloning ontvangen')
+        : busy
+            ? s.pick('Verifying reward…', 'Beloning controleren…')
+            : pending
+                ? s.pick('Reward pending', 'Beloning in behandeling')
+                : ads?.initializing == true
+                    ? s.pick('Preparing ads…', 'Advertenties voorbereiden…')
+                    : status?.enabled == true && remaining == 0
+                        ? s.pick('Daily limit reached', 'Daglimiet bereikt')
+                        : status?.enabled == true && ads?.canRequestAds == true
+                            ? s.pick('Watch an ad $remaining/$limit',
+                                'Bekijk een advertentie $remaining/$limit')
+                            : status?.enabled != true
+                                ? s.pick('Watch an ad 3/3',
+                                    'Bekijk een advertentie 3/3')
+                                : s.pick('Not available yet',
+                                    'Nog niet beschikbaar');
     return Card(
         key: Key('rewarded-chest-${currency.name}'),
         child: Padding(
@@ -1716,6 +1719,18 @@ class _RewardedChestPreview extends StatelessWidget {
                               'Bekijk een advertentie voor 150 munten. Maximaal 3 per dag in deze shop. Reclame wordt actief zodra de winkelconfiguratie klaar is.'),
                   textAlign: TextAlign.center),
               const SizedBox(height: 12),
+              if (ads?.error(rewardCurrency) ==
+                  'rewarded_ad_verification_failed')
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Text(
+                      s.pick(
+                          'The ad reward could not be verified. Your balance has been restored.',
+                          'De advertentiebeloning kon niet worden bevestigd. Je saldo is hersteld.'),
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                          color: Theme.of(context).colorScheme.error)),
+                ),
               FilledButton.icon(
                   onPressed: ready
                       ? () => _watch(context, ads!, rewardCurrency)
@@ -1728,12 +1743,38 @@ class _RewardedChestPreview extends StatelessWidget {
   Future<void> _watch(BuildContext context, CanonicalRewardedAds ads,
       RewardedAdCurrency currency) async {
     final s = AppStrings.of(context);
+    final navigator = Navigator.of(context, rootNavigator: true);
+    final loading = DialogRoute<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => PopScope(
+        canPop: false,
+        child: Dialog.fullscreen(
+          child: Center(
+              child: Column(mainAxisSize: MainAxisSize.min, children: [
+            const CircularProgressIndicator(),
+            const SizedBox(height: 20),
+            Text(s.pick('Preparing ads…', 'Advertenties voorbereiden…')),
+          ])),
+        ),
+      ),
+    );
+    unawaited(navigator.push(loading));
+    void closeLoading() {
+      if (navigator.mounted && loading.isActive) navigator.removeRoute(loading);
+    }
+
     try {
       final outcome = await ads.watch(currency);
-      if (!context.mounted) return;
+      closeLoading();
+      if (!context.mounted || !ads.current) return;
       switch (outcome) {
         case RewardedAdWatchOutcome.rewarded:
           // The persisted canonical presentation owns the reward reveal.
+          break;
+        case RewardedAdWatchOutcome.rewardPreviewed:
+          showAppSnackBar(
+              context, s.pick('Reward received', 'Beloning ontvangen'));
           break;
         case RewardedAdWatchOutcome.closedEarly:
           showAppSnackBar(
@@ -1748,11 +1789,14 @@ class _RewardedChestPreview extends StatelessWidget {
                   'Je beloning wordt nog gecontroleerd en verschijnt automatisch.'));
       }
     } on Object {
-      if (!context.mounted) return;
+      closeLoading();
+      if (!context.mounted || !ads.current) return;
       showAppSnackBar(
           context,
           s.pick('The ad could not be completed. Please try again later.',
               'De advertentie kon niet worden afgerond. Probeer het later opnieuw.'));
+    } finally {
+      closeLoading();
     }
   }
 }

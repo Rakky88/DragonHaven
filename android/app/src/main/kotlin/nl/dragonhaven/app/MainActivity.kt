@@ -805,17 +805,6 @@ class MainActivity : FlutterActivity() {
         }
     }
 
-    override fun onStart() {
-        EventBranding.activityVisible = true
-        super.onStart()
-    }
-
-    override fun onStop() {
-        super.onStop()
-        EventBranding.activityVisible = false
-        runCatching { EventBranding.refresh(this) }
-    }
-
     override fun onPause() {
         activityInForeground = false
         pauseMusicForBackground()

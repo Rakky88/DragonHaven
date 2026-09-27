@@ -263,6 +263,101 @@ void main() {
     expect(session.canAct, isTrue);
   });
 
+  test(
+      'reward wallet proof waits for a fresh read after an older in-flight read',
+      () async {
+    await session.synchronize();
+    final before = session.confirmedSnapshot!;
+    final originalData = jsonDecode(jsonEncode(data)) as Map<String, dynamic>;
+    addTearDown(() => data = originalData);
+    final olderRead = Completer<void>();
+    final newerRead = Completer<void>();
+    connection.holdRead = olderRead.future;
+    final reads = connection.reads;
+    final background = session.refreshSnapshotInBackground();
+    while (connection.reads == reads) {
+      await Future<void>.delayed(Duration.zero);
+    }
+
+    // The first response captured the old wallet before the claim committed.
+    data['wallet']['gems'] = before.gems + 15;
+    connection.revision++;
+    var completed = false;
+    final rewardRead = session.refreshWalletAfterReward().then((value) {
+      completed = true;
+      return value;
+    });
+    connection.holdRead = newerRead.future;
+    olderRead.complete();
+    await background;
+    while (connection.reads < reads + 2) {
+      await Future<void>.delayed(Duration.zero);
+    }
+
+    expect(completed, isFalse);
+    expect(connection.reads, reads + 2);
+    expect(session.confirmedSnapshot!.gems, before.gems);
+    expect(session.confirmedSnapshot!.serverRevision, before.serverRevision);
+    expect(session.canAct, isTrue);
+    newerRead.complete();
+    expect(await rewardRead, isTrue);
+    expect(session.confirmedSnapshot!.gems, before.gems + 15);
+    expect(
+        session.confirmedSnapshot!.serverRevision, before.serverRevision + 1);
+    expect((await session.snapshots.inspect(owner)).snapshot!.gems,
+        before.gems + 15);
+  });
+
+  test('reward wallet proof rejects skipped reads without disabling gameplay',
+      () async {
+    expect(await session.refreshWalletAfterReward(), isFalse);
+    expect(connection.reads, 0);
+    await session.synchronize();
+    final reads = connection.reads;
+    session.setForeground(false);
+    expect(await session.refreshWalletAfterReward(), isFalse);
+    session.setForeground(true);
+    expect(await session.refreshWalletAfterReward(), isFalse);
+    expect(connection.reads, reads);
+
+    await session.synchronize();
+    final held = Completer<void>();
+    connection.holdSend = held.future;
+    final pending = session.execute('purchase_title_chest', {});
+    final readsBeforeCommand = connection.reads;
+    expect(await session.refreshWalletAfterReward(), isFalse);
+    expect(connection.reads, readsBeforeCommand);
+    expect(session.canAct, isTrue);
+    held.complete();
+    await pending;
+    expect(session.canAct, isTrue);
+  });
+
+  test(
+      'failed reward wallet read cannot report proof from an earlier successful read',
+      () async {
+    await session.synchronize();
+    final before = session.confirmedSnapshot!;
+    final held = Completer<void>();
+    connection.holdRead = held.future;
+    final reads = connection.reads;
+    final background = session.refreshSnapshotInBackground();
+    while (connection.reads == reads) {
+      await Future<void>.delayed(Duration.zero);
+    }
+    // Let the existing read succeed, then lose connectivity before the read
+    // required for this reward starts.
+    final disconnect = background.then((_) => connection.online = false);
+    final rewardRead = session.refreshWalletAfterReward();
+    held.complete();
+    await disconnect;
+    expect(await rewardRead, isFalse);
+    expect(connection.reads, reads + 2);
+    expect(session.confirmedSnapshot!.gems, before.gems);
+    expect(session.errorCode, isNull);
+    expect(session.canAct, isTrue);
+  });
+
   test('background refresh discards a reply older than an intervening sync',
       () async {
     await session.synchronize();

@@ -15,12 +15,9 @@ class CanonicalGameIntent {
       : payload = Map.unmodifiable({
           for (final key in payload.keys.toList()..sort()) key: payload[key],
         }) {
-    final keys = GameCommandSchema.keys[action];
     if (!validOwner(ownerId) ||
         !validOwner(requestId) ||
-        keys == null ||
-        keys.length != payload.length ||
-        !keys.every(payload.containsKey) ||
+        !GameCommandSchema.acceptsPayload(action, payload) ||
         minimumRevision < 1 ||
         minimumRevision > 9007199254740991 ||
         payload.entries
@@ -77,6 +74,7 @@ class CanonicalGameIntent {
       RegExp(r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$')
           .hasMatch(value);
   static bool _argument(String action, String key, Object? value) {
+    if (key == 'spiritAlignmentVersion') return value is int && value == 2;
     if (key == 'inputs') {
       return value is String &&
           value.length <= 3200 &&

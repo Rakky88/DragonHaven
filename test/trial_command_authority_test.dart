@@ -217,8 +217,11 @@ void main() {
       final offerId = (state['trialOffers'] as List)
           .firstWhere((o) => o['kind'] == kind.name)['id'] as String;
       final initialXp = state['pet']['xp'] as int;
-      final start = await command(
-          state, 'start_trial', {'offerId': offerId, 'dragonId': dragonId});
+      final start = await command(state, 'start_trial', {
+        'offerId': offerId,
+        'dragonId': dragonId,
+        if (kind == TrialKind.spiritAlignment) 'spiritAlignmentVersion': 2,
+      });
       state = start['state'];
       final attempt = start['result'] as Map<String, dynamic>;
       expect(attempt.containsKey('checkpoint'), isFalse);

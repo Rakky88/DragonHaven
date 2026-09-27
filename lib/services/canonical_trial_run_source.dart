@@ -24,6 +24,7 @@ class CanonicalTrialRunSource {
   TrialRunModel? _restoredModel;
   TrialRunModel? get restoredModel => _restoredModel;
   String? _attemptId;
+  String? _recoveredStartAttemptId;
   bool _startPending = false;
   int _acknowledgedMs = 0;
   int get acknowledgedMs => _acknowledgedMs;
@@ -41,17 +42,39 @@ class CanonicalTrialRunSource {
 
   Future<CanonicalTrialAttempt> start() async {
     _requireAccount();
-    if (resumeAttemptId != null) return _resumeSaved();
+    if (resumeAttemptId != null || _recoveredStartAttemptId != null) {
+      return _resumeSaved();
+    }
+    // A pending start from an older app may have been recovered while opening
+    // this screen. Its public attempt intentionally has no rule-version field;
+    // restore the server checkpoint instead of guessing the local rules.
+    final existing = session.snapshot?.trialAttempt;
+    if (offer.kind == TrialKind.spiritAlignment &&
+        existing?.offerId == offer.id &&
+        existing?.dragonId == dragonId &&
+        existing?.kind == offer.kind) {
+      _recoveredStartAttemptId = existing!.id;
+      return _resumeSaved();
+    }
     Object? raw;
     if (_startPending) {
       await session.synchronize();
       _requireAccount();
       raw = session.snapshot?.data['trials']['attempt'];
+      if (raw != null && offer.kind == TrialKind.spiritAlignment) {
+        _recoveredStartAttemptId = CanonicalTrialAttempt.parse(raw).id;
+        _startPending = false;
+        return _resumeSaved();
+      }
     }
     if (raw == null) {
       _startPending = true;
-      raw = await CanonicalGameActions(session)
-          .execute('start_trial', {'offerId': offer.id, 'dragonId': dragonId});
+      raw = await CanonicalGameActions(session).execute('start_trial', {
+        'offerId': offer.id,
+        'dragonId': dragonId,
+        if (offer.kind == TrialKind.spiritAlignment)
+          'spiritAlignmentVersion': 2,
+      });
     }
     _requireAccount();
     final attempt = CanonicalTrialAttempt.parse(raw);
@@ -86,8 +109,13 @@ class CanonicalTrialRunSource {
     }
     if (raw == null) {
       _startPending = true;
-      raw = await CanonicalGameActions(session).execute('resume_trial',
-          {'attemptId': recovering ? current.id : resumeAttemptId!});
+      raw = await CanonicalGameActions(session).execute('resume_trial', {
+        'attemptId': recovering
+            ? current.id
+            : resumeAttemptId ?? _recoveredStartAttemptId!,
+        if (offer.kind == TrialKind.spiritAlignment)
+          'spiritAlignmentVersion': 2,
+      });
     }
     _requireAccount();
     if (raw is! Map ||

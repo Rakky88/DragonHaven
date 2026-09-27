@@ -75,7 +75,31 @@ String? _translatedDynamicUiPhrase(String text, String languageCode) {
   String? capture(RegExp expression, [int group = 1]) =>
       expression.firstMatch(text)?.group(group);
 
-  var value = capture(RegExp(r'^NEW (.+) RECORD!$'));
+  var value = capture(RegExp(r'^Shape (\d+)$'));
+  if (value != null) {
+    return _localized(languageCode, [
+      'Form $value',
+      'Figura $value',
+      'Forme $value',
+      'Forma $value',
+      'Forma $value',
+      '図形$value',
+    ]);
+  }
+
+  value = capture(RegExp(r'^(\d+) matched$'));
+  if (value != null) {
+    return _localized(languageCode, [
+      '$value Treffer',
+      '$value aciertos',
+      '$value réussites',
+      '$value corrispondenze',
+      '$value acertos',
+      '$value回成功',
+    ]);
+  }
+
+  value = capture(RegExp(r'^NEW (.+) RECORD!$'));
   if (value != null) {
     return _localized(languageCode, [
       'NEUER REKORD FÜR $value!',

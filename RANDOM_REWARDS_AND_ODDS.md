@@ -248,7 +248,7 @@ Ruleset: v0.05.29 published and verified; production schema 65, economy activati
 
 Source baseline: v0.05.16, with subsequent changes and dormant server rules below
 
-<!-- reference-source-fingerprint: 5cbe3ac9369e48ca -->
+<!-- reference-source-fingerprint: a62f3f182059e71a -->
 
 Calendar hardening after v0.05.29: canonical commands normalize the database
 instant to UTC. Legacy offline play retains its local day. Long-adventure
@@ -858,7 +858,7 @@ Every S+ completion also independently performs:
 - a 1% relic roll; and
 - a 10% unique Trial-emote roll.
 
-The relic uses the same weighted ten-relic pool and four lifetime-unique brooch rules described in section 1.3. The emote is selected uniformly from the 55 unowned Trial emotes. If all Trial emotes are owned, the effective emote chance becomes 0%.
+The relic uses the same weighted 11-relic, 65-ticket pool and four lifetime-unique brooch rules described in section 1.3. The emote is selected uniformly from the 55 unowned Trial emotes. If all Trial emotes are owned, the effective emote chance becomes 0%.
 
 The 55 Trial emotes are:
 
@@ -992,16 +992,21 @@ These systems use randomness but do not directly choose a reward item. Rewards r
 - Ruin Breaker uses timing and player input; it does not roll a reward-affecting target sequence.
 - Spirit Alignment keeps its outline fixed at the exact horizontal and vertical
   center. Circle, square and triangle appear in that fixed order, moving first
-  vertically at the left and then horizontally after the first tap. A round
-  continues only when all three
-  displayed overlaps are exactly 100%, then movement becomes exactly 1.10 times
-  as fast for each successive round. The percentage is the true geometric
+  vertically at the left and then horizontally after the first tap. New timed
+  runs start with exactly 60 seconds and continue cycling shapes regardless of
+  the previous percentages. Every individual displayed 100% immediately adds
+  exactly five seconds, once per placement; partial overlaps add no time. The
+  score remains the sum of all placement percentages. The clock includes the
+  700 ms result display, and input at or after expiry cannot add time or score.
+  Movement speed stays constant across sets of three. The percentage is the true geometric
   intersection of the equal circle, square, or triangle in one square logical
   arena. A fixed sub-pixel input snap moves a near-perfect stop onto exact
   alignment; every other result stays below 100%. Spirit slows both movement
   cycles by multiplying their duration by `1 + (S / 10000) * 0.8`; it never
-  changes the measured overlap. The run has no timer and ends on the first
-  imperfect three-shape round.
+  changes the measured overlap or the 60-second starting time. Existing version
+  1 checkpoints and starts from older apps retain their untimed, three-perfect
+  continuation rule and 1.10 speed multiplier. This compatibility does not
+  change offer probabilities, grade thresholds or reward pools.
 - Ruin Guard selects each falling boulder's lane uniformly from three lanes.
   Might lengthens its fall time by `M / 100 %`; every third completed boulder
   raises speed by a factor of 1.08. Three missed boulders end the run.
@@ -1146,7 +1151,8 @@ use the current table.
 
 Scans never reroll the egg and do not consume another relic for known information.
 Tagged eggs may be scanned. Oracle and Quill are Altar-exclusive; existing Astral
-Lens drops and shop remain unchanged, as do the seven-member MysticRelic pools.
+Lens drops and shop remain unchanged, as does the 11-relic, 65-ticket
+MysticRelic drop pool.
 Materials and crafted stock are not tradeable. Beacon donations buy only shared
 cosmetic progress; there are no additional rolls or improved loot odds.
 

@@ -5,6 +5,8 @@ import 'package:flutter_test/flutter_test.dart';
 const _migrationPath = 'supabase/migrations/202609230094_rewarded_ads.sql';
 const _repairMigrationPath =
     'supabase/migrations/202609230095_rewarded_ads_privacy_notice.sql';
+const _transactionRegexRepairPath =
+    'supabase/migrations/202609270100_rewarded_ad_transaction_regex.sql';
 
 String _compact(String value) => value.replaceAll(RegExp(r'\s+'), ' ').trim();
 
@@ -21,12 +23,15 @@ void main() {
   late String compact;
   late String repairSql;
   late String repairCompact;
+  late String transactionRegexRepairCompact;
 
   setUpAll(() {
     sql = File(_migrationPath).readAsStringSync();
     compact = _compact(sql);
     repairSql = File(_repairMigrationPath).readAsStringSync();
     repairCompact = _compact(repairSql);
+    transactionRegexRepairCompact =
+        _compact(File(_transactionRegexRepairPath).readAsStringSync());
   });
 
   test('reward issuance is dormant with fixed product limits and rewards', () {
@@ -189,6 +194,36 @@ void main() {
       reason: 'Without parentheses PostgreSQL treats the JSON key as an '
           'integer subtraction operand at runtime.',
     );
+  });
+
+  test('SSV transaction ids avoid PostgreSQL repetition bounds above 255', () {
+    expect(transactionRegexRepairCompact, isNot(contains('{1,256}')));
+    expect(
+      transactionRegexRepairCompact,
+      contains('length(p_transaction_id) not between 1 and 256'),
+    );
+    expect(
+      transactionRegexRepairCompact,
+      contains(
+        "length(rewarded_ad_context->>'transactionId') between 1 and 256",
+      ),
+    );
+    expect(
+      RegExp(r"\^\[A-Za-z0-9\._~-\]\+\$")
+          .allMatches(transactionRegexRepairCompact)
+          .length,
+      2,
+      reason: 'the callback and sealed intent use the same safe alphabet',
+    );
+    expect(
+      transactionRegexRepairCompact,
+      isNot(
+          contains('drop constraint rewarded_ad_claims_transaction_id_check')),
+      reason:
+          'the claim-table check already uses length plus an unbounded regex',
+    );
+    expect(transactionRegexRepairCompact,
+        contains("notify pgrst,'reload schema'"));
   });
 
   test('tables stay private and only intended RPC roles receive execute', () {

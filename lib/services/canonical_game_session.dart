@@ -51,19 +51,69 @@ class CanonicalGameSession extends ChangeNotifier {
   String? _errorCode;
   Future<CanonicalGameReceipt?>? _operation;
   Future<void>? _backgroundRefresh;
+  int _backgroundReadsApplied = 0;
   final _admitted = <Future<CanonicalGameReceipt?>>{};
   bool _retiring = false;
   Future<void>? _closing;
   Future<void>? _connectionClosing;
   String? _operationKey;
   final _commands = <_QueuedCommand>[];
+  final _rewardedPreviews = <String, ({String currency, int amount})>{};
+  final _confirmedRewardedClaims = <String>{};
+  CanonicalGameSnapshot? _rewardedPreviewBase;
+  CanonicalGameSnapshot? _rewardedPreviewSnapshot;
 
   bool get _sameSession =>
       !_disposed &&
       _owner == connection.currentOwner &&
       _epoch == connection.sessionEpoch;
-  CanonicalGameSnapshot? get snapshot =>
-      _sameSession ? (_preview ?? _snapshot) : null;
+  CanonicalGameSnapshot? get snapshot {
+    if (!_sameSession) return null;
+    final base = _preview ?? _snapshot;
+    if (base == null || _rewardedPreviews.isEmpty) return base;
+    if (identical(base, _rewardedPreviewBase) &&
+        _rewardedPreviewSnapshot != null) {
+      return _rewardedPreviewSnapshot;
+    }
+    final data = jsonDecode(jsonEncode(base.data)) as Map<String, dynamic>;
+    final wallet = data['wallet'] as Map<String, dynamic>;
+    for (final reward in _rewardedPreviews.values) {
+      wallet[reward.currency] =
+          (wallet[reward.currency] as int) + reward.amount;
+    }
+    _rewardedPreviewBase = base;
+    return _rewardedPreviewSnapshot = _snapshot!.preview(data);
+  }
+
+  /// SDK-earned rewards are immediately visible while signed SSV is in flight.
+  /// They never enter the durable cache or authorize a purchase. Commands are
+  /// still predicted from the confirmed wallet and ordinary command queue.
+  void previewRewardedAd(String claimId, String currency) {
+    if (!_sameSession || !const {'gems', 'coins'}.contains(currency)) return;
+    if (hasConfirmedRewardedAd(claimId) ||
+        _rewardedPreviews.containsKey(claimId)) {
+      return;
+    }
+    _rewardedPreviews[claimId] =
+        (currency: currency, amount: currency == 'gems' ? 15 : 150);
+    _rewardedPreviewSnapshot = null;
+    notifyListeners();
+  }
+
+  bool hasConfirmedRewardedAd(String claimId) =>
+      _sameSession &&
+      (_confirmedRewardedClaims.contains(claimId) ||
+          (_snapshot?.presentations
+                  .any((p) => p.id == 'rewarded-ad-$claimId') ??
+              false));
+
+  void settleRewardedAdPreview(String claimId) {
+    if (_rewardedPreviews.remove(claimId) != null && !_disposed) {
+      _rewardedPreviewSnapshot = null;
+      notifyListeners();
+    }
+  }
+
   CanonicalGameSnapshot? get confirmedSnapshot =>
       _sameSession ? _snapshot : null;
   String? get errorCode => _sameSession ? _errorCode : null;
@@ -95,6 +145,10 @@ class CanonicalGameSession extends ChangeNotifier {
     _fresh = false;
     _snapshot = null;
     _preview = null;
+    _rewardedPreviews.clear();
+    _confirmedRewardedClaims.clear();
+    _rewardedPreviewBase = null;
+    _rewardedPreviewSnapshot = null;
     _minimumServerRevision = 0;
     _errorCode = null;
     _operation = null;
@@ -199,7 +253,10 @@ class CanonicalGameSession extends ChangeNotifier {
             minimumRulesetRevision: observed.rulesetRevision);
         if (!unchanged()) return;
         await snapshots.persistFresh(value);
-        if (unchanged()) _accept(value);
+        if (unchanged()) {
+          _accept(value);
+          _backgroundReadsApplied++;
+        }
       } on Object {
         // Periodic reads are opportunistic. Manual synchronization and command
         // reconciliation remain responsible for surfacing recovery failures.
@@ -211,6 +268,26 @@ class CanonicalGameSession extends ChangeNotifier {
       }
     }());
     return future;
+  }
+
+  /// Require a wallet read begun after a terminal ad-claim status. A read
+  /// already in flight may predate that claim and cannot settle its preview.
+  Future<bool> refreshWalletAfterReward() async {
+    final owner = connection.currentOwner;
+    final epoch = connection.sessionEpoch;
+    final current = _backgroundRefresh;
+    if (current != null) await current;
+    if (!_sameSession ||
+        connection.currentOwner != owner ||
+        connection.sessionEpoch != epoch) {
+      return false;
+    }
+    final applied = _backgroundReadsApplied;
+    await refreshSnapshotInBackground();
+    return _sameSession &&
+        connection.currentOwner == owner &&
+        connection.sessionEpoch == epoch &&
+        _backgroundReadsApplied > applied;
   }
 
   /// Predictable actions can be admitted against the projected display while
@@ -400,6 +477,15 @@ class CanonicalGameSession extends ChangeNotifier {
       throw const CanonicalGameException('game_snapshot_stale');
     }
     _snapshot = value;
+    // Remove the speculative credit in the same notification that publishes
+    // the committed wallet, avoiding a frame with the reward counted twice.
+    for (final event in value.presentations) {
+      if (event.id.startsWith('rewarded-ad-')) {
+        final claimId = event.id.substring('rewarded-ad-'.length);
+        _confirmedRewardedClaims.add(claimId);
+        _rewardedPreviews.remove(claimId);
+      }
+    }
     _preview = null;
     _sinceConfirmation
       ..reset()
@@ -504,6 +590,10 @@ class CanonicalGameSession extends ChangeNotifier {
     _cancelCommands(const CanonicalGameException('game_account_changed'));
     _snapshot = null;
     _preview = null;
+    _rewardedPreviews.clear();
+    _confirmedRewardedClaims.clear();
+    _rewardedPreviewBase = null;
+    _rewardedPreviewSnapshot = null;
     _backgroundRefresh = null;
     _sinceConfirmation.stop();
     _fresh = false;

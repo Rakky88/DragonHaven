@@ -49,10 +49,7 @@ abstract final class GameCommandEngine {
     Map<String, dynamic>? verifiedTradeReservations,
     Map<String, dynamic>? verifiedRewardedAdClaim,
   }) async {
-    final keys = GameCommandSchema.keys[action];
-    if (keys == null ||
-        payload.length != keys.length ||
-        !keys.every(payload.containsKey)) {
+    if (!GameCommandSchema.acceptsPayload(action, payload)) {
       throw const GameCommandException('invalid_command');
     }
     final args = _Arguments(payload);
@@ -250,6 +247,7 @@ abstract final class GameCommandEngine {
               seed: identities.nextInt(1 << 31),
               offerId: args.text('offerId'),
               dragonId: args.text('dragonId'),
+              timedSpiritAlignment: payload['spiritAlignmentVersion'] == 2,
               now: now);
           result = TrialAttempts.display(activeAttempt);
         case 'resume_trial':
@@ -258,6 +256,8 @@ abstract final class GameCommandEngine {
               attempt: activeAttempt,
               id: args.text('attemptId'),
               replacementId: identities.uuid(),
+              supportsTimedSpiritAlignment:
+                  payload['spiritAlignmentVersion'] == 2,
               now: now);
           result = {
             'attempt': TrialAttempts.display(activeAttempt),

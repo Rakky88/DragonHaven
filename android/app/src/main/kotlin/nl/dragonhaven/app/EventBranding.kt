@@ -1,6 +1,8 @@
 package nl.dragonhaven.app
 
 import android.app.AlarmManager
+import android.app.Activity
+import android.app.Application
 import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.ComponentName
@@ -8,6 +10,9 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
+import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -17,7 +22,7 @@ object EventBranding {
     private const val PREFS = "dragonhaven_event_branding"
     private const val REQUEST = 7047
     // Disabling the alias of a visible task can finish that task even with
-    // DONT_KILL_APP. Apply launcher changes only after the game leaves view.
+    // DONT_KILL_APP. Include SDK activities such as AdActivity in this guard.
     var activityVisible = false
 
     fun setSchedule(context: Context, values: List<*>) {
@@ -67,7 +72,7 @@ object EventBranding {
             enabled != (state == PackageManager.COMPONENT_ENABLED_STATE_ENABLED)
         }
         if (activityVisible) {
-            // onStop applies the pending calendar after Flutter saves on pause.
+            // Application-wide lifecycle applies it after every activity leaves view.
         } else if (Build.VERSION.SDK_INT >= 33) {
             if (changes.isNotEmpty()) manager.setComponentEnabledSettings(changes.map { (component, state) ->
                 PackageManager.ComponentEnabledSetting(component, state, PackageManager.DONT_KILL_APP)
@@ -88,6 +93,58 @@ object EventBranding {
             .filter { it > now }.minOrNull()
         if (next != null) alarm.setAndAllowWhileIdle(AlarmManager.RTC, next, pending)
     }
+}
+
+/** A full-screen SDK activity still belongs to the visible DragonHaven task. */
+internal class EventBrandingLifecycle(private val context: Context) :
+    Application.ActivityLifecycleCallbacks {
+    private val starting = mutableSetOf<Activity>()
+    private val started = mutableSetOf<Activity>()
+    private val handler = Handler(Looper.getMainLooper())
+    private val background = Runnable {
+        if (starting.isEmpty() && started.isEmpty()) {
+            EventBranding.activityVisible = false
+            runCatching { EventBranding.refresh(context) }
+        }
+    }
+
+    init {
+        EventBranding.activityVisible = false
+    }
+
+    private fun visible() {
+        handler.removeCallbacks(background)
+        EventBranding.activityVisible = true
+    }
+
+    private fun stopped(activity: Activity) {
+        starting.remove(activity)
+        started.remove(activity)
+        if (starting.isNotEmpty() || started.isNotEmpty()) return
+        // Recreation is not a departure from the app. The replacement activity
+        // owns the next genuine background transition.
+        if (activity.isChangingConfigurations) return
+        handler.removeCallbacks(background)
+        // Bridge short Activity handoffs without touching launcher aliases.
+        handler.postDelayed(background, 700L)
+    }
+
+    override fun onActivityCreated(activity: Activity, state: Bundle?) {
+        starting.add(activity)
+        visible()
+    }
+
+    override fun onActivityStarted(activity: Activity) {
+        starting.remove(activity)
+        started.add(activity)
+        visible()
+    }
+
+    override fun onActivityStopped(activity: Activity) = stopped(activity)
+    override fun onActivityDestroyed(activity: Activity) = stopped(activity)
+    override fun onActivityResumed(activity: Activity) = Unit
+    override fun onActivityPaused(activity: Activity) = Unit
+    override fun onActivitySaveInstanceState(activity: Activity, state: Bundle) = Unit
 }
 
 class EventBrandingReceiver : BroadcastReceiver() {

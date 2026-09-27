@@ -1,5 +1,159 @@
 # DragonHaven audit
 
+## v0.06.11 release preparation ? 27 September 2026
+
+App display/Android version advances to 0.06.11, build 10104. This release
+includes the previously prepared rewarded-ad recovery, Adventure/ranking
+presentation and three Trial refinements documented below. Migration 100's
+rewarded-ad transaction validation is already deployed to production. The
+updated shared worker must be deployed before APK publication, retaining
+minimum client build 10102 and legacy Spirit Alignment checkpoints.
+
+The rollout helper now supports a prepublication compatibility deployment.
+It requires a clean, pushed candidate commit, matching local tag/version,
+the existing public APK digest, unchanged client floor, and successful staging
+proof for the exact source, schema, compiled ruleset and Edge parser. Automatic
+rollback, authenticated synthetic smoke, cleanup and postflight remain active.
+This lets the server understand the new optional capability before the new APK
+is distributed. The protected local staging workspace is excluded throughout.
+
+Release validation and deployment evidence will be recorded after completion.
+
+## Unreleased timed Spirit Alignment — 27 September 2026
+
+New Spirit Alignment runs start at exactly 60 seconds, keep cycling through
+circle/square/triangle regardless of mistakes, and add five seconds for each
+individual displayed 100% placement. Score remains the sum of percentages;
+movement no longer accelerates between sets. Spirit assistance still slows
+movement without changing geometric overlap or initial time. The HUD shows a
+countdown and total shape number, with +5s feedback on every perfect result.
+Result-display time counts toward the clock; an input at expiry cannot revive
+the run. Checkpoints retain the bonus count and time through pause/resume.
+
+The nested alignment checkpoint has version 2. Version 1 remains supported
+with its previous untimed rules. New alignment start/resume payloads explicitly
+request `spiritAlignmentVersion: 2`; omission selects the legacy start rules.
+The Edge parser, durable intent journal and shared engine validate this narrow
+optional capability. The public attempt keeps its exact version-1 shape for
+released clients. An old app cannot fence a timed attempt by attempting to
+resume it; upgraded clients restore old saved games without converting their
+rules. Lost legacy requests keep their original request ID and payload.
+
+The database command lease already accepts and hashes the full bounded payload,
+so no migration is needed. A future release must deploy the updated shared
+worker and execute-game-command Edge parser before distributing the new APK.
+No production deploy, app version change or release was performed here.
+
+Coverage includes timeout boundaries, individual and repeated bonuses,
+imperfect continuation, long-run checkpoint replay, restored legacy games,
+capability validation, lost replies and compact-screen timer feedback. Trial
+offer probabilities, ranking storage, score grades and reward pools are unchanged.
+
+The shared domain probe compiles and produces identical full results in the
+Flutter VM and Deno, including timed alignment checkpoints, resumption and
+final rewards. All 33 execute-game-command Edge tests pass. The seven model
+timer tests, seven version-compatibility tests and four timer widget tests
+pass alongside the existing rotation, command-authority and resume suites.
+Flutter analysis reports no issues; living references were reviewed and their
+fingerprints synchronized. Only the shared-engine fingerprint changes in the
+redeem-code reference; its content and rewards are unchanged.
+The final default-font regressions also cover scrolling Trial instructions on
+small screens. Rune Orbit's test harness now awaits actual checkpoint futures
+in the real asynchronous zone, explicitly exercising background autosaving
+without a timing-dependent polling loop.
+
+## Unreleased Ruin Guard and Rune Orbit feedback — 27 September 2026
+
+Ruin Guard uses a generated transparent boulder sprite. A dragon anticipates a
+matching impact with a short lunge, then recoils as seven clipped pieces of that
+same stone spread, rotate and fade with a golden shockwave. Misses retain the
+intact falling stone. Reduced motion uses static separated pieces and a success
+symbol. Asset provenance and the exact prompt are in
+`assets/licenses/TRIAL_ART_SOURCES.md`.
+
+Rune Orbit now rotates stable rune sprites continuously through a visible
+golden gate. Misses produce a single fading red wash, border and explicit
+lost-heart message; matches use green feedback, a checkmark and a +1 message.
+Reduced motion keeps static outcome feedback. Compact score/status headers
+remain within a 320-pixel layout with enlarged text.
+
+Both renderers use a read-only, bounded presentation clock between canonical
+simulation updates. Rune taps resolve the gate atomically after advancing the
+input clock, avoiding the stale-rune race at a timing boundary. Scoring,
+collision times, RNG, input encoding/replay, server verification and rewards
+are unchanged. No database, deployment, version bump or release is part of
+this presentation change.
+
+Validation: 60 targeted Flutter tests pass, including eight dedicated canonical
+widget checks covering impacts, misses, separate render frames, pause behavior,
+reduced motion, compact layouts and gate-boundary input recording. Canonical
+checkpoint submissions remain accepted; existing simulation/replay, trial
+widgets, interrupted saves and resumed-session regressions pass. Full Flutter analysis reports no issues and the
+reference-documentation guard is synchronized. Font-backed screenshots of
+contact, shatter and both Orbit outcomes were reviewed.
+
+## Unreleased rewarded-ad recovery and Adventure presentation - 27 September 2026
+
+Rewarded ads now preload one creative per currency without reserving a daily
+claim. A tap opens a full-screen loading surface while the bounded claim request
+finishes; the SDK ad is shown only when the app is resumed and the original
+account is still active. Timed-out loads dispose late creatives. An earned SDK
+callback displays +15 Gems or +150 Coins immediately on dismissal, without
+blocking play on SSV polling. The account-scoped display journal survives an
+app restart; it cannot authorize spending or modify the confirmed wallet.
+Signed SSV remains mandatory for the canonical exactly-once reward. Expired or
+cancelled claims roll back the display with an explicit message. A committed
+wallet replaces the preview atomically, and settlement after terminal status
+requires a newly applied background wallet read rather than an older in-flight
+read. Claim recovery commands can coexist with queued ordinary gameplay.
+
+Read-only production incident review found two expired issued claims (Coins
+and Gems) and no Google SSV callbacks during their observation window. The user
+confirmed that one or both AdMob units lack the saved callback URL. Exact setup
+instructions were provided. The bare URL returning `invalid callback` in a
+browser is expected. The user subsequently saved both settings; two signed
+setup probes returned HTTP 200. A subsequent genuine Coins/150 callback reached
+the function but returned HTTP 503: PostgreSQL rejected the `{1,256}` regex
+bound with SQLSTATE 2201B. Migration 100 preserves the 1..256 limit with an
+explicit length check plus the existing allowed alphabet in the verification
+RPC and canonical intent context CHECK. A rolled-back staging rehearsal proved
+256-character verification, idempotent replay, context acceptance, 257-character
+rejection and preserved grants; its before/after schema hashes match.
+
+Only migration 100 was applied to production. The post-change preflight reports
+100 matching migrations, zero lint errors and HTTP 200 for Auth, settings,
+application and SSV health. The original signed Coins callback was redelivered
+unchanged and returned HTTP 200 `ok`; its claim is now verified for 150 Coins,
+awaiting collection by the app. No wallet credit was fabricated or manually
+written. The earlier attempts without a Google callback remain unconfirmed.
+The worker, SSV function bundle, runtime flags, app version and public release
+are unchanged. See REWARDED_ADS_RECOVERY_VERIFICATION.md for evidence.
+
+The Android event-icon guard now tracks every started/starting Activity,
+including Google's AdActivity, and defers launcher-alias changes until actual
+backgrounding. A configuration-change guard and short Activity handoff grace
+prevent a pending icon change from interrupting a full-screen overlay. This
+repairs a concrete lifecycle race; the user's exact handset failure still
+requires on-device verification.
+
+Trial ranking selectors now use readable horizontally scrolling cards with
+full names, larger icons and a clear selected state. One event progress bar is
+kept above all four Adventure tabs; standalone Trials retains its event bar.
+Event schedules, reward amounts, odds and visibility windows are unchanged.
+RELICS_GUIDE_NL.md documents every obtainable relic, effect, recipe and exact
+conditional drop chance. Historical Golden Wings direct rewards are explicitly
+separated from current obtainable routes. Two stale weighted-pool descriptions
+in RANDOM_REWARDS_AND_ODDS.md were corrected to the existing 11-relic pool.
+
+Validation: Flutter analysis reports no issues; the full 1,253-test Flutter
+run passes with one expected skip, followed by all eight migration contract
+tests including the new regex regression. The reference-documentation guard
+is synchronized. Five focused native lifecycle/startup tests pass.
+The narrow-screen rankings integration test now scrolls the intended card into
+view before selecting it; it no longer taps an offscreen control. The physical
+phone is not connected; end-to-end display verification on that handset and
+confirmation of the app's final collection remain outstanding.
+
 ## Published release v0.06.10 / 10103 - 27 September 2026
 
 This release restores the detailed v0.05.40-era tower rooms and movement while

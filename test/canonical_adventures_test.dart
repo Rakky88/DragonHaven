@@ -69,7 +69,7 @@ void main() {
     await session.synchronize();
   }
 
-  testWidgets('event replaces its adventure offer with points progress',
+  testWidgets('one event progress bar stays above every Adventure tab',
       (tester) async {
     await tester.binding.setSurfaceSize(const Size(430, 1000));
     addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -99,6 +99,54 @@ void main() {
             .progress
             .fraction,
         0);
+    final eventBar = find.byType(EventProgressBar, skipOffstage: false);
+    final eventState = tester.state(eventBar);
+    final eventBounds = tester.getRect(eventBar);
+    final tabs = find.byKey(const Key('tutorial-adventure-tabs'));
+    expect(eventBounds.bottom, lessThanOrEqualTo(tester.getTopLeft(tabs).dy));
+    expect(find.ancestor(of: eventBar, matching: find.byType(TabBarView)),
+        findsNothing);
+
+    await tester.drag(
+        find.byKey(const PageStorageKey('canonical-adventures-list-0')),
+        const Offset(0, -180));
+    await tester.pump(const Duration(milliseconds: 350));
+    expect(tester.getRect(eventBar), eventBounds);
+
+    // Swiping to Trials must retain the same bar and its animation state.
+    final gesture =
+        await tester.startGesture(tester.getCenter(find.byType(TabBarView)));
+    await gesture.moveBy(const Offset(-70, 0));
+    await tester.pump(const Duration(milliseconds: 300));
+    await gesture.moveBy(const Offset(-90, 0));
+    await tester.pump(const Duration(milliseconds: 300));
+    await gesture.moveBy(const Offset(-150, 0));
+    await tester.pump(const Duration(milliseconds: 300));
+    await gesture.up();
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+    expect(tester.widget<TabBar>(tabs).controller!.index, 1);
+    expect(eventBar, findsOneWidget);
+    expect(tester.state(eventBar), same(eventState));
+    expect(tester.getRect(eventBar), eventBounds);
+
+    for (final tab in const {
+      'canonical-tab-active': 2,
+      'canonical-tab-completed': 3,
+      'canonical-tab-available': 0,
+    }.entries) {
+      final tabButton = find.byKey(Key(tab.key));
+      await tester.ensureVisible(tabButton);
+      await tester.pump();
+      await tester.tap(tabButton);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 350));
+      expect(tester.widget<TabBar>(tabs).controller!.index, tab.value);
+      expect(eventBar, findsOneWidget);
+      expect(tester.state(eventBar), same(eventState));
+      expect(tester.getRect(eventBar), eventBounds);
+    }
+    expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox());
   });
 

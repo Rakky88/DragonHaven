@@ -49,10 +49,9 @@ void main() {
     }
   });
 
-  test(
-      'Spirit Alignment only advances on three displayed 100s and speeds by 1.10',
+  test('legacy Spirit Alignment keeps its three-perfect round and speed rules',
       () {
-    var game = SpiritAlignmentGame(seed: 41, spirit: 300);
+    var game = SpiritAlignmentGame(seed: 41, spirit: 300, timed: false);
     expect(game.targetX, .5);
     expect(game.targetY, .5);
     expect(game.playerX, lessThan(game.targetX));
@@ -313,9 +312,9 @@ void main() {
     }
   });
 
-  test('a rendered 99 or lower ends Spirit Alignment after the three shapes',
+  test('a rendered 99 or lower ends legacy Spirit Alignment after three shapes',
       () {
-    final game = SpiritAlignmentGame(seed: 7, spirit: 0);
+    final game = SpiritAlignmentGame(seed: 7, spirit: 0, timed: false);
     var at = 0;
     // Lock the first shape far away from its target.
     expect(game.tap(at), isTrue);

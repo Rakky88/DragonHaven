@@ -63,8 +63,14 @@ Future<List<Object?>> trialCommandProbe() async {
       return result;
     }
 
-    final started = await command('start_trial',
-        {'offerId': offer.id, 'dragonId': state['pet']['id']}, 0);
+    final started = await command(
+        'start_trial',
+        {
+          'offerId': offer.id,
+          'dragonId': state['pet']['id'],
+          if (kind == TrialKind.spiritAlignment) 'spiritAlignmentVersion': 2,
+        },
+        0);
     var attempt = started['result'] as Map;
     var model = TrialRunModel(
         kind: kind,
@@ -111,8 +117,14 @@ Future<List<Object?>> trialCommandProbe() async {
         if (resumedResult == null) {
           final oldId = attempt['id'];
           awayMs = const Duration(hours: 1).inMilliseconds;
-          final resumed =
-              await command('resume_trial', {'attemptId': oldId}, at + 1000);
+          final resumed = await command(
+              'resume_trial',
+              {
+                'attemptId': oldId,
+                if (kind == TrialKind.spiritAlignment)
+                  'spiritAlignmentVersion': 2,
+              },
+              at + 1000);
           resumedResult = resumed['result'];
           attempt = (resumedResult as Map)['attempt'] as Map;
           model = TrialRunModel.fromCheckpoint(

@@ -1966,9 +1966,13 @@ void main() {
     expect(find.text('Lyra'), findsOneWidget);
     expect(find.text('211'), findsOneWidget);
 
-    await tester.tap(
-      find.byKey(const Key('trial-ranking-kind-ruinBreaker')),
-    );
+    final ruinBreaker = find.byKey(const Key('trial-ranking-kind-ruinBreaker'));
+    // Trial choices have readable full labels in a horizontal scroller; on a
+    // narrow phone the next choice must first be brought into the viewport.
+    await tester.ensureVisible(ruinBreaker);
+    await tester.pumpAndSettle();
+    expect(ruinBreaker.hitTestable(), findsOneWidget);
+    await tester.tap(ruinBreaker);
     await tester.pumpAndSettle();
     expect(find.text('1200'), findsOneWidget);
     expect(

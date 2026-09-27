@@ -144,35 +144,6 @@ class _AdventuresState extends State<_Adventures>
             physics: const AlwaysScrollableScrollPhysics(),
             padding: const EdgeInsets.fromLTRB(14, 14, 14, 36),
             children: [
-              for (final progress in view.adventures.eventProgress.where((p) =>
-                  view.adventures.activeEvents.any((w) => w.key == p.key) &&
-                  p.activeAt(now)))
-                EventProgressBar(
-                    progress: progress,
-                    onClaim: () => _controller.animateTo(3),
-                    partnerAction: progress.eventId ==
-                            'valentine_two_heartlights'
-                        ? EventPartnerControl(
-                            eventKey: progress.key,
-                            active: widget.active && tab == _tab,
-                            firstAutomaticSyncAfter:
-                                adventureOfferRefreshRemaining(
-                                    AdventureKind.mini, now),
-                            beforeSync: () async {
-                              for (var attempt = 0;
-                                  attempt < 50 && session.busy;
-                                  attempt++) {
-                                await Future<void>.delayed(
-                                    const Duration(milliseconds: 100));
-                              }
-                              return session.canAct;
-                            },
-                            applyShared: (_, owner) async {
-                              if (session.connection.currentOwner == owner) {
-                                await session.refreshSnapshotInBackground();
-                              }
-                            })
-                        : null),
               if ((tab == 3)) ...[
                 for (final progress
                     in view.adventures.eventProgress.where((p) => p.canClaim))
@@ -318,25 +289,67 @@ class _AdventuresState extends State<_Adventures>
                     active: widget.active && tab == _tab),
             ]));
     return Column(children: [
-      Padding(
-          key: const Key('tutorial-adventure-header'),
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-          child: Row(children: [
-            const GameIconSprite(GameIconKind.adventureShort, size: 52),
-            const SizedBox(width: 10),
-            Expanded(
-                child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                  Text(s.tr('adventure'),
-                      style: Theme.of(context).textTheme.displaySmall),
-                  Text(
-                      s.pick(
-                          'Choose a path. Bring back stories, training and treasure.',
-                          'Kies een route. Breng verhalen, training en schatten mee terug.'),
-                      style: Theme.of(context).textTheme.bodySmall),
+      ConstrainedBox(
+        constraints:
+            BoxConstraints(maxHeight: MediaQuery.sizeOf(context).height * .5),
+        child: SingleChildScrollView(
+          key: const Key('event-progress-region'),
+          child: Column(children: [
+            Padding(
+                key: const Key('tutorial-adventure-header'),
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                child: Row(children: [
+                  const GameIconSprite(GameIconKind.adventureShort, size: 52),
+                  const SizedBox(width: 10),
+                  Expanded(
+                      child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                        Text(s.tr('adventure'),
+                            style: Theme.of(context).textTheme.displaySmall),
+                        Text(
+                            s.pick(
+                                'Choose a path. Bring back stories, training and treasure.',
+                                'Kies een route. Breng verhalen, training en schatten mee terug.'),
+                            style: Theme.of(context).textTheme.bodySmall),
+                      ])),
                 ])),
-          ])),
+            for (final progress in view.adventures.eventProgress.where((p) =>
+                view.adventures.activeEvents.any((w) => w.key == p.key) &&
+                p.activeAt(now)))
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 14),
+                child: EventProgressBar(
+                    key: ValueKey(progress.key),
+                    progress: progress,
+                    onClaim: () => _controller.animateTo(3),
+                    partnerAction: progress.eventId ==
+                            'valentine_two_heartlights'
+                        ? EventPartnerControl(
+                            eventKey: progress.key,
+                            active: widget.active,
+                            firstAutomaticSyncAfter:
+                                adventureOfferRefreshRemaining(
+                                    AdventureKind.mini, now),
+                            beforeSync: () async {
+                              for (var attempt = 0;
+                                  attempt < 50 && session.busy;
+                                  attempt++) {
+                                await Future<void>.delayed(
+                                    const Duration(milliseconds: 100));
+                              }
+                              return session.canAct;
+                            },
+                            applyShared: (_, owner) async {
+                              if (session.connection.currentOwner == owner) {
+                                await session.refreshSnapshotInBackground();
+                              }
+                            })
+                        : null),
+              ),
+          ]),
+        ),
+      ),
       TabBar(
           key: const Key('tutorial-adventure-tabs'),
           controller: _controller,
@@ -369,7 +382,7 @@ class _AdventuresState extends State<_Adventures>
       Expanded(
           child: TabBarView(controller: _controller, children: [
         content(0),
-        const CanonicalTrialsScreen(),
+        const CanonicalTrialsScreen(showEventProgress: false),
         content(2),
         content(3),
       ])),

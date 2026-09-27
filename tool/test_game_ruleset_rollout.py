@@ -1,6 +1,7 @@
 import hashlib
 import argparse
 import json
+import shutil
 from pathlib import Path
 import tempfile
 import unittest
@@ -13,6 +14,7 @@ from tool.game_ruleset_rollout import (
     _safe_runtime,
     _semantic_version,
     _sql,
+    _worker_source_sha256,
     Rollout,
 )
 
@@ -31,7 +33,10 @@ class GameRulesetRolloutTest(unittest.TestCase):
             (rollout.root / "pubspec.yaml").write_text(
                 "name: dragon_haven\nversion: 0.6.10+10103\n", "utf-8"
             )
-            rollout._run = lambda command, label, cwd=None: "f" * 40 + "\n"
+            rollout._run = lambda command, label, cwd=None: (
+                "f" * 40 + "\trefs/tags/v0.06.10\n"
+                if label == 'release_remote_source_resolve' else "f" * 40 + "\n"
+            )
             rollout._request = lambda *args, **kwargs: self.release_response()
 
             rollout._verify_release()
@@ -47,6 +52,142 @@ class GameRulesetRolloutTest(unittest.TestCase):
                 RolloutError, "release_minimum_build_exceeds_source"
             ):
                 rollout._verify_release()
+
+    def test_prepublication_verifies_remote_candidate_and_public_baseline(self):
+        with tempfile.TemporaryDirectory() as directory:
+            rollout = self.prepublication_fixture(Path(directory))
+            requests = []
+
+            def request(url, **kwargs):
+                requests.append(url)
+                return self.release_response()
+
+            rollout._request = request
+            rollout._verify_release()
+            rollout._verify_prepublication_staging()
+            self.assertTrue(any(url.endswith('/releases/tags/v0.06.10') for url in requests))
+            self.assertFalse(any('v0.06.11' in url for url in requests))
+
+    def test_prepublication_rejects_dirty_or_unpushed_source(self):
+        with tempfile.TemporaryDirectory() as directory:
+            for label, output, error in (
+                ('release_source_clean_check', ' M lib/domain/trial_attempts.dart', 'release_source_has_uncommitted_changes'),
+                ('release_untracked_source_check', 'lib/domain/new_rules.dart', 'release_source_has_untracked_files'),
+                ('release_remote_source_resolve', '', 'release_remote_source_not_exact'),
+                ('release_remote_source_resolve', 'e' * 40 + '\trefs/heads/feat/server-owned-gameplay\n', 'release_remote_source_not_exact'),
+                ('release_remote_source_resolve', 'f' * 40 + '\trefs/tags/v0.06.11\n', 'release_remote_source_not_exact'),
+            ):
+                with self.subTest(label=label, output=output):
+                    rollout = self.prepublication_fixture(Path(directory))
+                    run = rollout._run
+                    rollout._run = lambda command, step, cwd=None: output if step == label else run(command, step, cwd)
+                    with self.assertRaisesRegex(RolloutError, error):
+                        rollout._verify_release()
+
+    def test_published_release_accepts_peeled_annotated_remote_tag(self):
+        with tempfile.TemporaryDirectory() as directory:
+            rollout = self.prepublication_fixture(Path(directory))
+            run = rollout._run
+            rollout._run = lambda command, label, cwd=None: (
+                'e' * 40 + '\trefs/tags/v0.06.11\n' + 'f' * 40 + '\trefs/tags/v0.06.11^{}\n'
+                if label == 'release_remote_source_resolve' else run(command, label, cwd)
+            )
+            rollout._verify_remote_source('f' * 40, 'refs/tags/v0.06.11', annotated=True)
+
+    def test_prepublication_still_rejects_wrong_public_apk_digest(self):
+        with tempfile.TemporaryDirectory() as directory:
+            rollout = self.prepublication_fixture(Path(directory))
+            rollout.args.apk_sha256 = 'd' * 64
+            with self.assertRaisesRegex(RolloutError, 'public_release_not_verified'):
+                rollout._verify_release()
+
+    def test_prepublication_cannot_raise_or_lower_existing_client_floor(self):
+        with tempfile.TemporaryDirectory() as directory:
+            for floor in (10101, 10103):
+                with self.subTest(floor=floor):
+                    rollout = self.prepublication_fixture(Path(directory))
+                    rollout.args.minimum_client_build = floor
+                    with self.assertRaisesRegex(RolloutError, 'compatible_rollout_cannot_change_minimum_build'):
+                        rollout._verify_prepublication_staging()
+
+    def test_prepublication_requires_successful_same_source_schema_and_worker_staging(self):
+        with tempfile.TemporaryDirectory() as directory:
+            for key, value in (
+                ('sourceRevision', 'e' * 40),
+                ('migrationVersions', ['099']),
+                ('rulesetSha256', 'c' * 64),
+                ('workerSourceSha256', 'c' * 64),
+                ('rollbackRequired', True),
+                ('mode', 'plan'),
+                ('smoke', {'authenticated': True}),
+                ('runtime', {'enabled': True}),
+            ):
+                with self.subTest(key=key):
+                    rollout = self.prepublication_fixture(Path(directory))
+                    path = Path(rollout.args.staging_evidence_dir) / 'result.json'
+                    result = json.loads(path.read_text('utf-8'))
+                    result[key] = value
+                    path.write_text(json.dumps(result), 'utf-8')
+                    with self.assertRaisesRegex(RolloutError, 'compatible_rollout_staging_evidence_mismatch'):
+                        rollout._verify_prepublication_staging()
+
+    def test_prepublication_rehashes_staged_parser_independently_of_ruleset(self):
+        with tempfile.TemporaryDirectory() as directory:
+            rollout = self.prepublication_fixture(Path(directory))
+            core = Path(rollout.args.staging_evidence_dir) / 'candidate-deployed/supabase/functions/execute-game-command/core.ts'
+            core.write_text('different capability parser', 'utf-8')
+            with self.assertRaisesRegex(RolloutError, 'compatible_rollout_staging_worker_mismatch'):
+                rollout._verify_prepublication_staging()
+
+    def test_missing_staging_blocks_before_production_pause_or_deploy(self):
+        with tempfile.TemporaryDirectory() as directory:
+            args = self.production_args(Path(directory) / 'evidence', 10101)
+            args.compatibility_release_tag = 'v0.06.09'
+            args.staging_evidence_dir = str(Path(directory) / 'missing')
+            rollout = FakeRollout(args)
+            with self.assertRaisesRegex(RolloutError, 'compatible_rollout_staging_evidence_unavailable'):
+                rollout.execute()
+            self.assertEqual(rollout.runtime_updates, [])
+            self.assertEqual(rollout.deployments, [])
+
+    @classmethod
+    def prepublication_fixture(cls, root):
+        args = cls.production_args(root / 'production', 10102)
+        args.release_tag = 'v0.06.11'
+        args.compatibility_release_tag = 'v0.06.10'
+        args.candidate_branch = 'feat/server-owned-gameplay'
+        args.staging_evidence_dir = str(root / 'staging')
+        rollout = Rollout(args)
+        rollout.root = root
+        rollout.new_ruleset = 'b' * 64
+        rollout.migration_versions = ['099', '100']
+        rollout.baseline_runtime = dict(cls.runtime(), minimum_client_build=10102)
+        (root / 'pubspec.yaml').write_text('version: 0.6.11+10104\n', 'utf-8')
+        worker = root / 'supabase/functions/execute-game-command'
+        worker.mkdir(parents=True, exist_ok=True)
+        for name in ('index.ts', 'core.ts', 'deadline.ts', 'bundle.generated.ts', 'game.generated.js'):
+            (worker / name).write_text(name, 'utf-8')
+        staging = Path(args.staging_evidence_dir)
+        shutil.copytree(root / 'supabase', staging / 'candidate-deployed/supabase', dirs_exist_ok=True)
+        runtime = dict(rollout.baseline_runtime, enabled=False, migration_enabled=False, ruleset_sha256=rollout.new_ruleset)
+        result = {
+            'environment': 'staging', 'projectRef': 'vtmjkhzalalozpfnbvsd', 'mode': 'apply',
+            'rollbackRequired': False, 'sourceRevision': 'f' * 40,
+            'rulesetSha256': rollout.new_ruleset, 'minimumClientBuild': 10102,
+            'migrationVersions': rollout.migration_versions,
+            'workerSourceSha256': _worker_source_sha256(root),
+            'smoke': {'authenticated': True, 'initializationReplay': True, 'serverAuthority': True, 'rulesetSha256': rollout.new_ruleset},
+            'runtime': runtime, 'function': {'status': 'ACTIVE', 'verify_jwt': False},
+        }
+        (staging / 'result.json').write_text(json.dumps(result), 'utf-8')
+        (staging / 'baseline.json').write_text(json.dumps({'sourceRevision': 'f' * 40}), 'utf-8')
+        (staging / 'server-postflight.txt').write_text('passed', 'utf-8')
+        rollout._run = lambda command, label, cwd=None: (
+            '' if label in ('release_source_clean_check', 'release_untracked_source_check', 'candidate_branch_invalid') else
+            'f' * 40 + '\trefs/heads/feat/server-owned-gameplay\n' if label == 'release_remote_source_resolve' else 'f' * 40 + '\n'
+        )
+        rollout._request = lambda *args, **kwargs: cls.release_response()
+        return rollout
 
     def test_extracts_final_cli_json(self):
         value = _json_from_output('notice\n{"migrations":[{"remote":"1"}]}\n')
@@ -179,6 +320,17 @@ class GameRulesetRolloutTest(unittest.TestCase):
             rollback = json.loads((Path(directory) / "apply" / "rollback.json").read_text("utf-8"))
             self.assertTrue(rollback["restored"])
             self.assertEqual(failed.deployments, ["candidate", "baseline"])
+
+    def test_successful_apply_records_exact_source_and_deployed_worker_for_promotion(self):
+        with tempfile.TemporaryDirectory() as directory:
+            rollout = FakeRollout(self.args(Path(directory) / 'staging', 'apply'))
+            rollout.migration_versions = ['099', '100']
+            result = rollout.execute()
+            self.assertEqual(result['sourceRevision'], 'f' * 40)
+            self.assertEqual(result['migrationVersions'], ['099', '100'])
+            self.assertEqual(result['workerSourceSha256'], _worker_source_sha256(rollout.evidence / 'candidate-deployed'))
+            self.assertFalse(result['rollbackRequired'])
+            self.assertEqual(rollout.deployments, ['candidate'])
 
     def test_lost_pause_response_restores_runtime_without_redeploying_worker(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -372,6 +524,10 @@ class FakeRollout(Rollout):
 
     def _download(self, destination, label):
         destination.mkdir(parents=True, exist_ok=False)
+        worker = destination / 'supabase/functions/execute-game-command'
+        worker.mkdir(parents=True)
+        for name in ('index.ts', 'core.ts', 'deadline.ts', 'bundle.generated.ts', 'game.generated.js'):
+            (worker / name).write_text(name, 'utf-8')
         return self.initial["ruleset_sha256"] if "baseline" in destination.name else self.new_ruleset
 
     def _update_runtime(self, expected, changes, label):

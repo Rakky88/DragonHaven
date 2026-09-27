@@ -220,26 +220,16 @@ class _TrialRankingsSheetState extends State<_TrialRankingsSheet> {
                     ),
                   ),
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(14, 13, 14, 11),
-                  child: Row(
-                    children: [
-                      for (final kind in standardTrialKinds) ...[
-                        if (kind != standardTrialKinds.first)
-                          const SizedBox(width: 7),
-                        Expanded(
-                          child: _TrialChoice(
-                            kind: kind,
-                            selected: kind == _kind,
-                            label: _trialLabel(strings, kind),
-                            onTap: () {
-                              if (_loading || kind == _kind) return;
-                              setState(() => _kind = kind);
-                              _load();
-                            },
-                          ),
-                        ),
-                      ],
-                    ],
+                  padding: const EdgeInsets.only(top: 13, bottom: 11),
+                  child: _TrialKindSelector(
+                    selectedKind: _kind,
+                    onSelected: _loading
+                        ? null
+                        : (kind) {
+                            if (kind == _kind) return;
+                            setState(() => _kind = kind);
+                            _load();
+                          },
                   ),
                 ),
                 for (final trial in seasonalKinds)
@@ -490,8 +480,92 @@ class _EventTrialChoice extends StatelessWidget {
   }
 }
 
+class _TrialKindSelector extends StatefulWidget {
+  const _TrialKindSelector({
+    required this.selectedKind,
+    required this.onSelected,
+  });
+
+  final TrialKind selectedKind;
+  final ValueChanged<TrialKind>? onSelected;
+
+  @override
+  State<_TrialKindSelector> createState() => _TrialKindSelectorState();
+}
+
+class _TrialKindSelectorState extends State<_TrialKindSelector> {
+  final _scrollController = ScrollController();
+  final _choiceKeys = {
+    for (final kind in standardTrialKinds) kind: GlobalKey(),
+  };
+
+  @override
+  void initState() {
+    super.initState();
+    _revealSelection();
+  }
+
+  @override
+  void didUpdateWidget(covariant _TrialKindSelector oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.selectedKind != widget.selectedKind) _revealSelection();
+  }
+
+  void _revealSelection() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_scrollController.hasClients) return;
+      final target =
+          _choiceKeys[widget.selectedKind]?.currentContext?.findRenderObject();
+      if (target == null) return;
+      // Only move the horizontal selector, never the rankings' vertical scroll.
+      _scrollController.position.ensureVisible(target, alignment: .5);
+    });
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final strings = AppStrings.of(context);
+    return Scrollbar(
+      controller: _scrollController,
+      thumbVisibility: true,
+      trackVisibility: true,
+      thickness: 3,
+      radius: const Radius.circular(3),
+      child: SingleChildScrollView(
+        key: const Key('trial-ranking-kind-selector'),
+        controller: _scrollController,
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.fromLTRB(14, 0, 14, 10),
+        child: Row(
+          children: [
+            for (final kind in standardTrialKinds) ...[
+              if (kind != standardTrialKinds.first) const SizedBox(width: 9),
+              _TrialChoice(
+                key: _choiceKeys[kind],
+                kind: kind,
+                selected: kind == widget.selectedKind,
+                label: _trialLabel(strings, kind),
+                onTap: widget.onSelected == null
+                    ? null
+                    : () => widget.onSelected!(kind),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _TrialChoice extends StatelessWidget {
   const _TrialChoice({
+    super.key,
     required this.kind,
     required this.selected,
     required this.label,
@@ -501,49 +575,60 @@ class _TrialChoice extends StatelessWidget {
   final TrialKind kind;
   final bool selected;
   final String label;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   @override
-  Widget build(BuildContext context) => Material(
-        color: selected
-            ? AppColors.eventColor(context, const Color(0xFFEDE1FF))
-            : Colors.white,
-        borderRadius: BorderRadius.circular(17),
-        child: InkWell(
-          key: Key('trial-ranking-kind-${kind.name}'),
-          borderRadius: BorderRadius.circular(17),
-          onTap: onTap,
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 180),
-            padding: const EdgeInsets.fromLTRB(5, 7, 5, 8),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(17),
-              border: Border.all(
-                color: selected
-                    ? AppColors.eventColor(context, AppColors.twilight)
-                    : AppColors.eventColor(context, const Color(0xFFE1D8EA)),
-                width: selected ? 1.5 : 1,
-              ),
-            ),
-            child: Column(
-              children: [
-                TrialIconSprite(kind: kind, size: 35),
-                const SizedBox(height: 3),
-                Text(
-                  label,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: selected
-                        ? AppColors.eventColor(context, AppColors.twilightDark)
-                        : AppColors.ink,
-                    fontSize: 9.5,
-                    height: 1.05,
-                    fontWeight: FontWeight.w900,
-                  ),
+  Widget build(BuildContext context) => Semantics(
+        selected: selected,
+        button: true,
+        child: Material(
+          color: selected
+              ? AppColors.eventColor(context, AppColors.twilightDark)
+              : Colors.white,
+          borderRadius: BorderRadius.circular(18),
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            key: Key('trial-ranking-kind-${kind.name}'),
+            onTap: onTap,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 180),
+              constraints: const BoxConstraints(minHeight: 68),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(
+                  color: selected
+                      ? AppColors.gold
+                      : AppColors.eventColor(context, const Color(0xFFE1D8EA)),
+                  width: 1.5,
                 ),
-              ],
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ExcludeSemantics(
+                      child: TrialIconSprite(kind: kind, size: 42)),
+                  const SizedBox(width: 10),
+                  Text(
+                    label,
+                    maxLines: 1,
+                    softWrap: false,
+                    style: TextStyle(
+                      color: selected ? Colors.white : AppColors.ink,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  SizedBox.square(
+                    dimension: 18,
+                    child: selected
+                        ? const Icon(Icons.check_circle_rounded,
+                            color: AppColors.gold, size: 18)
+                        : null,
+                  ),
+                ],
+              ),
             ),
           ),
         ),

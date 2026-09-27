@@ -13,6 +13,7 @@ abstract final class TrialAttempts {
       required int seed,
       required String offerId,
       required String dragonId,
+      bool timedSpiritAlignment = false,
       required DateTime now}) async {
     final dragon = game.ownedDragons.where((d) => d.id == dragonId).firstOrNull;
     final offer =
@@ -29,9 +30,14 @@ abstract final class TrialAttempts {
         !await game.beginTrial(offerId)) {
       throw const TrialAttemptException('game_action_unavailable');
     }
-    final model = TrialRunModel(kind: offer.kind, seed: seed, training: {
-      for (final focus in TrainingFocus.values) focus: dragon.trainingFor(focus)
-    });
+    final model = TrialRunModel(
+        kind: offer.kind,
+        seed: seed,
+        timedSpiritAlignment: timedSpiritAlignment,
+        training: {
+          for (final focus in TrainingFocus.values)
+            focus: dragon.trainingFor(focus)
+        });
     return {
       'version': 1,
       'type': 'trial',
@@ -56,6 +62,7 @@ abstract final class TrialAttempts {
       required Map<String, dynamic>? attempt,
       required String id,
       required String replacementId,
+      bool supportsTimedSpiritAlignment = false,
       required DateTime now}) {
     if (attempt == null || attempt['type'] != 'trial' || attempt['id'] != id) {
       throw const TrialAttemptException('game_attempt_unavailable');
@@ -66,6 +73,11 @@ abstract final class TrialAttempts {
     _requireEligibleAttemptDragon(game, attempt);
     final model = TrialRunModel.fromCheckpoint(
         Map<String, dynamic>.from(attempt['checkpoint'] as Map));
+    // Reject an old app before fencing the current device or touching the
+    // attempt. An upgraded app can still resume every legacy checkpoint.
+    if (!supportsTimedSpiritAlignment && model.alignment?.timed == true) {
+      throw const TrialAttemptException('game_attempt_unavailable');
+    }
     if (model.kind.name != attempt['gameId']) {
       throw const TrialAttemptException('game_attempt_unavailable');
     }

@@ -23,5 +23,6 @@ class DragonHavenApplication : Application() {
         // Firebase can receive and display a notification before MainActivity
         // exists. Create its channel as soon as this process starts.
         DragonHavenNotificationChannels.ensureCreated(this)
+        registerActivityLifecycleCallbacks(EventBrandingLifecycle(this))
     }
 }

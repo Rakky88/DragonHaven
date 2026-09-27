@@ -135,12 +135,12 @@ void main() {
     await tester.pumpWidget(const SizedBox.shrink());
   });
 
-  testWidgets('Spirit Alignment exposes its two-tap shapes and speed',
+  testWidgets('Spirit Alignment exposes its two-tap shapes and countdown',
       (tester) async {
     await pumpTrial(tester, TrialKind.spiritAlignment);
     final board = find.byKey(const Key('spirit-alignment-game'));
     expect(board, findsOneWidget);
-    expect(find.text('Align all three shapes'), findsOneWidget);
+    expect(find.text('Align as many shapes as you can'), findsOneWidget);
     final arena = tester.getRect(find.byKey(const Key('spirit-logical-arena')));
     final target = tester.getRect(find.byKey(const Key('spirit-target-shape')));
     final player = tester.getRect(find.byKey(const Key('spirit-player-shape')));
@@ -161,7 +161,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 48));
     expect(find.byKey(const Key('spirit-target-shape')), findsOneWidget);
     expect(find.byKey(const Key('spirit-player-shape')), findsOneWidget);
-    expect(find.byKey(const Key('spirit-round-speed')), findsOneWidget);
+    expect(find.byKey(const Key('spirit-time-remaining')), findsOneWidget);
     await tester.tap(board);
     await tester.pump(const Duration(milliseconds: 48));
     expect(find.text('Tap to stop on the outline'), findsOneWidget);

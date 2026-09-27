@@ -584,6 +584,34 @@ Deno.test("Trial resume accepts only its authenticated attempt ID, never caller 
   }
 });
 
+Deno.test("Trial capability preserves legacy payloads and accepts only alignment version 2", async () => {
+  for (const action of ["start_trial", "resume_trial"]) {
+    const payload = action === "start_trial"
+      ? {offerId: "trial-offer", dragonId: "owned-dragon"}
+      : {attemptId: requestId};
+    for (const candidate of [payload, {...payload, spiritAlignmentVersion: 2}]) {
+      const accepted = setup();
+      assert((await handleCommand(request({...body, action, payload: candidate}), accepted.deps)).status === 200);
+      equal(accepted.inputs[0].payload, candidate);
+      equal(accepted.calls[0].payload.p_payload, candidate);
+    }
+    for (const capability of [null, 0, 1, 3, "2", true, 2.5]) {
+      const denied = setup();
+      assert((await handleCommand(request({...body, action,
+        payload: {...payload, spiritAlignmentVersion: capability}}), denied.deps)).status === 400);
+      equal(denied.calls, []);
+    }
+    const denied = setup();
+    assert((await handleCommand(request({...body, action,
+      payload: {...payload, spiritAlignmentVersion: 2, score: 999}}), denied.deps)).status === 400);
+    equal(denied.calls, []);
+  }
+  const denied = setup();
+  assert((await handleCommand(request({...body, action: "refresh",
+    payload: {spiritAlignmentVersion: 2}}), denied.deps)).status === 400);
+  equal(denied.calls, []);
+});
+
 Deno.test("database server authority survives execution, replay, reads and recovery", async () => {
   const liveSaved = {...saved, authority_mode: "server"};
   let executed = false;

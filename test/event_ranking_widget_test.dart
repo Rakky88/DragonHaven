@@ -106,6 +106,25 @@ void main() {
         expect(
             find.byKey(Key('trial-ranking-kind-${kind.name}')), findsOneWidget);
       }
+      // Every game remains reachable without squeezing all six labels into
+      // the phone's width, including with enlarged system text.
+      final lastStandard =
+          find.byKey(const Key('trial-ranking-kind-runeOrbit'));
+      await tester.ensureVisible(lastStandard);
+      await tester.pumpAndSettle();
+      await tester.tap(lastStandard);
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('trial-ranking-entry-runeOrbit')),
+          findsOneWidget);
+      final seasonalChoice =
+          find.byKey(const Key('trial-ranking-kind-rosevowRelay'));
+      await tester.ensureVisible(seasonalChoice);
+      await tester.pumpAndSettle();
+      await tester.tap(seasonalChoice);
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('trial-ranking-entry-rosevowRelay')),
+          findsOneWidget);
+      expect(tester.takeException(), isNull);
       if (scale > 1) {
         await tester.dragUntilVisible(
             find.byKey(const Key('trial-ranking-entry-rosevowRelay')),
@@ -118,6 +137,11 @@ void main() {
       expect(tester.takeException(), isNull);
       const review = bool.fromEnvironment('EVENT_RANKING_REVIEW');
       if (review) {
+        tester
+            .state<NestedScrollViewState>(find.byType(NestedScrollView))
+            .outerController
+            .jumpTo(0);
+        await tester.pumpAndSettle();
         final imageContext =
             tester.element(find.byKey(const Key('trial-rankings-sheet')));
         await tester.runAsync(() async {

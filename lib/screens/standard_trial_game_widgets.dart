@@ -15,6 +15,7 @@ import '../services/trial_gameplay_controller.dart';
 import '../theme/app_theme.dart';
 import '../widgets/dragon_art.dart';
 import '../widgets/game_icon_sprite.dart';
+import '../widgets/ruin_guard_impact.dart';
 import '../widgets/trial_icon_sprite.dart';
 
 typedef FinishStandardTrial = Future<void> Function(int score);
@@ -114,6 +115,9 @@ class _SpiritAlignmentTrialGameState extends State<SpiritAlignmentTrialGame>
   Widget build(BuildContext context) {
     final strings = AppStrings.of(context);
     final overlap = game.latestOverlap;
+    final secondsLeft = (game.remainingMs / 1000).ceil();
+    final timeLeft = '${(secondsLeft ~/ 60).toString().padLeft(2, '0')}:'
+        '${(secondsLeft % 60).toString().padLeft(2, '0')}';
     return _StandardTrialScaffold(
       offer: widget.offer,
       dragon: widget.dragon,
@@ -143,22 +147,43 @@ class _SpiritAlignmentTrialGameState extends State<SpiritAlignmentTrialGame>
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
+                  if (game.timed)
+                    Semantics(
+                      label: strings.pick('Time remaining', 'Resterende tijd'),
+                      child: _StatusChip(
+                        key: const Key('spirit-time-remaining'),
+                        icon: Icons.timer_outlined,
+                        label: timeLeft,
+                      ),
+                    )
+                  else ...[
+                    _StatusChip(
+                      key: const Key('spirit-round'),
+                      icon: Icons.auto_awesome_rounded,
+                      label: strings.pick(
+                          'Round ${game.round}', 'Ronde ${game.round}'),
+                    ),
+                    _StatusChip(
+                      key: const Key('spirit-round-speed'),
+                      icon: Icons.speed_rounded,
+                      label: '${game.roundSpeed.toStringAsFixed(2)}x',
+                    ),
+                  ],
                   _StatusChip(
-                    key: const Key('spirit-round'),
-                    icon: Icons.auto_awesome_rounded,
-                    label: strings.pick(
-                        'Round ${game.round}', 'Ronde ${game.round}'),
-                  ),
-                  _StatusChip(
-                    key: const Key('spirit-round-speed'),
-                    icon: Icons.speed_rounded,
-                    label: '${game.roundSpeed.toStringAsFixed(2)}x',
-                  ),
-                  _StatusChip(
+                    key: const Key('spirit-shape-count'),
                     icon: Icons.category_rounded,
-                    label: '${game.shapeIndex + 1}/3',
+                    label: game.timed
+                        ? strings.pick(
+                            'Shape ${(game.round - 1) * 3 + game.shapeIndex + 1}',
+                            'Vorm ${(game.round - 1) * 3 + game.shapeIndex + 1}',
+                          )
+                        : '${game.shapeIndex + 1}/3',
                   ),
-                ],
+                ]
+                    .map((chip) => Flexible(
+                          child: FittedBox(fit: BoxFit.scaleDown, child: chip),
+                        ))
+                    .toList(),
               ),
             ),
             Positioned.fill(
@@ -219,16 +244,32 @@ class _SpiritAlignmentTrialGameState extends State<SpiritAlignmentTrialGame>
                                     width: 2,
                                   ),
                                 ),
-                                child: Text(
-                                  '$overlap%',
-                                  key: Key('spirit-overlap-${game.shapeIndex}'),
-                                  style: TextStyle(
-                                    color: overlap == 100
-                                        ? const Color(0xFF82FFE0)
-                                        : Colors.white,
-                                    fontSize: 42,
-                                    fontWeight: FontWeight.w900,
-                                  ),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      '$overlap%',
+                                      key: Key(
+                                          'spirit-overlap-${game.shapeIndex}'),
+                                      style: TextStyle(
+                                        color: overlap == 100
+                                            ? const Color(0xFF82FFE0)
+                                            : Colors.white,
+                                        fontSize: 42,
+                                        fontWeight: FontWeight.w900,
+                                      ),
+                                    ),
+                                    if (game.timed && overlap == 100)
+                                      const Text(
+                                        '+5s',
+                                        key: Key('spirit-time-bonus'),
+                                        style: TextStyle(
+                                          color: Color(0xFF82FFE0),
+                                          fontSize: 24,
+                                          fontWeight: FontWeight.w900,
+                                        ),
+                                      ),
+                                  ],
                                 ),
                               ),
                             ),
@@ -244,15 +285,18 @@ class _SpiritAlignmentTrialGameState extends State<SpiritAlignmentTrialGame>
               right: 18,
               bottom: 20,
               child: Text(
-                game.waitingForResult
-                    ? (overlap == 100
-                        ? strings.pick('Perfect overlap!', 'Perfecte overlap!')
-                        : strings.pick('Next shape...', 'Volgende vorm...'))
-                    : game.phase == SpiritAlignmentPhase.vertical
-                        ? strings.pick('Tap to lock the height',
-                            'Tik om de hoogte vast te zetten')
-                        : strings.pick('Tap to stop on the outline',
-                            'Tik om op de omtrek te stoppen'),
+                game.timed && game.ended
+                    ? strings.pick("Time's up!", 'De tijd is om!')
+                    : game.waitingForResult
+                        ? (overlap == 100
+                            ? strings.pick(
+                                'Perfect overlap!', 'Perfecte overlap!')
+                            : strings.pick('Next shape...', 'Volgende vorm...'))
+                        : game.phase == SpiritAlignmentPhase.vertical
+                            ? strings.pick('Tap to lock the height',
+                                'Tik om de hoogte vast te zetten')
+                            : strings.pick('Tap to stop on the outline',
+                                'Tik om op de omtrek te stoppen'),
                 textAlign: TextAlign.center,
                 style: const TextStyle(
                   color: Colors.white,
@@ -263,13 +307,31 @@ class _SpiritAlignmentTrialGameState extends State<SpiritAlignmentTrialGame>
               ),
             ),
             if (!started)
-              _StartCard(
-                icon: Icons.center_focus_strong_rounded,
-                title: strings.pick(
-                    'Align all three shapes', 'Lijn alle drie vormen uit'),
-                body: strings.pick(
-                  'Tap once to lock the height, then tap again on the golden outline. Three displayed 100% scores make the next round 10% faster.',
-                  'Tik eenmaal om de hoogte vast te zetten en nogmaals op de gouden omtrek. Drie zichtbare scores van 100% maken de volgende ronde 10% sneller.',
+              Positioned.fill(
+                child: LayoutBuilder(
+                  builder: (context, constraints) => SingleChildScrollView(
+                    child: ConstrainedBox(
+                      constraints:
+                          BoxConstraints(minHeight: constraints.maxHeight),
+                      child: _StartCard(
+                        icon: Icons.center_focus_strong_rounded,
+                        title: game.timed
+                            ? strings.pick('Align as many shapes as you can',
+                                'Lijn zoveel mogelijk vormen uit')
+                            : strings.pick('Align all three shapes',
+                                'Lijn alle drie vormen uit'),
+                        body: game.timed
+                            ? strings.pick(
+                                'Start with 60 seconds. Tap once to lock the height, then tap again on the golden outline. Every 100% overlap adds 5 seconds. Keep going until time runs out!',
+                                'Je begint met 60 seconden. Tik eenmaal om de hoogte vast te zetten en nogmaals op de gouden omtrek. Elke overlap van 100% geeft 5 seconden extra. Ga door tot de tijd om is!',
+                              )
+                            : strings.pick(
+                                'Tap once to lock the height, then tap again on the golden outline. Three displayed 100% scores make the next round 10% faster.',
+                                'Tik eenmaal om de hoogte vast te zetten en nogmaals op de gouden omtrek. Drie zichtbare scores van 100% maken de volgende ronde 10% sneller.',
+                              ),
+                      ),
+                    ),
+                  ),
                 ),
               ),
           ],
@@ -313,8 +375,7 @@ class _RuinGuardTrialGameState extends State<RuinGuardTrialGame>
           seed: widget.offer.id.hashCode,
           might: widget.dragon.trainingFor(TrainingFocus.might),
         );
-    ticker = createTicker(_tick);
-    if (widget.controller == null) ticker.start();
+    ticker = createTicker(_tick)..start();
     widget.controller?.addListener(_verifiedFrame);
   }
 
@@ -335,8 +396,10 @@ class _RuinGuardTrialGameState extends State<RuinGuardTrialGame>
     final previous = previousTick;
     previousTick = elapsed;
     if (!started || previous == null || game.ended) return;
-    elapsedMs += (elapsed - previous).inMilliseconds;
-    game.advanceTo(elapsedMs);
+    if (widget.controller == null) {
+      elapsedMs += (elapsed - previous).inMilliseconds;
+      game.advanceTo(elapsedMs);
+    }
     if (mounted) setState(() {});
     if (game.ended) unawaited(_finish());
   }
@@ -421,7 +484,41 @@ class _RuinGuardTrialGameState extends State<RuinGuardTrialGame>
                 builder: (context, constraints) {
                   final laneWidth = constraints.maxWidth / 3;
                   final travel = max(1.0, constraints.maxHeight - 126);
+                  final reducedMotion = MediaQuery.disableAnimationsOf(context);
+                  final presentationMs =
+                      widget.controller?.presentationElapsedMs ??
+                          game.milliseconds;
+                  final fallProgress = game.locked
+                      ? 1.0
+                      : ((presentationMs - game.roundStartedAt) /
+                              game.fallDurationMs)
+                          .clamp(0.0, 1.0);
+                  final impactProgress = game.locked
+                      ? ((presentationMs - (game.lockedUntil! - 420)) / 420)
+                          .clamp(0.0, 1.0)
+                      : 0.0;
+                  final guarded =
+                      game.locked && game.playerLane == game.targetLane;
+                  final readyToGuard = started &&
+                      !game.locked &&
+                      game.playerLane == game.targetLane;
+                  // The dragon meets the stone at the existing collision time.
+                  // This anticipation and recoil never advance the game model.
+                  final lunge = reducedMotion
+                      ? 0.0
+                      : guarded
+                          ? 1 - Curves.easeOutCubic.transform(impactProgress)
+                          : readyToGuard
+                              ? Curves.easeInOut.transform(
+                                  ((fallProgress - .86) / .14).clamp(0.0, 1.0))
+                              : 0.0;
+                  final stoneSize = min(76.0, laneWidth * .72);
+                  final stoneRotation =
+                      reducedMotion ? 0.0 : .18 + fallProgress * 1.1;
+                  final stoneLeft =
+                      game.targetLane * laneWidth + (laneWidth - stoneSize) / 2;
                   return Stack(
+                    clipBehavior: Clip.hardEdge,
                     children: [
                       for (var lane = 0; lane < 3; lane++)
                         Positioned(
@@ -443,39 +540,61 @@ class _RuinGuardTrialGameState extends State<RuinGuardTrialGame>
                             ),
                           ),
                         ),
-                      Positioned(
-                        key: const Key('ruin-guard-boulder'),
-                        left:
-                            game.targetLane * laneWidth + (laneWidth - 58) / 2,
-                        top: game.boulderProgress * travel,
-                        child: const Icon(
-                          Icons.hexagon_rounded,
-                          size: 58,
-                          color: Color(0xFF706177),
-                          shadows: [
-                            Shadow(color: Colors.black87, blurRadius: 10)
-                          ],
+                      if (!guarded)
+                        Positioned(
+                          key: const Key('ruin-guard-boulder'),
+                          left: stoneLeft,
+                          top: fallProgress * travel +
+                              (game.locked && !reducedMotion
+                                  ? impactProgress * 40
+                                  : 0),
+                          child: Opacity(
+                            opacity: game.locked ? 1 - impactProgress : 1,
+                            child: Transform.rotate(
+                              angle: stoneRotation,
+                              child: RuinGuardBoulder(size: stoneSize),
+                            ),
+                          ),
                         ),
-                      ),
                       AnimatedPositioned(
                         key: const Key('ruin-guard-dragon'),
-                        duration: MediaQuery.disableAnimationsOf(context)
+                        duration: reducedMotion
                             ? Duration.zero
                             : const Duration(milliseconds: 150),
                         curve: Curves.easeOutBack,
                         left: game.playerLane * laneWidth,
                         bottom: 2,
                         width: laneWidth,
-                        child: DragonArt(
-                          height: 90,
-                          animate: !game.locked,
-                          stageKey: widget.dragon.stageKey,
-                          lineageId: widget.dragon.lineageId,
-                          evolutionPath: widget.dragon.activeEvolutionPath,
-                          prismatic: widget.dragon.prismatic,
-                          sinister: widget.dragon.sinister,
+                        child: Transform.translate(
+                          key: const Key('ruin-guard-lunge'),
+                          offset: Offset(0, -28 * lunge),
+                          child: Transform.rotate(
+                            angle: -.08 * lunge,
+                            child: DragonArt(
+                              height: 90,
+                              animate:
+                                  started && !game.locked && !reducedMotion,
+                              stageKey: widget.dragon.stageKey,
+                              lineageId: widget.dragon.lineageId,
+                              evolutionPath: widget.dragon.activeEvolutionPath,
+                              prismatic: widget.dragon.prismatic,
+                              sinister: widget.dragon.sinister,
+                            ),
+                          ),
                         ),
                       ),
+                      if (guarded)
+                        Positioned(
+                          key: const Key('ruin-guard-shatter'),
+                          left: stoneLeft - stoneSize,
+                          top: travel - stoneSize,
+                          child: RuinGuardImpact(
+                            progress: impactProgress,
+                            stoneSize: stoneSize,
+                            rotation: stoneRotation,
+                            reducedMotion: reducedMotion,
+                          ),
+                        ),
                     ],
                   );
                 },
@@ -546,10 +665,17 @@ class RuneOrbitTrialGame extends StatefulWidget {
   State<RuneOrbitTrialGame> createState() => _RuneOrbitTrialGameState();
 }
 
-class _RuneOrbitTrialGameState extends State<RuneOrbitTrialGame> {
+class _RuneOrbitTrialGameState extends State<RuneOrbitTrialGame>
+    with SingleTickerProviderStateMixin {
   static const runeKeys = ['fire', 'water', 'moon', 'star', 'wind'];
   late final RuneOrbitGame game;
-  Timer? timer;
+  late final Ticker ticker;
+  Duration frameElapsed = Duration.zero;
+  int localStartedAt = 0;
+  int observedMatches = 0, observedMisses = 0;
+  Duration? resultAt;
+  bool matched = false;
+  double resultPhase = 0;
   bool started = false, finishing = false;
 
   @override
@@ -560,53 +686,90 @@ class _RuneOrbitTrialGameState extends State<RuneOrbitTrialGame> {
           seed: widget.offer.id.hashCode,
           arcana: widget.dragon.trainingFor(TrainingFocus.arcana),
         );
+    observedMatches = game.rounds;
+    observedMisses = game.misses;
+    ticker = createTicker(_tick)..start();
     widget.controller?.addListener(_verifiedFrame);
   }
 
   @override
   void dispose() {
     widget.controller?.removeListener(_verifiedFrame);
-    timer?.cancel();
+    ticker.dispose();
     super.dispose();
   }
 
   void _verifiedFrame() {
     if (!mounted) return;
+    _observeResult();
     setState(() {});
     if (game.ended) unawaited(_finish());
+  }
+
+  void _tick(Duration elapsed) {
+    frameElapsed = elapsed;
+    if (!started) return;
+    if (widget.controller == null && !game.ended) {
+      game.advanceTo(
+          max(game.milliseconds, elapsed.inMilliseconds - localStartedAt));
+      _observeResult();
+    }
+    // Canonical games are only advanced by their controller. This ticker reads
+    // its monotonic presentation clock to draw between simulation updates.
+    if (mounted) setState(() {});
+    if (game.ended) unawaited(_finish());
+  }
+
+  void _observeResult() {
+    if (game.rounds == observedMatches && game.misses == observedMisses) return;
+    matched = game.rounds > observedMatches;
+    observedMatches = game.rounds;
+    observedMisses = game.misses;
+    resultAt = frameElapsed;
+    if (matched) unawaited(HavenAudio.play(HavenSound.uiConfirm));
+  }
+
+  double _phase(bool reducedMotion) {
+    if (!started) return 0;
+    if (!game.accepting) {
+      if (resultAt == null) return 0;
+      if (reducedMotion || game.ended) return resultPhase;
+      // Each canonical round starts with rune zero. Use its existing 420ms
+      // intermission to bring the ring back around without swapping identities.
+      final progress =
+          ((frameElapsed - resultAt!).inMilliseconds / 420).clamp(0.0, 1.0);
+      final nextCycle = (resultPhase / 5).round() * 5;
+      return resultPhase +
+          (nextCycle - resultPhase) * Curves.easeInOut.transform(progress);
+    }
+    final at = widget.controller?.presentationElapsedMs ?? game.milliseconds;
+    return max(0.0, (at - game.roundStartedAt) / game.visibleMs);
   }
 
   void _tap() {
     if (!started) {
       started = true;
+      localStartedAt = frameElapsed.inMilliseconds;
       widget.controller?.start();
       unawaited(HavenAudio.play(HavenSound.adventureStart));
-      if (widget.controller == null) {
-        timer = Timer.periodic(const Duration(milliseconds: 16), (timer) {
-          if (!mounted || game.ended) return;
-          game.advanceTo(timer.tick * 16);
-          setState(() {});
-          if (game.ended) unawaited(_finish());
-        });
-      }
       setState(() {});
       return;
     }
     if (!game.accepting) return;
-    final rune = game.gateRune;
+    resultPhase = _phase(MediaQuery.disableAnimationsOf(context));
     if (widget.controller case final controller?) {
-      controller.input(TrialControl.tapRune, rune);
+      controller.inputOrbitRune();
     } else {
-      game.tap(rune, game.milliseconds);
+      game.tap(game.gateRune, game.milliseconds);
     }
-    unawaited(HavenAudio.play(HavenSound.uiConfirm));
+    _observeResult();
     setState(() {});
+    if (game.ended) unawaited(_finish());
   }
 
   Future<void> _finish() async {
     if (finishing) return;
     finishing = true;
-    timer?.cancel();
     await Future<void>.delayed(const Duration(milliseconds: 750));
     if (mounted && widget.controller == null) {
       await widget.onFinished(game.rounds);
@@ -619,6 +782,15 @@ class _RuneOrbitTrialGameState extends State<RuneOrbitTrialGame> {
   @override
   Widget build(BuildContext context) {
     final strings = AppStrings.of(context);
+    final reducedMotion = MediaQuery.disableAnimationsOf(context);
+    final phase = _phase(reducedMotion);
+    final resultAge =
+        resultAt == null ? 1000 : (frameElapsed - resultAt!).inMilliseconds;
+    final showResult = resultAt != null && (resultAge < 700 || game.ended);
+    final feedbackColor =
+        matched ? const Color(0xFF74F9CF) : const Color(0xFFFF536A);
+    final flashOpacity =
+        reducedMotion ? .20 : (1 - resultAge / 550).clamp(0.0, 1.0);
     return _StandardTrialScaffold(
       offer: widget.offer,
       dragon: widget.dragon,
@@ -633,6 +805,27 @@ class _RuneOrbitTrialGameState extends State<RuneOrbitTrialGame> {
             Image.asset('assets/images/ui/trials/trial_rune_background.webp',
                 fit: BoxFit.cover),
             const ColoredBox(color: Color(0xBB100A25)),
+            if (showResult)
+              Positioned.fill(
+                child: IgnorePointer(
+                  child: Opacity(
+                    key: const Key('rune-orbit-feedback-flash'),
+                    opacity: flashOpacity,
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        border: Border.all(color: feedbackColor, width: 4),
+                        gradient: RadialGradient(
+                          radius: .85,
+                          colors: [
+                            feedbackColor.withValues(alpha: .03),
+                            feedbackColor.withValues(alpha: .42),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
             Positioned(
               top: 14,
               left: 14,
@@ -640,11 +833,18 @@ class _RuneOrbitTrialGameState extends State<RuneOrbitTrialGame> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  _StatusChip(
-                    icon: Icons.auto_awesome_rounded,
-                    label: strings.pick(
-                        '${game.rounds} matched', '${game.rounds} gevangen'),
+                  Flexible(
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerLeft,
+                      child: _StatusChip(
+                        icon: Icons.auto_awesome_rounded,
+                        label: strings.pick('${game.rounds} matched',
+                            '${game.rounds} gevangen'),
+                      ),
+                    ),
                   ),
+                  const SizedBox(width: 8),
                   _StatusChip(
                     key: const Key('rune-orbit-lives'),
                     icon: Icons.favorite_rounded,
@@ -655,7 +855,7 @@ class _RuneOrbitTrialGameState extends State<RuneOrbitTrialGame> {
             ),
             Positioned.fill(
               top: 72,
-              bottom: 72,
+              bottom: 116,
               child: LayoutBuilder(
                 builder: (context, constraints) {
                   final center = Offset(
@@ -664,23 +864,45 @@ class _RuneOrbitTrialGameState extends State<RuneOrbitTrialGame> {
                       min(constraints.maxWidth, constraints.maxHeight) * .34;
                   return Stack(
                     children: [
-                      for (var slot = 0; slot < 5; slot++)
+                      Positioned.fill(
+                        child: CustomPaint(
+                          key: const Key('rune-orbit-gate'),
+                          painter: _RuneOrbitTrackPainter(
+                            center: center,
+                            radius: radius,
+                          ),
+                        ),
+                      ),
+                      for (var rune = 0; rune < 5; rune++)
                         Positioned(
+                          key: Key('rune-orbit-position-$rune'),
                           left: center.dx +
-                              cos(-pi / 2 + slot * pi * 2 / 5) * radius -
+                              cos(-pi / 2 + (rune - phase + .5) * pi * 2 / 5) *
+                                  radius -
                               31,
                           top: center.dy +
-                              sin(-pi / 2 + slot * pi * 2 / 5) * radius -
+                              sin(-pi / 2 + (rune - phase + .5) * pi * 2 / 5) *
+                                  radius -
                               31,
-                          child: Opacity(
-                            opacity: slot == 0 ? 1 : .58,
+                          child: Container(
+                            width: 62,
+                            height: 62,
+                            padding: const EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: const Color(0xB51C103A),
+                              border: Border.all(
+                                color: game.accepting && rune == game.gateRune
+                                    ? AppColors.gold
+                                    : const Color(0x665E4A8B),
+                                width: game.accepting && rune == game.gateRune
+                                    ? 3
+                                    : 1,
+                              ),
+                            ),
                             child: Image.asset(
-                              _asset((game.gateRune + slot) % 5),
-                              key: slot == 0
-                                  ? const Key('rune-orbit-gate')
-                                  : null,
-                              width: 62,
-                              height: 62,
+                              _asset(rune),
+                              key: Key('rune-orbit-rune-$rune'),
                             ),
                           ),
                         ),
@@ -690,33 +912,42 @@ class _RuneOrbitTrialGameState extends State<RuneOrbitTrialGame> {
                         child: Container(
                           width: 134,
                           height: 134,
-                          padding: const EdgeInsets.all(23),
+                          padding: const EdgeInsets.all(17),
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             color: const Color(0xE02A1A51),
-                            border: Border.all(color: AppColors.gold, width: 3),
-                            boxShadow: const [
+                            border: Border.all(
+                                color:
+                                    showResult ? feedbackColor : AppColors.gold,
+                                width: 3),
+                            boxShadow: [
                               BoxShadow(
-                                  color: Color(0x88B88AFF), blurRadius: 24)
+                                  color: showResult
+                                      ? feedbackColor.withValues(alpha: .4)
+                                      : const Color(0x88B88AFF),
+                                  blurRadius: reducedMotion ? 0 : 24)
                             ],
                           ),
-                          child: Image.asset(
-                            _asset(game.targetRune),
-                            key: const Key('rune-orbit-target'),
-                          ),
-                        ),
-                      ),
-                      Positioned(
-                        left: center.dx - 60,
-                        top: center.dy + 74,
-                        width: 120,
-                        child: Text(
-                          strings.pick('MATCH', 'VANG'),
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            color: AppColors.gold,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: 1.4,
+                          child: Column(
+                            children: [
+                              Expanded(
+                                child: Image.asset(
+                                  _asset(game.targetRune),
+                                  key: const Key('rune-orbit-target'),
+                                ),
+                              ),
+                              const SizedBox(height: 3),
+                              Text(
+                                strings.pick('TARGET', 'DOEL'),
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                  color: AppColors.gold,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w900,
+                                  letterSpacing: 1.4,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ),
@@ -728,15 +959,63 @@ class _RuneOrbitTrialGameState extends State<RuneOrbitTrialGame> {
             Positioned(
               left: 18,
               right: 18,
-              bottom: 22,
-              child: Text(
-                strings.pick('Tap when the matching rune reaches the top gate.',
-                    'Tik wanneer de juiste rune de bovenste poort bereikt.'),
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w800),
+              bottom: 18,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (showResult)
+                    Semantics(
+                      liveRegion: true,
+                      child: Container(
+                        key: Key(
+                            matched ? 'rune-orbit-success' : 'rune-orbit-miss'),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 9),
+                        decoration: BoxDecoration(
+                          color: const Color(0xF51E1239),
+                          borderRadius: BorderRadius.circular(18),
+                          border: Border.all(color: feedbackColor, width: 2),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                                matched
+                                    ? Icons.check_circle_rounded
+                                    : Icons.cancel_rounded,
+                                color: feedbackColor,
+                                size: 23),
+                            const SizedBox(width: 8),
+                            Flexible(
+                              child: Text(
+                                matched
+                                    ? strings.pick(
+                                        'MATCHED! +1', 'GEVANGEN! +1')
+                                    : strings.pick(
+                                        'MISS! −1 heart', 'MIS! −1 hartje'),
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                    color: feedbackColor,
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w900),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  const SizedBox(height: 8),
+                  Text(
+                    strings.pick(
+                        'Tap when the matching rune enters the golden gate.',
+                        'Tik als de juiste rune de gouden poort binnenkomt.'),
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800),
+                  ),
+                ],
               ),
             ),
             if (!started)
@@ -753,6 +1032,59 @@ class _RuneOrbitTrialGameState extends State<RuneOrbitTrialGame> {
       ),
     );
   }
+}
+
+class _RuneOrbitTrackPainter extends CustomPainter {
+  const _RuneOrbitTrackPainter({required this.center, required this.radius});
+  final Offset center;
+  final double radius;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final ring = Rect.fromCircle(center: center, radius: radius);
+    canvas.drawCircle(
+        center,
+        radius,
+        Paint()
+          ..color = const Color(0x665E4A8B)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2);
+    // Exactly one fifth of the orbit is selectable at a time. Center each
+    // rune's canonical interval on the top of this visible gate sector.
+    canvas.drawArc(
+        ring,
+        -pi / 2 - pi / 5,
+        pi * 2 / 5,
+        false,
+        Paint()
+          ..color = const Color(0x35FFE08A)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 72);
+    canvas.drawArc(
+        ring.inflate(36),
+        -pi / 2 - pi / 5,
+        pi * 2 / 5,
+        false,
+        Paint()
+          ..color = AppColors.gold
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 3);
+    for (final edge in [-1, 1]) {
+      final angle = -pi / 2 + edge * pi / 5;
+      final direction = Offset(cos(angle), sin(angle));
+      canvas.drawLine(
+          center + direction * (radius - 36),
+          center + direction * (radius + 36),
+          Paint()
+            ..color = AppColors.gold
+            ..strokeWidth = 3
+            ..strokeCap = StrokeCap.round);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _RuneOrbitTrackPainter oldDelegate) =>
+      oldDelegate.center != center || oldDelegate.radius != radius;
 }
 
 class _StandardTrialScaffold extends StatelessWidget {
@@ -800,14 +1132,26 @@ class _StandardTrialScaffold extends StatelessWidget {
                   Text(focusLabel,
                       style: const TextStyle(
                           color: AppColors.gold, fontWeight: FontWeight.w900)),
-                  const Spacer(),
-                  TrialIconSprite(kind: offer.kind, size: 30),
-                  const SizedBox(width: 8),
-                  Text(
-                    '$score  /  ${strings.pick('Best', 'Beste')} '
-                    '${dragon.trialBest(offer.kind.name)}',
-                    style: const TextStyle(
-                        color: Colors.white, fontWeight: FontWeight.w900),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerRight,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          TrialIconSprite(kind: offer.kind, size: 30),
+                          const SizedBox(width: 8),
+                          Text(
+                            '$score  /  ${strings.pick('Best', 'Beste')} '
+                            '${dragon.trialBest(offer.kind.name)}',
+                            style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w900),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -865,23 +1209,25 @@ class _StartCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(26),
               border: Border.all(color: AppColors.gold),
             ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(icon, color: AppColors.gold, size: 44),
-                const SizedBox(height: 10),
-                Text(title,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 22,
-                        fontWeight: FontWeight.w900)),
-                const SizedBox(height: 7),
-                Text(body,
-                    textAlign: TextAlign.center,
-                    style:
-                        const TextStyle(color: Color(0xFFDCD2F4), height: 1.3)),
-              ],
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(icon, color: AppColors.gold, size: 44),
+                  const SizedBox(height: 10),
+                  Text(title,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 22,
+                          fontWeight: FontWeight.w900)),
+                  const SizedBox(height: 7),
+                  Text(body,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                          color: Color(0xFFDCD2F4), height: 1.3)),
+                ],
+              ),
             ),
           ),
         ),

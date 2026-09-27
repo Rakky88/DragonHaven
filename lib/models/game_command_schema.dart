@@ -1,6 +1,20 @@
 /// Protocol identities shared by the client journal and server evaluator.
 /// No score, reward amount, entitlement or unverified grant is accepted here.
 abstract final class GameCommandSchema {
+  /// An omitted alignment capability keeps released clients on their original
+  /// rules. Only explicitly supported versions may enter the durable journal.
+  static bool acceptsPayload(String action, Map<String, dynamic> payload) {
+    final requiredKeys = keys[action];
+    if (requiredKeys == null || !requiredKeys.every(payload.containsKey)) {
+      return false;
+    }
+    if (payload.length == requiredKeys.length) return true;
+    return (action == 'start_trial' || action == 'resume_trial') &&
+        payload.length == requiredKeys.length + 1 &&
+        payload['spiritAlignmentVersion'] is int &&
+        payload['spiritAlignmentVersion'] == 2;
+  }
+
   static const keys = <String, Set<String>>{
     'refresh': {},
     'complete_onboarding': {'name'},

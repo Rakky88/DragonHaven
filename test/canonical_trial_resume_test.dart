@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:dragon_haven/models/egg_altar.dart';
 import 'package:dragon_haven/models/pet.dart';
@@ -124,10 +125,22 @@ void main() {
       controller.input(TrialControl.strikeRuin);
     }
     expect(controller.model.ended, true);
-    for (var n = 0; n < 100 && controller.saving; n++) {
-      await Future<void>.delayed(const Duration(milliseconds: 10));
+    final saved = Completer<void>();
+    void observeReceipt() {
+      if (!saved.isCompleted &&
+          (controller.completion != null || controller.error != null)) {
+        saved.complete();
+      }
     }
-    await controller.flush();
+
+    controller.addListener(observeReceipt);
+    try {
+      await controller.flush();
+      observeReceipt();
+      await saved.future;
+    } finally {
+      controller.removeListener(observeReceipt);
+    }
     expect(controller.error, isNull);
     expect(controller.completion, isNotNull);
     expect(session.snapshot!.trialAttempt, isNull);

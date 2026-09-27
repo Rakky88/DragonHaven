@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:dragon_haven/config/rewarded_ads_config.dart';
@@ -123,6 +124,95 @@ void main() {
       expect(repository.statusCalls, 2);
       expect(ads.canRequestAds, isTrue);
     });
+
+    test('preloads both currencies without reserving any reward', () async {
+      await ads.initialize();
+      await ads.prepare(RewardedAdCurrency.gems);
+      await ads.prepare(RewardedAdCurrency.coins);
+      expect(platform.loadCalls, 2);
+      expect(repository.issueCalls, 0);
+      await ads.prepare(RewardedAdCurrency.gems);
+      expect(platform.loadCalls, 2);
+      expect(ads.ready(RewardedAdCurrency.gems), isTrue);
+    });
+
+    test('earned dismissal returns immediately while verification is pending',
+        () async {
+      await ads.initialize();
+      await ads.prepare(RewardedAdCurrency.gems);
+      final statusReadsBeforeTap = repository.statusCalls;
+      final outcome = await ads.watch(RewardedAdCurrency.gems);
+      expect(outcome, RewardedAdWatchOutcome.rewardPreviewed);
+      expect(ads.earnedPending(RewardedAdCurrency.gems), isTrue);
+      expect(ads.busy(RewardedAdCurrency.gems), isFalse);
+      expect(repository.issueCalls, 1);
+      expect(repository.statusCalls, statusReadsBeforeTap);
+      expect(repository.claimReads, 0);
+      final journal = jsonDecode(
+          await File('${directory.path}/rewarded-earned-$_owner.json')
+              .readAsString());
+      expect(journal['owner'], _owner);
+      expect(journal['claims'], {_claimId: 'gems'});
+    });
+
+    test(
+        'earned journal survives a restart and an explicit expiry rolls it back',
+        () async {
+      await ads.initialize();
+      await ads.watch(RewardedAdCurrency.gems);
+      ads.dispose();
+      ads = CanonicalRewardedAds(
+          session: session,
+          repository: repository,
+          platform: platform,
+          config: RewardedAdsConfig(
+              mode: RewardedAdsMode.test,
+              gemsAdUnitId: RewardedAdsConfig.androidRewardedTestUnitId,
+              coinsAdUnitId: RewardedAdsConfig.androidRewardedTestUnitId,
+              platformSupported: true));
+      await ads.initialize();
+      expect(ads.earnedPending(RewardedAdCurrency.gems), isTrue);
+      repository.claimStates.add(const RewardedAdClaimStatus('expired'));
+      await ads.refresh();
+      expect(ads.earnedPending(RewardedAdCurrency.gems), isFalse);
+      expect(ads.error(RewardedAdCurrency.gems),
+          'rewarded_ad_verification_failed');
+      final journal = jsonDecode(
+          await File('${directory.path}/rewarded-earned-$_owner.json')
+              .readAsString());
+      expect(journal['claims'], isEmpty);
+    });
+
+    test('an account change while showing never previews the old reward',
+        () async {
+      final dismissed = Completer<bool>();
+      platform.loaded.dismissal = dismissed.future;
+      await ads.initialize();
+      final showing = ads.watch(RewardedAdCurrency.gems);
+      while (platform.loaded.customData == null) {
+        await Future<void>.delayed(Duration.zero);
+      }
+      connection.currentOwner = '99999999-9999-4999-8999-999999999999';
+      connection.sessionEpoch++;
+      final failure = expectLater(showing, throwsStateError);
+      dismissed.complete(true);
+      await failure;
+      expect(ads.earnedPending(RewardedAdCurrency.gems), isFalse);
+      expect(
+          await File('${directory.path}/rewarded-earned-$_owner.json').exists(),
+          isFalse);
+    });
+
+    test('claimed status alone cannot discard an unconfirmed wallet preview',
+        () async {
+      await ads.initialize();
+      await ads.watch(RewardedAdCurrency.gems);
+      repository.claimStates.add(const RewardedAdClaimStatus('claimed'));
+      // This session has not synchronized yet, so a background wallet read
+      // cannot run. Retain evidence and retry instead of losing the reward.
+      await ads.refresh();
+      expect(ads.earnedPending(RewardedAdCurrency.gems), isTrue);
+    });
   });
 }
 
@@ -157,16 +247,18 @@ final class _LoadedAd implements LoadedRewardedAd {
   bool result = true;
   Object? error;
   String? customData;
+  Future<bool>? dismissal;
 
   @override
   Future<void> dispose() async {}
 
   @override
-  Future<bool> show({required String customData}) async {
+  Future<bool> show(
+      {required String customData, bool Function()? mayShow}) async {
     this.customData = customData;
     final failure = error;
     if (failure != null) throw failure;
-    return result;
+    return dismissal == null ? result : await dismissal!;
   }
 }
 
@@ -174,6 +266,7 @@ final class _Platform implements RewardedAdsPlatform {
   final loaded = _LoadedAd();
   int consentCalls = 0;
   int consentFailures = 0;
+  int loadCalls = 0;
 
   @override
   Future<RewardedAdsConsentState> initializeConsent() async {
@@ -187,7 +280,10 @@ final class _Platform implements RewardedAdsPlatform {
   }
 
   @override
-  Future<LoadedRewardedAd> load(String adUnitId) async => loaded;
+  Future<LoadedRewardedAd> load(String adUnitId) async {
+    loadCalls++;
+    return loaded;
+  }
 
   @override
   Future<RewardedAdsConsentState> showPrivacyOptions() async =>
@@ -199,6 +295,8 @@ final class _Repository implements RewardedAdsRepository {
   final cancelled = <String>[];
   final claimStates = <RewardedAdClaimStatus>[];
   int statusCalls = 0;
+  int issueCalls = 0;
+  int claimReads = 0;
 
   RewardedAdsStatus get currentStatus => RewardedAdsStatus(
           enabled: true,
@@ -220,18 +318,22 @@ final class _Repository implements RewardedAdsRepository {
   }
 
   @override
-  Future<RewardedAdClaimStatus> claimStatus(String claimId) async =>
-      claimStates.isEmpty
-          ? const RewardedAdClaimStatus('issued')
-          : claimStates.removeAt(0);
+  Future<RewardedAdClaimStatus> claimStatus(String claimId) async {
+    claimReads++;
+    return claimStates.isEmpty
+        ? const RewardedAdClaimStatus('issued')
+        : claimStates.removeAt(0);
+  }
 
   @override
-  Future<RewardedAdClaim> issue(RewardedAdCurrency currency) async =>
-      RewardedAdClaim(
-          id: _claimId,
-          token: _token,
-          currency: currency,
-          expiresAt: DateTime.now().toUtc().add(const Duration(minutes: 15)));
+  Future<RewardedAdClaim> issue(RewardedAdCurrency currency) async {
+    issueCalls++;
+    return RewardedAdClaim(
+        id: _claimId,
+        token: _token,
+        currency: currency,
+        expiresAt: DateTime.now().toUtc().add(const Duration(minutes: 15)));
+  }
 
   @override
   Future<RewardedAdsStatus> status() async {

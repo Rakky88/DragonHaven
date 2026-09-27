@@ -19,7 +19,8 @@ class TrialRunModel {
   TrialRunModel(
       {required this.kind,
       required this.seed,
-      required Map<TrainingFocus, int> training})
+      required Map<TrainingFocus, int> training,
+      bool timedSpiritAlignment = true})
       : training = Map.unmodifiable(training),
         _random = Random(seed) {
     durationMs = trialDefinitions[kind]!.durationMilliseconds(training);
@@ -42,6 +43,7 @@ class TrialRunModel {
       alignment = SpiritAlignmentGame(
           seed: seed,
           spirit: stat(TrainingFocus.spirit),
+          timed: timedSpiritAlignment,
           random: TrialRandom(seed));
     }
     if (kind == TrialKind.ruinGuard) {
@@ -140,7 +142,9 @@ class TrialRunModel {
   bool get endless => trialDefinitions[kind]!.isEndless;
   int stat(TrainingFocus focus) => training[focus] ?? 0;
   double assistance(TrainingFocus focus) => stat(focus).toDouble();
-  int get remainingMs => max(0, durationMs - elapsedMs - _witchPenaltyMs);
+  int get remainingMs => alignment?.timed == true
+      ? alignment!.remainingMs
+      : max(0, durationMs - elapsedMs - _witchPenaltyMs);
   int get score =>
       cavern?.score ??
       ruin?.score ??

@@ -12,25 +12,27 @@ abstract interface class RewardedAdsRepository {
 final class SupabaseRewardedAdsRepository implements RewardedAdsRepository {
   const SupabaseRewardedAdsRepository(this.client);
   final SupabaseClient client;
+  static const _timeout = Duration(seconds: 15);
 
   @override
-  Future<RewardedAdsStatus> status() async =>
-      RewardedAdsStatus.fromJson(await client.rpc('get_my_rewarded_ad_status'));
+  Future<RewardedAdsStatus> status() async => RewardedAdsStatus.fromJson(
+      await client.rpc('get_my_rewarded_ad_status').timeout(_timeout));
 
   @override
   Future<RewardedAdClaim> issue(RewardedAdCurrency currency) async =>
       RewardedAdClaim.fromJson(await client.rpc('issue_my_rewarded_ad_claim',
-          params: {'p_currency': currency.name}));
+          params: {'p_currency': currency.name}).timeout(_timeout));
 
   @override
   Future<RewardedAdClaimStatus> claimStatus(String claimId) async =>
-      RewardedAdClaimStatus.fromJson(await client
-          .rpc('get_my_rewarded_ad_claim', params: {'p_claim_id': claimId}));
+      RewardedAdClaimStatus.fromJson(await client.rpc(
+          'get_my_rewarded_ad_claim',
+          params: {'p_claim_id': claimId}).timeout(_timeout));
 
   @override
   Future<bool> cancel(String claimId) async {
-    final result = await client
-        .rpc('cancel_my_rewarded_ad_claim', params: {'p_claim_id': claimId});
+    final result = await client.rpc('cancel_my_rewarded_ad_claim',
+        params: {'p_claim_id': claimId}).timeout(_timeout);
     if (result is! bool) {
       throw const FormatException('rewarded_ad_cancel_response_invalid');
     }

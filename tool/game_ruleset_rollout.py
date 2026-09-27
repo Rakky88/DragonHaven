@@ -107,6 +107,18 @@ def _local_versions(root: Path) -> list[str]:
     return versions
 
 
+def _worker_source_sha256(root: Path) -> str:
+    """Bind the Edge parser and bridge as well as the compiled Dart rules."""
+    directory = root / "supabase/functions/execute-game-command"
+    digest = hashlib.sha256()
+    for name in ("index.ts", "core.ts", "deadline.ts", "bundle.generated.ts", "game.generated.js"):
+        path = directory / name
+        if not path.is_file():
+            raise RolloutError("worker_source_incomplete")
+        digest.update(name.encode() + b"\0" + hashlib.sha256(path.read_bytes()).digest())
+    return digest.hexdigest()
+
+
 def _safe_runtime(value: object) -> dict[str, object]:
     if not isinstance(value, dict):
         raise RolloutError("runtime_invalid")
@@ -144,6 +156,7 @@ class Rollout:
         self.candidate_runtime: dict[str, object] | None = None
         self.candidate_function: dict[str, object] | None = None
         self.new_ruleset = ""
+        self.migration_versions: list[str] = []
         self.worker_deploy_attempted = False
 
     def _run(self, command: list[str], label: str, cwd: Path | None = None) -> str:
@@ -380,6 +393,7 @@ class Rollout:
         local = _local_versions(self.root)
         if remote != local:
             raise RolloutError("migration_history_not_exact")
+        self.migration_versions = local
         self._run(
             [
                 self.args.supabase,
@@ -437,7 +451,51 @@ class Rollout:
         head = self._run(["git", "rev-parse", "HEAD"], "release_head_resolve").strip()
         if not re.fullmatch(r"[0-9a-f]{40}", tag_commit) or tag_commit != head:
             raise RolloutError("release_tag_not_exact_source")
-        tag = urllib.parse.quote(self.args.release_tag, safe="")
+        compatibility_tag = getattr(self.args, "compatibility_release_tag", None)
+        if compatibility_tag:
+            self._verify_prepublication_source(head)
+            baseline_version = _semantic_version(compatibility_tag[1:])
+            if TAG.fullmatch(compatibility_tag) is None or baseline_version is None or baseline_version >= source_version:
+                raise RolloutError("compatibility_release_not_older")
+        else:
+            self._verify_remote_source(head, "refs/tags/" + self.args.release_tag, annotated=True)
+        self._verify_public_release(compatibility_tag or self.args.release_tag)
+
+    def _verify_prepublication_source(self, head: str) -> None:
+        if self._run(
+            ["git", "status", "--porcelain", "--untracked-files=no"],
+            "release_source_clean_check",
+        ).strip():
+            raise RolloutError("release_source_has_uncommitted_changes")
+        if self._run(
+            ["git", "ls-files", "--others", "--exclude-standard", "lib", "supabase", "tool"],
+            "release_untracked_source_check",
+        ).strip():
+            raise RolloutError("release_source_has_untracked_files")
+        branch = getattr(self.args, "candidate_branch", None)
+        if not branch or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._/-]*", branch):
+            raise RolloutError("candidate_branch_required")
+        ref = "refs/heads/" + branch
+        self._run(["git", "check-ref-format", ref], "candidate_branch_invalid")
+        self._verify_remote_source(head, ref)
+
+    def _verify_remote_source(self, head: str, ref: str, *, annotated: bool = False) -> None:
+        wanted = [ref, ref + "^{}"] if annotated else [ref]
+        refs = self._run(
+            ["git", "ls-remote", "https://github.com/" + self.args.github_repository + ".git", *wanted],
+            "release_remote_source_resolve",
+        )
+        remote = {}
+        for line in refs.splitlines():
+            parts = line.split()
+            if len(parts) != 2 or re.fullmatch(r"[0-9a-f]{40}", parts[0]) is None or parts[1] in remote:
+                raise RolloutError("release_remote_source_invalid")
+            remote[parts[1]] = parts[0]
+        if set(remote) - set(wanted) or remote.get(ref + "^{}", remote.get(ref)) != head:
+            raise RolloutError("release_remote_source_not_exact")
+
+    def _verify_public_release(self, release_tag: str) -> None:
+        tag = urllib.parse.quote(release_tag, safe="")
         release = self._request(
             f"https://api.github.com/repos/{self.args.github_repository}/releases/tags/{tag}",
             label="release_lookup",
@@ -454,16 +512,55 @@ class Rollout:
             None,
         ) if isinstance(assets, list) else None
         if (
-            release.get("tag_name") != self.args.release_tag
+            release.get("tag_name") != release_tag
             or release.get("draft") is not False
             or release.get("prerelease") is not False
-            or latest.get("tag_name") != self.args.release_tag
+            or latest.get("tag_name") != release_tag
             or not isinstance(asset, dict)
             or asset.get("digest") != "sha256:" + self.args.apk_sha256
             or not isinstance(asset.get("size"), int)
             or asset["size"] < 1
         ):
             raise RolloutError("public_release_not_verified")
+
+    def _verify_prepublication_staging(self) -> None:
+        if not getattr(self.args, "compatibility_release_tag", None):
+            return
+        if self.baseline_runtime is None or self.args.minimum_client_build != self.baseline_runtime["minimum_client_build"]:
+            raise RolloutError("compatible_rollout_cannot_change_minimum_build")
+        directory = Path(self.args.staging_evidence_dir)
+        try:
+            result = json.loads((directory / "result.json").read_text("utf-8"))
+            baseline = json.loads((directory / "baseline.json").read_text("utf-8"))
+        except (OSError, ValueError):
+            raise RolloutError("compatible_rollout_staging_evidence_unavailable") from None
+        source = self._run(["git", "rev-parse", "HEAD"], "staging_source_compare").strip()
+        if not isinstance(result, dict) or not isinstance(baseline, dict):
+            raise RolloutError("compatible_rollout_staging_evidence_invalid")
+        smoke, runtime, function = result.get("smoke"), result.get("runtime"), result.get("function")
+        if (
+            result.get("environment") != "staging" or result.get("projectRef") != PROJECTS["staging"]
+            or result.get("mode") != "apply" or result.get("rollbackRequired") is not False
+            or result.get("sourceRevision") != source or baseline.get("sourceRevision") != source
+            or result.get("rulesetSha256") != self.new_ruleset
+            or result.get("minimumClientBuild") != self.args.minimum_client_build
+            or not self.migration_versions or result.get("migrationVersions") != self.migration_versions
+            or result.get("workerSourceSha256") != _worker_source_sha256(self.root)
+            or not isinstance(smoke, dict)
+            or any(smoke.get(key) is not True for key in ("authenticated", "initializationReplay", "serverAuthority"))
+            or smoke.get("rulesetSha256") != self.new_ruleset
+            or not isinstance(runtime, dict) or runtime.get("ruleset_sha256") != self.new_ruleset
+            or runtime.get("minimum_client_build") != self.args.minimum_client_build
+            or any(runtime.get(key) is not False for key in ("enabled", "migration_enabled", "shadow_social_enabled", "shadow_projection_enabled", "shadow_lifecycle_enabled"))
+            or not isinstance(function, dict) or function.get("status") != "ACTIVE"
+            or function.get("verify_jwt") is not False
+            or not (directory / "server-postflight.txt").is_file()
+        ):
+            raise RolloutError("compatible_rollout_staging_evidence_mismatch")
+        # Rehash the downloaded staging deployment; a ruleset hash alone does
+        # not cover the TypeScript capability parser.
+        if _worker_source_sha256(directory / "candidate-deployed") != _worker_source_sha256(self.root):
+            raise RolloutError("compatible_rollout_staging_worker_mismatch")
 
     def _postflight(self) -> None:
         command = [
@@ -761,6 +858,7 @@ class Rollout:
         self._verify_release()
         self.baseline_runtime = self._runtime()
         self.baseline_function = self._function()
+        self._verify_prepublication_staging()
         old_ruleset = self._download(self.evidence / "baseline-worker", "baseline_worker_download")
         if self.baseline_runtime["ruleset_sha256"] is not None and old_ruleset != self.baseline_runtime["ruleset_sha256"]:
             raise RolloutError("baseline_worker_runtime_mismatch")
@@ -777,6 +875,7 @@ class Rollout:
             "candidateRulesetSha256": self.new_ruleset,
             "minimumClientBuild": self.args.minimum_client_build,
             "sourceRevision": self._run(["git", "rev-parse", "HEAD"], "source_revision").strip(),
+            "migrationVersions": self.migration_versions,
         }
         self._write("baseline.json", baseline)
         if self.args.mode == "plan":
@@ -826,6 +925,9 @@ class Rollout:
                 "projectRef": self.project,
                 "minimumClientBuild": self.args.minimum_client_build,
                 "rulesetSha256": self.new_ruleset,
+                "sourceRevision": baseline["sourceRevision"],
+                "migrationVersions": self.migration_versions,
+                "workerSourceSha256": _worker_source_sha256(deployed_dir),
                 "runtime": final_runtime,
                 "function": final_function,
                 "smoke": smoke,
@@ -876,6 +978,9 @@ def _arguments(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--expected-publishable-key")
     parser.add_argument("--release-tag")
     parser.add_argument("--apk-sha256", type=str.lower)
+    parser.add_argument("--compatibility-release-tag", help="Prepublication: validate the existing public APK and preserve its client floor")
+    parser.add_argument("--staging-evidence-dir", help="Successful apply evidence for this exact source, worker and schema")
+    parser.add_argument("--candidate-branch", help="Prepublication: remote branch whose head must equal the candidate commit")
     parser.add_argument("--github-repository", default="Rakky88/DragonHaven")
     args = parser.parse_args(argv)
     if args.minimum_client_build < 1 or BUILD.fullmatch(str(args.minimum_client_build)) is None:
@@ -883,6 +988,9 @@ def _arguments(argv: list[str]) -> argparse.Namespace:
     if args.mode == "apply" and args.environment == "production":
         if not args.release_tag or not args.apk_sha256:
             parser.error("production apply requires --release-tag and --apk-sha256")
+    if args.compatibility_release_tag or args.staging_evidence_dir or args.candidate_branch:
+        if args.environment != "production" or args.mode != "apply" or not args.compatibility_release_tag or not args.staging_evidence_dir or not args.candidate_branch:
+            parser.error("prepublication requires production apply, --compatibility-release-tag, --staging-evidence-dir and --candidate-branch")
     if args.mode == "apply" and args.environment == "staging":
         if not args.expected_url or not args.expected_publishable_key:
             parser.error(

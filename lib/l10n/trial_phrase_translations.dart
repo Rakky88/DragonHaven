@@ -260,6 +260,30 @@ const trialPhraseTranslations = <String, List<String>>{
     'Não foi possível esvaziar esta sala.',
     'この部屋を空にできませんでした。'
   ],
+  'Time remaining': [
+    'Verbleibende Zeit',
+    'Tiempo restante',
+    'Temps restant',
+    'Tempo rimanente',
+    'Tempo restante',
+    '残り時間'
+  ],
+  "Time's up!": [
+    'Die Zeit ist um!',
+    '¡Se acabó el tiempo!',
+    'Le temps est écoulé !',
+    'Tempo scaduto!',
+    'O tempo acabou!',
+    '時間切れ！'
+  ],
+  'Align as many shapes as you can in 60 seconds. Every 100% adds 5 seconds.': [
+    'Richte in 60 Sekunden so viele Formen wie möglich aus. Jede Wertung von 100 % bringt 5 zusätzliche Sekunden.',
+    'Alinea tantas figuras como puedas en 60 segundos. Cada 100 % añade 5 segundos.',
+    'Alignez autant de formes que possible en 60 secondes. Chaque score de 100 % ajoute 5 secondes.',
+    'Allinea quante più forme puoi in 60 secondi. Ogni 100% aggiunge 5 secondi.',
+    'Alinhe o máximo de formas que conseguir em 60 segundos. Cada 100% adiciona 5 segundos.',
+    '60秒でできるだけ多くの図形を合わせましょう。100%になるたびに5秒追加されます。'
+  ],
   'Perfect overlap!': [
     'Perfekte Überlappung!',
     '¡Superposición perfecta!',
@@ -291,6 +315,23 @@ const trialPhraseTranslations = <String, List<String>>{
     'Tocca per fermarti sul contorno',
     'Toque para parar sobre o contorno',
     'タップして輪郭上で止める'
+  ],
+  'Align as many shapes as you can': [
+    'Richte so viele Formen wie möglich aus',
+    'Alinea tantas figuras como puedas',
+    'Alignez autant de formes que possible',
+    'Allinea quante più forme puoi',
+    'Alinhe o máximo de formas que conseguir',
+    'できるだけ多くの図形を合わせる'
+  ],
+  'Start with 60 seconds. Tap once to lock the height, then tap again on the golden outline. Every 100% overlap adds 5 seconds. Keep going until time runs out!':
+      [
+    'Du startest mit 60 Sekunden. Tippe einmal, um die Höhe festzulegen, und dann erneut auf der goldenen Kontur. Jede Überlappung von 100 % bringt 5 zusätzliche Sekunden. Mach weiter, bis die Zeit abläuft!',
+    'Empiezas con 60 segundos. Toca una vez para fijar la altura y vuelve a tocar sobre el contorno dorado. Cada superposición del 100 % añade 5 segundos. ¡Sigue hasta que se agote el tiempo!',
+    'Vous commencez avec 60 secondes. Touchez une fois pour fixer la hauteur, puis à nouveau sur le contour doré. Chaque superposition à 100 % ajoute 5 secondes. Continuez jusqu’à la fin du temps imparti !',
+    'Inizi con 60 secondi. Tocca una volta per bloccare l’altezza, poi di nuovo sul contorno dorato. Ogni sovrapposizione del 100% aggiunge 5 secondi. Continua finché il tempo non scade!',
+    'Você começa com 60 segundos. Toque uma vez para fixar a altura e novamente sobre o contorno dourado. Cada sobreposição de 100% adiciona 5 segundos. Continue até o tempo acabar!',
+    '制限時間は60秒です。1回タップして高さを決め、黄金の輪郭上でもう一度タップします。100%重なるたびに5秒追加されます。時間がなくなるまで続けましょう！'
   ],
   'Align all three shapes': [
     'Richte alle drei Formen aus',
@@ -341,6 +382,31 @@ const trialPhraseTranslations = <String, List<String>>{
     'Tocca per spostarti tra tre corsie. Intercetta ogni masso prima che cada. Tre errori terminano la Prova.',
     'Toque para alternar entre três faixas. Intercepte cada rocha antes que ela caia. Três erros encerram a Prova.',
     'タップして3つのレーンを移動します。落石が着地する前に受け止めてください。3回失敗すると試練終了です。'
+  ],
+  'TARGET': ['ZIEL', 'OBJETIVO', 'CIBLE', 'BERSAGLIO', 'ALVO', 'ターゲット'],
+  'MATCHED! +1': [
+    'TREFFER! +1',
+    '¡ACIERTO! +1',
+    'RÉUSSI ! +1',
+    'PRESO! +1',
+    'ACERTOU! +1',
+    '成功！ +1'
+  ],
+  'MISS! −1 heart': [
+    'VERFEHLT! −1 Herz',
+    '¡FALLO! −1 corazón',
+    'RATÉ ! −1 cœur',
+    'MANCATO! −1 cuore',
+    'ERROU! −1 coração',
+    '失敗！ ハート−1'
+  ],
+  'Tap when the matching rune enters the golden gate.': [
+    'Tippe, wenn die passende Rune das goldene Tor erreicht.',
+    'Toca cuando la runa correcta entre en la puerta dorada.',
+    'Touchez lorsque la rune correspondante entre dans le portail doré.',
+    'Tocca quando la runa corrispondente entra nel portale dorato.',
+    'Toque quando a runa correspondente entrar no portal dourado.',
+    '同じルーンが黄金のゲートに入ったらタップしてください。'
   ],
   'MATCH': ['TREFFER', 'COINCIDE', 'CORRESPONDANCE', 'ABBINA', 'COMBINE', '一致'],
   'Tap when the matching rune reaches the top gate.': [
