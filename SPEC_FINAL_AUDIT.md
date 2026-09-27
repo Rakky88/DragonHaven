@@ -1,5 +1,29 @@
 # DragonHaven audit
 
+## One-time Rune Orbit score correction - 27 September 2026
+
+On the owner's explicit request, existing Rune Orbit dragon records of 50 or
+greater were reset to numeric zero on production. One record in one prepared,
+server-owned account matched. All scores below 50, other Trial records, rewards,
+wallet balances, progression and historical command receipts were preserved.
+This is a one-time data correction, not a cap on future legitimate scores.
+
+The operator inspected pet, sanctuary and released-dragon records, active
+attempts, pending commands, ranking projections and historical cloud-save
+coverage. No active Rune Orbit attempt or processing command was affected.
+A protected local backup was taken and the exact correction passed a
+rollback-only rehearsal. The committed transaction used per-owner advisory and
+row locks, expected revision/hash checks, state validation and revision/hash
+advancement. Existing triggers rebuilt all ranking scopes from the remaining
+owned-dragon scores; a lower pre-existing score was retained.
+
+Postflight found zero remaining records or ranking entries at or above 50,
+consistent projection revisions/hashes and unchanged game runtime. Exact JSON
+comparison confirmed only the intended score changed, the account revision
+advanced once, the wallet was preserved and the ranking matched the remaining
+scores. No app release, ruleset change or schema migration was required.
+Private evidence is under `.tools/rune-score-reset-20260927/`.
+
 ## Server efficiency follow-up deployed - 27 September 2026
 
 After publishing v0.06.12, migration 102 was committed in
