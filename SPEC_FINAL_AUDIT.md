@@ -1,5 +1,18 @@
 # DragonHaven audit
 
+## v0.06.13 published - 27 September 2026
+
+Release `v0.06.13` was published from exact commit
+`75eefb9b7c00ceb127c0cd6472dacb4d03d1dd03` as the latest public GitHub
+release. Its single `DragonHaven.apk` asset is 583,650,429 bytes and GitHub's
+recorded SHA-256 is
+`2092014ee441082ff408b2208c99a07b35f819dbc3b54dbd938f3cafc34d087a`,
+matching the locally verified signed artifact. The permanent latest-download
+link resolved through the release to HTTP 200 with the same content length.
+The post-publication production preflight again confirmed all 103 migrations,
+zero database lint errors and healthy Auth, Auth settings and application
+endpoints.
+
 ## v0.06.13 release preparation - 27 September 2026
 
 Candidate display/package version 0.06.13, Android build 10106. Group Adventure
