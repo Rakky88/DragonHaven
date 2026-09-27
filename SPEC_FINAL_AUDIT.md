@@ -1,29 +1,40 @@
 # DragonHaven audit
 
-## v0.06.14 release preparation - 27 September 2026
+## v0.06.14 published - 27 September 2026
 
-Candidate display/package version 0.06.14, Android build 10107. This release
-combines the prepared Keeper progression and Spirit Alignment changes below.
+Release `v0.06.14` was published from exact commit
+`faf43af10c55a34eb6acaffd69852d9487f5adda` with display/package version
+0.06.14 and Android build 10107. This release combines the Keeper progression
+and Spirit Alignment changes below.
 Dragons can reach level 50 without changing their evolution path, excess XP
 from level-50 dragons advances a Keeper account from level 1 through 40, and
 each reached Keeper level creates its exactly-once Level Chest. Spirit
 Alignment version 4 awards five bonus seconds only after three consecutive
 100% placements while restored older attempts retain their original rules.
 
-The release requires migration 104 and the matching game-worker bundle. Both
-are staged and verified before production deployment. Production deployment
-preserves the existing minimum supported client build and uses the guarded
-ruleset rollout, including runtime ownership checks, synthetic command smoke
-tests and automatic restoration of the previous worker and runtime state if a
-verification fails. The public release is published only after the signed APK,
-production migration set, database lint, Auth, application endpoint, rewarded
-ad callback contract and active ruleset all pass their release checks.
+Migration 104 and the matching game-worker bundle were applied and verified on
+staging before production. Production remains enabled with minimum supported
+client build 10105 and ruleset SHA-256
+`45001d0de4006023d243e96e94e3494772f95c9a9a361440b0b3592bf7d6a4ba`.
+The guarded rollout passed runtime ownership checks, synthetic command smoke
+tests and server postflight. Production preflight then confirmed all 104
+migrations, zero database lint errors, healthy Auth and application endpoints,
+and the production rewarded-ad callback contract.
+
+The signed `nl.dragonhaven.app` APK is 585,819,171 bytes with SHA-256
+`0bd571ee1819478b628b0db2cd46450b8a19fca83f63d582cde619e9930fda25`.
+GitHub records the same digest and size, the permanent latest-download link
+resolves to HTTP 200 with that content length, and the release tag points to
+the exact candidate commit. Package, version, build, certificate, three ABIs,
+production ad-unit IDs and non-debuggable status were verified. Build 10107
+was installed and launched on the Android emulator without a runtime crash;
+the compact Keeper Level Chest UI was also visually reviewed at 320 by 820
+with reduced motion.
 
 ## Spirit Alignment streak bonus and score reset - 27 September 2026
 
-Prepared locally after v0.06.13; no app release or production game-worker
-deployment has been performed for this section. New Spirit Alignment attempts
-use version 4: only three consecutive displayed 100% placements award one
+Released in v0.06.14. New Spirit Alignment attempts use version 4: only three
+consecutive displayed 100% placements award one
 five-second bonus, and every lower placement resets the streak. After a bonus,
 the next streak starts at zero. Versioned recovery preserves version 1, 2 and 3
 attempts with the exact rules under which they started, so an interrupted older
@@ -48,9 +59,9 @@ generated candidate server bundle is 1,322,208 bytes with SHA-256
 
 ## Keeper account progression prepared - 27 September 2026
 
-Prepared locally after v0.06.13; no release, migration or production worker
-deployment has been performed for this section. Dragons can progress to level
-50 while all existing evolution thresholds and choices stay unchanged. Dragon
+Released in v0.06.14 with migration 104 and the matching production worker.
+Dragons can progress to level 50 while all existing evolution thresholds and
+choices stay unchanged. Dragon
 XP above the level-50 threshold flows directly into a separate Keeper account
 level, starting at level 1 and capped at level 40. The first level step costs
 50,000 XP and each following step is the previous requirement multiplied by
@@ -70,8 +81,8 @@ Migration 104 is prepared to align server-side public dragon levels with the
 same 50-level XP curve. It also extends the tightly bounded public-profile
 cosmetic allow-list to the earned Keeper badges and level-40 frame, preventing
 a valid selected reward from blocking a later canonical state commit. The
-existing supporter and Heartbound cosmetics remain accepted. The migration is
-not deployed.
+existing supporter and Heartbound cosmetics remain accepted. The migration
+was rehearsed and verified on staging before production deployment.
 
 Validation includes clean Flutter analysis and the complete Flutter suite:
 1,337 tests passed with one intentional opt-in skip. It covers exact app/server
