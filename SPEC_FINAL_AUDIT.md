@@ -1,6 +1,6 @@
 # DragonHaven audit
 
-## v0.06.15 inventory recovery prepared - 3 October 2026
+## v0.06.15 published - 3 October 2026
 
 Production incident analysis covered all nine prepared server accounts. Eight
 projected normally; the affected account retained a valid canonical revision
@@ -34,10 +34,31 @@ successful command and should persist a bounded retrying outbox on device.
 
 Flutter analysis is clean and the complete suite passes with 1,341 tests and
 one intentional opt-in skip. The Edge worker has 36 passing Deno tests. The
-generated server candidate is 1,323,223 bytes with ruleset SHA-256
+generated server bundle is 1,323,223 bytes with file SHA-256
 `b6e7080d7d5311599b1d614e38b08eb40a0894e76ce700fbae5371d791560eee`.
-Production preflight confirms all 104 migrations, zero database lint errors,
-healthy Auth/application endpoints and the live rewarded-ad callback contract.
+
+Release `v0.06.15` was published from exact commit
+`fee3b161c89bff564e633ad1a7d1d8d084cfc4f7` with display/package version
+0.06.15 and Android build 10108. Its signed `nl.dragonhaven.app` APK is
+585,819,175 bytes with SHA-256
+`1fec06872cbbfc9fdedab631f60e549389f4d9df53fdc33ab6103e53239b8683`;
+GitHub records the same size and digest, marks the release as latest and binds
+the tag to the exact candidate commit. Package, version, build, signing
+certificate, three ABIs, production ad-unit IDs and non-debuggable status were
+verified before publication.
+
+The exact candidate passed the guarded staging rollout before production.
+Production rollout completed without rollback, deployed active function
+version 20 and advanced the runtime from revision 7 to 8 while retaining
+minimum client build 10105. The active production ruleset SHA-256 is
+`2a578b477c30ce537b36e1a6bd9cdbc4eed7288dd94a7d98651a5c56130fb3e7`
+and worker-source SHA-256 is
+`720520be553703ecf6ccc05081410d8f89070c7337ca636246cda342a64bb7a2`.
+The authenticated initialization/replay/authority smoke checks all passed.
+Post-publication production preflight confirms all 104 migrations, zero
+database lint errors and healthy Auth/application endpoints. A fresh,
+privacy-contained read of Keeper `DH-17792DC5` also projects successfully on
+the released code, and the temporary snapshot was deleted immediately.
 
 ## v0.06.14 published - 27 September 2026
 
