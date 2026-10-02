@@ -65,7 +65,10 @@ class _CanonicalAccountGateState<T> extends State<CanonicalAccountGate<T>>
     // polling once per minute avoids needless Auth/PostgREST load while play
     // is healthy.
     _heartbeat = Timer.periodic(const Duration(minutes: 1), (_) {
-      if (_connected != false) unawaited(_bootstrap.verifyConnection());
+      // Android's validated-network signal is only a hint. VPN, private DNS
+      // and Wi-Fi handovers can report false while Supabase is reachable, so
+      // always let the authenticated probe decide whether recovery can run.
+      unawaited(_bootstrap.verifyConnection());
     });
     if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
       _network = const EventChannel('nl.dragonhaven.app/network')

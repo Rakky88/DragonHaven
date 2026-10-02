@@ -1,5 +1,44 @@
 # DragonHaven audit
 
+## v0.06.15 inventory recovery prepared - 3 October 2026
+
+Production incident analysis covered all nine prepared server accounts. Eight
+projected normally; the affected account retained a valid canonical revision
+and matching SHA-256 but became unreadable after three Dragon Tower room-break
+markers expired. During a read, roaming normalization counted a temporary
+returning visitor, moved one owned dragon to another floor and consequently
+caused the projector's immutable-asset guard to reject its own result. No
+inventory, currency, authentication or PostgreSQL corruption was present.
+
+Canonical server projection now restores saved state without running the
+wall-clock-dependent roaming normalizer. Normal `refresh` commands still own
+the explicit tower-break transition under the existing account lock, revision
+and state-hash checks. A regression constructs a full room plus a timed visitor
+and proves that projection preserves every resident assignment. The candidate
+ruleset also projects the privacy-contained copy of the affected production
+state successfully.
+
+Client recovery is strengthened at the same boundary. A reconnect queued
+behind an in-flight command proceeds even when that command fails, allowing the
+same durable request UUID to be reconciled. The Android connectivity signal is
+now advisory: the once-per-minute authenticated heartbeat is never suppressed
+by a temporary `NET_CAPABILITY_VALIDATED` false reading during VPN, private-DNS
+or Wi-Fi/mobile handover. No additional healthy-state polling was introduced.
+
+Production measurements found no stuck intents or lock waits. The observed
+command path is normally sub-second and PostgreSQL canonical reads average
+about 15 ms, so changing database products or paying for more compute would
+not address this incident. Longer-term latency work should remove the second
+post-command worker roundtrip by returning the authoritative projection with a
+successful command and should persist a bounded retrying outbox on device.
+
+Flutter analysis is clean and the complete suite passes with 1,341 tests and
+one intentional opt-in skip. The Edge worker has 36 passing Deno tests. The
+generated server candidate is 1,323,223 bytes with ruleset SHA-256
+`b6e7080d7d5311599b1d614e38b08eb40a0894e76ce700fbae5371d791560eee`.
+Production preflight confirms all 104 migrations, zero database lint errors,
+healthy Auth/application endpoints and the live rewarded-ad callback contract.
+
 ## v0.06.14 published - 27 September 2026
 
 Release `v0.06.14` was published from exact commit

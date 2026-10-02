@@ -160,6 +160,7 @@ class HouseholdProvider extends ChangeNotifier {
         (state['pet'] as Map).isEmpty) {
       throw const FormatException('Unsupported canonical game state');
     }
+    _validateCanonicalTowerAssignments(state);
     final assets = GameAssetSnapshot(state);
     final game = HouseholdProvider(
       initialize: false,
@@ -170,7 +171,11 @@ class HouseholdProvider extends ChangeNotifier {
       clock: () => now.toUtc(),
       idGenerator: idGenerator,
     );
-    game._restore(state);
+    // Projecting a canonical snapshot must be a pure read. Roaming placement
+    // can depend on the current set of temporary returning visitors, so doing
+    // that normalization here would make an otherwise valid saved state
+    // appear to have changed merely because time passed.
+    game._restore(state, normalizeRoaming: false);
     game._applyAltarProtection();
     final restoredAssets = GameAssetSnapshot(
         GameStateEnvelope.preserveUnknownMetadata(state, game.exportState()));
@@ -180,6 +185,37 @@ class HouseholdProvider extends ChangeNotifier {
           '${assets.differenceKinds(restoredAssets).join(', ')}');
     }
     return game;
+  }
+
+  static void _validateCanonicalTowerAssignments(Map<String, dynamic> state) {
+    final floors = (state['towerFloorRoomIds'] as List?)
+            ?.whereType<String>()
+            .toList(growable: false) ??
+        const <String>[];
+    if (floors.isEmpty) return;
+    final damaged = (state['damagedTowerFloors'] as List?)
+            ?.whereType<num>()
+            .map((value) => value.toInt())
+            .toSet() ??
+        const <int>{};
+    final dragons = <Object?>[
+      state['pet'],
+      ...(state['sanctuaryDragons'] as List? ?? const <Object?>[]),
+    ];
+    for (final raw in dragons) {
+      if (raw is! Map || raw['roamsTower'] != true) continue;
+      final floor = raw['currentFloorIndex'];
+      final room = raw['currentRoomId'];
+      if (floor is! num ||
+          floor.toInt() != floor ||
+          floor < 0 ||
+          floor >= floors.length ||
+          damaged.contains(floor.toInt()) ||
+          room != floors[floor.toInt()]) {
+        throw const FormatException(
+            'Canonical game state requires reconciliation: dragon');
+      }
+    }
   }
 
   /// Non-persistent gate for preview Special Adventures and Special Chests.
@@ -910,7 +946,10 @@ class HouseholdProvider extends ChangeNotifier {
     _normalizeRoamingState();
   }
 
-  void _restore(Map<String, dynamic> data) {
+  void _restore(
+    Map<String, dynamic> data, {
+    bool normalizeRoaming = true,
+  }) {
     eggAltar = EggAltarState.fromJson(
         Map<String, dynamic>.from(data['eggAltar'] as Map? ?? {}));
     pendingAltarOperation = data['pendingAltarOperation'] is Map
@@ -1504,7 +1543,7 @@ class HouseholdProvider extends ChangeNotifier {
     }.values.where((entry) => entry.code != ActivityCode.legacy).toList();
     _trimActivities();
     _ensureFavoriteDragon();
-    _normalizeRoamingState();
+    if (normalizeRoaming) _normalizeRoamingState();
   }
 
   int chestCount(ChestTier tier) => tier == ChestTier.special

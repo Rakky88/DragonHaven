@@ -634,6 +634,26 @@ void main() {
         (before.shop.chests['title'] ?? 0) + 1);
   });
 
+  test('reconnect queued behind a failed command still reconciles its UUID',
+      () async {
+    final before = session.snapshot!;
+    final hold = Completer<void>();
+    server
+      ..hold = hold.future
+      ..loseReply = true;
+    final command = session.execute('purchase_title_chest', {});
+    final reconnect = session.synchronize();
+    hold.complete();
+
+    await expectLater(command, throwsA(isA<CanonicalGameException>()));
+    final receipt = await reconnect;
+    expect(receipt?.replayed, isTrue);
+    expect(session.fresh, isTrue);
+    expect(session.canAct, isTrue);
+    expect(session.snapshot!.coins, before.coins - 500);
+    expect(server.sent.map((intent) => intent.requestId).toSet(), hasLength(1));
+  });
+
   test('account change hides pending display and never installs its reply',
       () async {
     final hold = Completer<void>();

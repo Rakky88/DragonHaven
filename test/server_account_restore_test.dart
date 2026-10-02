@@ -19,6 +19,67 @@ import 'support/canonical_ui_server.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+
+  test('canonical reads do not move a resident for a timed visitor', () async {
+    final now = DateTime.utc(2026, 10, 2, 12);
+    final state = (await runGameDomainProbe())['state'] as Map<String, dynamic>;
+    state['towerFloorRoomIds'] = ['hearth', 'crystal'];
+    state['unlockedRoomIds'] = ['nest', 'hearth', 'crystal'];
+    final resident = state['pet'] as Map<String, dynamic>;
+    resident
+      ..['stage'] = DragonStage.hatchling.name
+      ..['firstEgg'] = false
+      ..['roamsTower'] = true
+      ..['currentFloorIndex'] = 0
+      ..['currentRoomId'] = 'hearth'
+      ..['activeAdventureId'] = null;
+    final residents = <Map<String, dynamic>>[];
+    for (var index = 0; index < 2; index++) {
+      final copy = jsonDecode(jsonEncode(resident)) as Map<String, dynamic>;
+      copy
+        ..['id'] = '00000000-0000-4000-8000-00000000010$index'
+        ..['name'] = 'Resident $index'
+        ..['favorite'] = false
+        ..['acquiredAt'] = DateTime.utc(2026, 1, index + 1).toIso8601String();
+      residents.add(copy);
+    }
+    state['sanctuaryDragons'] = residents;
+    final visitor = jsonDecode(jsonEncode(resident)) as Map<String, dynamic>;
+    visitor
+      ..['id'] = '00000000-0000-4000-8000-000000000199'
+      ..['name'] = 'Timed visitor'
+      ..['favorite'] = false
+      ..['roamsTower'] = false
+      ..['acquiredAt'] = DateTime.utc(2025).toIso8601String();
+    state['releasedDragons'] = [visitor];
+    state['returningVisitors'] = {
+      visitor['id']: now.add(const Duration(hours: 1)).toIso8601String(),
+    };
+    final before = <String, (int, String)>{
+      for (final dragon in [resident, ...residents])
+        dragon['id'] as String: (
+          dragon['currentFloorIndex'] as int,
+          dragon['currentRoomId'] as String,
+        ),
+    };
+
+    final restored = HouseholdProvider.forServerState(
+      state,
+      now: now,
+      random: ServerEntropy('a4' * 32, stream: 'rewards'),
+      idGenerator: ServerEntropy('a4' * 32, stream: 'identities').uuid,
+    );
+    expect(
+      <String, (int, String)>{
+        for (final dragon in restored.ownedDragons)
+          dragon.id: (dragon.currentFloorIndex, dragon.currentRoomId),
+      },
+      before,
+      reason: 'A canonical read may not create a time-dependent tower move.',
+    );
+    restored.dispose();
+  });
+
   test(
       'a completely empty second device restores all account collections and live journeys',
       () async {

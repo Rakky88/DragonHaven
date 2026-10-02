@@ -167,8 +167,17 @@ class CanonicalGameSession extends ChangeNotifier {
     }
     if (!_sameSession) _accountChanged();
     if (_commands.isNotEmpty) {
-      return _commands.last.completion.future.then(
-          (_) => synchronize(minimumServerRevision: minimumServerRevision));
+      final queued = _commands.last.completion.future;
+      return (() async {
+        try {
+          await queued;
+        } on Object {
+          // The caller of the command still receives its failure. A reconnect
+          // that arrived while it was in flight must nevertheless reconcile
+          // the durable UUID instead of failing with that same old response.
+        }
+        return synchronize(minimumServerRevision: minimumServerRevision);
+      })();
     }
     if (minimumServerRevision > _minimumServerRevision) {
       _minimumServerRevision = minimumServerRevision;
