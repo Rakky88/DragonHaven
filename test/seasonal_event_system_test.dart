@@ -38,6 +38,8 @@ void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
 
   const eventIds = <String>{
+    'harvestmoon_moonlit_orchard',
+    'sunwake_summer_sea',
     'golden_wings_birthday',
     'halloween_witchlight',
     'christmas_winter_hearth',
@@ -46,11 +48,11 @@ void main() {
     'pride_every_color',
   };
 
-  test('all six event contracts are complete and internally linked', () {
+  test('all event contracts are complete and internally linked', () {
     final events = specialAdventureEventCatalog
         .where((event) => eventIds.contains(event.id))
         .toList(growable: false);
-    expect(events, hasLength(6));
+    expect(events, hasLength(8));
     expect(events.map((event) => event.id).toSet(), eventIds);
 
     for (final event in events) {
@@ -94,6 +96,14 @@ void main() {
 
   test('event windows use exact Europe Amsterdam boundaries', () {
     final expected = <String, (DateTime, DateTime)>{
+      'harvestmoon_moonlit_orchard': (
+        DateTime.utc(2027, 9, 6, 22),
+        DateTime.utc(2027, 9, 13, 22),
+      ),
+      'sunwake_summer_sea': (
+        DateTime.utc(2027, 7, 19, 22),
+        DateTime.utc(2027, 7, 26, 22),
+      ),
       'golden_wings_birthday': (
         DateTime.utc(2026, 8, 31, 22),
         DateTime.utc(2026, 9, 2, 22)

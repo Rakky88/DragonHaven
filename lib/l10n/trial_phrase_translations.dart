@@ -318,13 +318,14 @@ const trialPhraseTranslations = <String, List<String>>{
     'O tempo acabou!',
     '時間切れ！'
   ],
-  'Align as many shapes as you can in 60 seconds. Every 100% adds 5 seconds.': [
-    'Richte in 60 Sekunden so viele Formen wie möglich aus. Jede Wertung von 100 % bringt 5 zusätzliche Sekunden.',
-    'Alinea tantas figuras como puedas en 60 segundos. Cada 100 % añade 5 segundos.',
-    'Alignez autant de formes que possible en 60 secondes. Chaque score de 100 % ajoute 5 secondes.',
-    'Allinea quante più forme puoi in 60 secondi. Ogni 100% aggiunge 5 secondi.',
-    'Alinhe o máximo de formas que conseguir em 60 segundos. Cada 100% adiciona 5 segundos.',
-    '60秒でできるだけ多くの図形を合わせましょう。100%になるたびに5秒追加されます。'
+  'Align shapes inside the outline for 60 seconds. Three 100% scores in a row add 5 seconds.':
+      [
+    'Richte 60 Sekunden lang Formen innerhalb der Kontur aus. Drei Wertungen von 100 % in Folge bringen 5 zusätzliche Sekunden.',
+    'Alinea figuras dentro del contorno durante 60 segundos. Tres puntuaciones seguidas del 100 % añaden 5 segundos.',
+    'Alignez des formes à l’intérieur du contour pendant 60 secondes. Trois scores de 100 % d’affilée ajoutent 5 secondes.',
+    'Allinea le forme dentro il contorno per 60 secondi. Tre punteggi consecutivi del 100% aggiungono 5 secondi.',
+    'Alinha formas dentro do contorno durante 60 segundos. Três pontuações seguidas de 100% adicionam 5 segundos.',
+    '60秒間、図形を輪郭の内側に合わせよう。3回連続で100%を取ると5秒追加されます。'
   ],
   'Perfect overlap!': [
     'Perfekte Überlappung!',

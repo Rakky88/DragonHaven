@@ -108,7 +108,7 @@ void main() {
       'Shape 17',
       '23 matched',
       "Time's up!",
-      'Align as many shapes as you can in 60 seconds. Every 100% adds 5 seconds.',
+      'Align shapes inside the outline for 60 seconds. Three 100% scores in a row add 5 seconds.',
     ];
     for (final language in translatedLanguages) {
       for (final sample in samples) {

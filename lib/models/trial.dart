@@ -143,9 +143,9 @@ const trialDefinitions = <TrialKind, TrialDefinition>{
     titleEn: 'Spirit Alignment',
     titleNl: 'Geestuitlijning',
     subtitleEn:
-        'Align as many shapes as you can in 60 seconds. Every 100% adds 5 seconds.',
+        'Align shapes inside the outline for 60 seconds. Three 100% scores in a row add 5 seconds.',
     subtitleNl:
-        'Lijn zoveel mogelijk vormen uit in 60 seconden. Elke 100% geeft 5 seconden extra.',
+        'Lijn vormen 60 seconden lang binnen de omtrek uit. Drie scores van 100% achter elkaar geven 5 seconden extra.',
     duration: Duration(seconds: 60),
   ),
   TrialKind.ruinGuard: TrialDefinition(
@@ -170,9 +170,9 @@ const trialDefinitions = <TrialKind, TrialDefinition>{
     titleEn: 'Witchlight Ward',
     titleNl: 'Heksenlichtbescherming',
     subtitleEn:
-        'Balance lantern wards, catch brave wisps and drive the creeping gloom from the grove.',
+        'Remember the pumpkin face, then guide the Witchlight along the path. Stay within the edges. Three mistakes end the Trial.',
     subtitleNl:
-        'Breng lantaarntekens in balans, vang dappere dwaallichtjes en verjaag de sluipende duisternis.',
+        'Onthoud het pompoengezicht en leid daarna het heksenlicht langs het pad. Blijf binnen de randen. Bij drie fouten eindigt de proef.',
     specialEventId: 'halloween_witchlight',
   ),
   TrialKind.hollyfrostGiftforge: TrialDefinition(
