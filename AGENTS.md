@@ -7,6 +7,23 @@ public Auth endpoint is unhealthy. This preflight is mandatory in addition to
 Flutter analysis, tests, APK signature/version checks and the GitHub publisher
 dry run.
 
+# Production server release coupling
+
+Never deploy a new DragonHaven production Edge Function, apply a production
+database migration, change production function secrets, or activate a new
+production game ruleset outside the app-release operation that publishes the
+matching app version. Production project `tnzathhutuwmohmjfrlo` must remain
+unlinked during ordinary development. Link it only inside the release
+operation, after the exact release source and artifact have been verified, and
+unlink it again when release verification finishes.
+
+Do not run `supabase functions deploy`, `supabase db push`, `supabase secrets
+set`, or a write-capable Management API query against production as a separate
+follow-up or preparatory step. Use staging for rehearsals. The only permitted
+incident exception is restoring the exact immutable server bundle of an app
+version that is already published; an incident rollback must not introduce
+new server behavior or migrations.
+
 # Living gameplay reference requirement
 
 Changes to Special Events, Special Adventures, Special Chests, or egg content
