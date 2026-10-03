@@ -893,10 +893,7 @@ class _TrialOfferCard extends StatelessWidget {
                     dimension: 42,
                     child: IconButton.filledTonal(
                       key: Key('refresh-trial-ad-${offer.id}'),
-                      tooltip: strings.pick(
-                        'Watch an ad to swap this Trial',
-                        'Bekijk een advertentie om deze proef te wisselen',
-                      ),
+                      tooltip: strings.pick('Swap', 'Wissel'),
                       onPressed: onRefresh,
                       icon: refreshing
                           ? const SizedBox.square(
