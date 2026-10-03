@@ -52,5 +52,30 @@ void main() {
 
     final release = File('.github/workflows/release.yml').readAsStringSync();
     expect(release, contains('release_server_preflight.ps1'));
+    expect(release, contains('supabase db push --linked --include-all --yes'));
+    expect(release, contains('supabase functions deploy rewarded-ad-ssv'));
+    expect(release, contains('tool/game_ruleset_rollout.py'));
+    expect(
+      RegExp(
+        r'name: Await public APK and activate matching game worker[\s\S]*?SUPABASE_ACCESS_TOKEN: \$\{\{ secrets\.SUPABASE_ACCESS_TOKEN \}\}',
+      ).hasMatch(release),
+      isTrue,
+      reason: 'The guarded rollout needs the production Management API token.',
+    );
+    expect(
+      RegExp(
+        r'name: Verify final production server[\s\S]*?SUPABASE_ACCESS_TOKEN: \$\{\{ secrets\.SUPABASE_ACCESS_TOKEN \}\}',
+      ).hasMatch(release),
+      isTrue,
+      reason: 'The mandatory final preflight needs the production token.',
+    );
+    expect(
+      release.indexOf('flutter build appbundle --release'),
+      lessThan(
+        release.indexOf(
+          'name: Apply matching production schema and rewarded-ad worker',
+        ),
+      ),
+    );
   });
 }

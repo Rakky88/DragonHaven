@@ -32,26 +32,36 @@ void main() {
     );
   });
 
-  test('release verifies local SSV and live deployment before ad build', () {
+  test('release builds first and verifies the deployed SSV before publication',
+      () {
     final workflow = File('.github/workflows/release.yml').readAsStringSync();
     final configure = workflow.indexOf(
       'name: Configure optional production rewarded ads',
     );
     final denoTest =
         workflow.indexOf('deno test supabase/functions/rewarded-ad-ssv/');
+    final build = workflow.indexOf('flutter build appbundle --release');
+    final apply = workflow.indexOf(
+      'name: Apply matching production schema and rewarded-ad worker',
+    );
+    final deploy = workflow.indexOf(
+      'supabase functions deploy rewarded-ad-ssv',
+      apply,
+    );
     final preflight = workflow.indexOf(
       './tool/release_server_preflight.ps1 @preflight',
+      apply,
     );
-    final build = workflow.indexOf('flutter build appbundle --release');
 
     expect(workflow,
         contains('deno check supabase/functions/rewarded-ad-ssv/index.ts'));
     expect(configure, greaterThan(-1));
     expect(workflow, contains('-SsvSourceRevision \$env:GITHUB_SHA'));
     expect(denoTest, greaterThan(-1));
-    expect(preflight, greaterThan(configure));
-    expect(preflight, greaterThan(denoTest));
-    expect(build, greaterThan(preflight));
+    expect(build, greaterThan(denoTest));
+    expect(apply, greaterThan(build));
+    expect(deploy, greaterThan(apply));
+    expect(preflight, greaterThan(deploy));
     expect(workflow, contains('RequireRewardedAds = \$true'));
     expect(
       workflow,

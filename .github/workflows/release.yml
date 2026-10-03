@@ -14,14 +14,22 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: dragonhaven-release-${{ github.ref_name }}
+  cancel-in-progress: false
+
 jobs:
   build-release:
     runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 90
     env:
       EXPECTED_SIGNING_CERT_SHA256: 477C5A5D7453384CA756265E77AF97D5A002A907177CCD2D9065A9BEC3414942
     steps:
       - name: Checkout
         uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
 
       - name: Verify required secret configuration
         shell: pwsh
@@ -78,8 +86,11 @@ jobs:
         with:
           deno-version: v2.x
 
-      - name: Verify rewarded-ad SSV
+      - name: Verify production server workers
         run: |
+          dart run tool/build_server_game.dart
+          deno check supabase/functions/execute-game-command/index.ts
+          deno test supabase/functions/execute-game-command/
           deno check supabase/functions/rewarded-ad-ssv/index.ts
           deno test supabase/functions/rewarded-ad-ssv/
 
@@ -136,7 +147,7 @@ jobs:
           "DRAGONHAVEN_ADMOB_REWARDED_COINS_ID=$($env:ADS_COINS_AD_UNIT_ID.Trim())" >> $env:GITHUB_ENV
           "DRAGONHAVEN_ADMOB_REWARDED_TRIAL_REFRESH_ID=$($env:ADS_TRIAL_REFRESH_AD_UNIT_ID.Trim())" >> $env:GITHUB_ENV
 
-      - name: Verify linked production server
+      - name: Verify production deployment plan
         shell: pwsh
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
@@ -150,18 +161,19 @@ jobs:
           }
           supabase link --project-ref tnzathhutuwmohmjfrlo --password $env:SUPABASE_DB_PASSWORD
           New-Item -ItemType Directory -Path release -Force | Out-Null
-          $preflight = @{}
-          if ($env:DRAGONHAVEN_REWARDED_ADS_MODE -eq 'production') {
-            $preflight = @{
-              RequireRewardedAds = $true
-              ExpectedRewardedGemsAdUnitId = $env:DRAGONHAVEN_ADMOB_REWARDED_GEMS_ID
-              ExpectedRewardedCoinsAdUnitId = $env:DRAGONHAVEN_ADMOB_REWARDED_COINS_ID
-              ExpectedRewardedTrialRefreshAdUnitId = $env:DRAGONHAVEN_ADMOB_REWARDED_TRIAL_REFRESH_ID
-              ExpectedRewardedSsvSourceRevision = $env:GITHUB_SHA
-            }
+          ./tool/public_server_health_check.ps1 `
+            -Environment production `
+            -OutputPath release/server-health-before.json
+          supabase db lint --linked --level error --fail-on error --output-format json |
+            Tee-Object -FilePath release/database-lint-before.json
+          if ($LASTEXITCODE -ne 0) {
+            throw 'Production database lint failed before deployment.'
           }
-          ./tool/release_server_preflight.ps1 @preflight |
-            Tee-Object -FilePath release/server-preflight.txt
+          supabase db push --linked --include-all --dry-run |
+            Tee-Object -FilePath release/migration-dry-run.txt
+          if ($LASTEXITCODE -ne 0) {
+            throw 'Production migration dry-run failed.'
+          }
 
       - name: Analyze
         run: flutter analyze --no-pub
@@ -247,7 +259,7 @@ jobs:
         working-directory: android
         run: ./gradlew :app:testDebugUnitTest -x :app:compileFlutterBuildDebug -x :app:copyFlutterAssetsDebug
 
-      - name: Verify and document release artifact
+      - name: Verify release artifact
         shell: bash
         run: |
           set -euo pipefail
@@ -271,13 +283,7 @@ jobs:
           CERT_SHA256="$(keytool -printcert -jarfile "$AAB" | sed -n 's/^[[:space:]]*SHA256: //p' | head -n 1 | tr -d ':[:space:]' | tr '[:lower:]' '[:upper:]')"
           test -n "$CERT_SHA256"
           test "$CERT_SHA256" = "$EXPECTED_SIGNING_CERT_SHA256"
-          if [[ "$DRAGONHAVEN_REWARDED_ADS_MODE" == "production" ]]; then
-            SSV_DEPLOYMENT_PARITY=passed
-          else
-            SSV_DEPLOYMENT_PARITY=not-required
-          fi
-
-          cat > release/release-verification.md <<EOF
+          cat > release/artifact-verification.md <<EOF
           # DragonHaven Play artifact verification
 
           - Commit: \`$GITHUB_SHA\`
@@ -291,12 +297,63 @@ jobs:
           - Expected signing certificate matched: yes
           - Rewarded ads mode: \`$DRAGONHAVEN_REWARDED_ADS_MODE\`
           - Rewarded-ad SSV typecheck and tests: passed
-          - Rewarded-ad SSV deployment parity: \`$SSV_DEPLOYMENT_PARITY\`
-          - Server preflight: passed (see \`server-preflight.txt\`)
           - Flutter analyze: passed
           - Flutter tests: passed
           EOF
 
+          cat release/artifact-verification.md
+
+      - name: Apply matching production schema and rewarded-ad worker
+        if: ${{ github.ref_type == 'tag' }}
+        shell: pwsh
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          supabase db push --linked --include-all --yes |
+            Tee-Object -FilePath release/migration-apply.txt
+          if ($LASTEXITCODE -ne 0) {
+            throw 'Production migration apply failed.'
+          }
+          if ($env:DRAGONHAVEN_REWARDED_ADS_MODE -eq 'production') {
+            supabase secrets set `
+              --project-ref tnzathhutuwmohmjfrlo `
+              --env-file .tools/rewarded-ads-ssv-secrets.env
+            if ($LASTEXITCODE -ne 0) {
+              throw 'Rewarded-ad server secret update failed.'
+            }
+            supabase functions deploy rewarded-ad-ssv `
+              --project-ref tnzathhutuwmohmjfrlo `
+              --no-verify-jwt `
+              --use-api
+            if ($LASTEXITCODE -ne 0) {
+              throw 'Rewarded-ad server deployment failed.'
+            }
+          }
+          $preflight = @{}
+          if ($env:DRAGONHAVEN_REWARDED_ADS_MODE -eq 'production') {
+            $preflight = @{
+              RequireRewardedAds = $true
+              ExpectedRewardedGemsAdUnitId = $env:DRAGONHAVEN_ADMOB_REWARDED_GEMS_ID
+              ExpectedRewardedCoinsAdUnitId = $env:DRAGONHAVEN_ADMOB_REWARDED_COINS_ID
+              ExpectedRewardedTrialRefreshAdUnitId = $env:DRAGONHAVEN_ADMOB_REWARDED_TRIAL_REFRESH_ID
+              ExpectedRewardedSsvSourceRevision = $env:GITHUB_SHA
+            }
+          }
+          ./tool/release_server_preflight.ps1 @preflight |
+            Tee-Object -FilePath release/server-preflight.txt
+
+      - name: Document release candidate verification
+        shell: bash
+        run: |
+          cp release/artifact-verification.md release/release-verification.md
+          if [[ "$GITHUB_REF_TYPE" == "tag" ]]; then
+            {
+              echo '- Production schema and rewarded-ad worker: deployed'
+              echo '- Server preflight: passed (see `server-preflight.txt`)'
+            } >> release/release-verification.md
+          else
+            echo '- Production deployment: not requested for this manual bundle validation' >> release/release-verification.md
+          fi
           cat release/release-verification.md
 
       - name: Upload workflow artifact
@@ -305,3 +362,65 @@ jobs:
           name: DragonHaven-Play-Store
           path: release/
           retention-days: 7
+
+      - name: Await public APK and activate matching game worker
+        if: ${{ github.ref_type == 'tag' }}
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          set -euo pipefail
+          APK_SHA256=''
+          for attempt in $(seq 1 180); do
+            RELEASE_JSON="$(gh api "repos/${GITHUB_REPOSITORY}/releases/tags/${GITHUB_REF_NAME}" 2>/dev/null || true)"
+            APK_SHA256="$(printf '%s' "$RELEASE_JSON" | python3 -c 'import json,sys; v=json.load(sys.stdin); a=next((x for x in v.get("assets",[]) if x.get("name")=="DragonHaven.apk"),{}); d=a.get("digest",""); print(d[7:] if d.startswith("sha256:") else "")' 2>/dev/null || true)"
+            if [[ "$APK_SHA256" =~ ^[0-9a-f]{64}$ ]]; then
+              break
+            fi
+            echo "Waiting for verified public DragonHaven.apk (${attempt}/180)."
+            sleep 10
+          done
+          [[ "$APK_SHA256" =~ ^[0-9a-f]{64}$ ]] || (echo 'Public APK did not become available in time.' && exit 1)
+          python3 tool/game_ruleset_rollout.py \
+            --environment production \
+            --mode apply \
+            --minimum-client-build 10105 \
+            --release-tag "$GITHUB_REF_NAME" \
+            --apk-sha256 "$APK_SHA256" \
+            --evidence-dir release/game-ruleset-rollout
+
+      - name: Verify final production server
+        if: ${{ github.ref_type == 'tag' }}
+        shell: pwsh
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          $preflight = @{}
+          if ($env:DRAGONHAVEN_REWARDED_ADS_MODE -eq 'production') {
+            $preflight = @{
+              RequireRewardedAds = $true
+              ExpectedRewardedGemsAdUnitId = $env:DRAGONHAVEN_ADMOB_REWARDED_GEMS_ID
+              ExpectedRewardedCoinsAdUnitId = $env:DRAGONHAVEN_ADMOB_REWARDED_COINS_ID
+              ExpectedRewardedTrialRefreshAdUnitId = $env:DRAGONHAVEN_ADMOB_REWARDED_TRIAL_REFRESH_ID
+              ExpectedRewardedSsvSourceRevision = $env:GITHUB_SHA
+            }
+          }
+          ./tool/release_server_preflight.ps1 @preflight |
+            Tee-Object -FilePath release/server-postflight.txt
+
+      - name: Upload production rollout evidence
+        if: ${{ always() && github.ref_type == 'tag' }}
+        uses: actions/upload-artifact@v6
+        with:
+          name: DragonHaven-production-rollout
+          path: |
+            release/game-ruleset-rollout/
+            release/server-postflight.txt
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Unlink production project
+        if: ${{ always() }}
+        shell: pwsh
+        run: supabase unlink --yes

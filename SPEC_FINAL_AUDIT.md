@@ -1,5 +1,23 @@
 # DragonHaven audit
 
+## v0.06.18 release candidate - 3 October 2026
+
+This candidate advances DragonHaven to display/package version 0.06.18 and
+Android build 10111. It combines focused Basic/Ascended Trial rankings,
+rewarded Trial replacement, clearer Keeper and free-reward presentation,
+stronger Keeper-name validation, increased Nameweaver's Quill availability,
+explicit blocking feedback for the few actions that require canonical server
+confirmation, and restored store-aware share/update actions.
+
+The matching server candidate adds migrations 105 through 108 for chest odds,
+rewarded Trial replacement and Keeper-name policy. The rewarded-ad callback and
+canonical game worker are released from the same immutable app tag. The release
+operation applies the additive schema and callback before publication, requires
+the exact post-deployment server preflight, then activates the game worker only
+after GitHub exposes the signed APK. The worker rollout preserves the existing
+minimum client build and includes automatic rollback and authenticated smoke
+checks.
+
 ## v0.06.17 published - 3 October 2026
 
 The Adventure dragon picker now captures its canonical action after the player

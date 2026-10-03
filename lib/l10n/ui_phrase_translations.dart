@@ -1280,6 +1280,46 @@ const uiPhraseTranslations = <String, List<String>>{
     'Link de download do Android copiado.',
     'Androidのダウンロードリンクをコピーしました。'
   ],
+  'Google Play link copied.': [
+    'Google-Play-Link kopiert.',
+    'Enlace de Google Play copiado.',
+    'Lien Google Play copié.',
+    'Link di Google Play copiato.',
+    'Link do Google Play copiado.',
+    'Google Playのリンクをコピーしました。'
+  ],
+  'The app link could not be copied.': [
+    'Der App-Link konnte nicht kopiert werden.',
+    'No se pudo copiar el enlace de la aplicación.',
+    'Le lien de l’application n’a pas pu être copié.',
+    'Impossibile copiare il link dell’app.',
+    'Não foi possível copiar o link do app.',
+    'アプリのリンクをコピーできませんでした。'
+  ],
+  'Opening DragonHaven in Google Play…': [
+    'DragonHaven wird in Google Play geöffnet…',
+    'Abriendo DragonHaven en Google Play…',
+    'Ouverture de DragonHaven dans Google Play…',
+    'Apertura di DragonHaven in Google Play…',
+    'Abrindo DragonHaven no Google Play…',
+    'Google PlayでDragonHavenを開いています…'
+  ],
+  'The app page could not be opened. The link was copied instead.': [
+    'Die App-Seite konnte nicht geöffnet werden. Der Link wurde stattdessen kopiert.',
+    'No se pudo abrir la página de la aplicación. El enlace se copió en su lugar.',
+    'La page de l’application n’a pas pu être ouverte. Le lien a été copié à la place.',
+    'Impossibile aprire la pagina dell’app. Il link è stato copiato.',
+    'Não foi possível abrir a página do app. O link foi copiado.',
+    'アプリのページを開けなかったため、代わりにリンクをコピーしました。'
+  ],
+  'The app link could not be opened or copied.': [
+    'Der App-Link konnte weder geöffnet noch kopiert werden.',
+    'No se pudo abrir ni copiar el enlace de la aplicación.',
+    'Le lien de l’application n’a pu être ni ouvert ni copié.',
+    'Impossibile aprire o copiare il link dell’app.',
+    'Não foi possível abrir nem copiar o link do app.',
+    'アプリのリンクを開くこともコピーすることもできませんでした。'
+  ],
   'Update': [
     'Aktualisieren',
     'Actualizar',
@@ -1518,6 +1558,14 @@ const uiPhraseTranslations = <String, List<String>>{
     'Copia link di download',
     'Copiar link de download',
     'ダウンロードリンクをコピー'
+  ],
+  'Copy Google Play link': [
+    'Google-Play-Link kopieren',
+    'Copiar enlace de Google Play',
+    'Copier le lien Google Play',
+    'Copia il link di Google Play',
+    'Copiar link do Google Play',
+    'Google Playのリンクをコピー'
   ],
   'Copy one permanent Android download link for someone else, or open it to install the latest release over this app. Your progress stays safe.':
       [
@@ -2273,6 +2321,23 @@ const uiPhraseTranslations = <String, List<String>>{
     'Condividi o aggiorna DragonHaven',
     'Compartilhar ou atualizar DragonHaven',
     'DragonHavenを共有／更新'
+  ],
+  'Share the DragonHaven Google Play page, or open it to install the latest available update.':
+      [
+    'Teile die Google-Play-Seite von DragonHaven oder ?ffne sie, um das neueste verf?gbare Update zu installieren.',
+    'Comparte la p?gina de DragonHaven en Google Play o ?brela para instalar la ?ltima actualizaci?n disponible.',
+    'Partagez la page Google Play de DragonHaven ou ouvrez-la pour installer la derni?re mise ? jour disponible.',
+    'Condividi la pagina Google Play di DragonHaven oppure aprila per installare l?ultimo aggiornamento disponibile.',
+    'Compartilhe a p?gina do DragonHaven no Google Play ou abra-a para instalar a atualiza??o mais recente dispon?vel.',
+    'DragonHaven?Google Play??????????????????????????????????'
+  ],
+  'Open Google Play': [
+    'Google Play ?ffnen',
+    'Abrir Google Play',
+    'Ouvrir Google Play',
+    'Apri Google Play',
+    'Abrir Google Play',
+    'Google Play???'
   ],
   'Shop': ['Laden', 'Tienda', 'Boutique', 'Negozio', 'Loja', 'ショップ'],
   'Mini': ['Mini', 'Mini', 'Mini', 'Mini', 'Mini', 'ミニ'],
