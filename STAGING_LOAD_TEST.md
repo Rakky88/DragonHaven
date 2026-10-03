@@ -1,7 +1,7 @@
 # DragonHaven staging-loadtest
 
-Laatst bijgewerkt: **7 september 2026**
-Uitgangsversie: **v0.05.18 / huidig productieschema 49 / stagingschema 49**
+Laatst bijgewerkt: **3 oktober 2026**
+Uitgangsversie: **v0.06.17 / stagingschema 105 / Micro compute**
 De onderstaande 100- en 1000-accountmetingen zijn beide op schema 47 uitgevoerd.
 
 ## Doel en huidige status
@@ -13,6 +13,43 @@ slaagt zonder fouten. De volgende 1000-accountmeting faalt door veel netwerk-
 time-outs en een niet-afsluitende runner; er is geen groene 1000-accountacceptatie.
 Alle tijdelijke accounts zijn verwijderd. De belastingstest heeft productie
 niet gewijzigd; de afzonderlijke Halloween-uitrol staat los van deze metingen.
+
+## Actuele Micro-capaciteitsmeting - 3 oktober 2026
+
+Staging is vóór iedere uitvoer via de Supabase Management API als `ci_micro`
+geverifieerd. Schema 105, database-lint, Auth, instellingen en de publieke
+app-healthcheck waren voor en na beide runs groen. Productie en bestaande
+spelersaccounts zijn niet gebruikt.
+
+| Meting | 100 gelijktijdig | 1.000 gelijktijdig |
+| --- | ---: | ---: |
+| GitHub-run | [37125416843](https://github.com/Rakky88/DragonHaven/actions/runs/37125416843) | [37126066887](https://github.com/Rakky88/DragonHaven/actions/runs/37126066887) |
+| Bevestigde / actieve spelers | 100 / 100 | 1.000 / 1.000 |
+| Totale aanvragen | 1.749 | 17.321 |
+| Leesaanvragen | 1.549 | 15.321 |
+| Fouten | 0 (0,00%) | 0 (0,00%) |
+| Snapshot p50 / p95 / p99 / max | 204 / 248 / 504 / 538 ms | 184 / 217 / 475 / 758 ms |
+| p95 overige reads | 234-244 ms | 207-209 ms |
+| Gemiddelde CPU tijdens browsing | 3,76% | 30,24% |
+| Hoogste gemeten CPU-minuut | 3,99% | 36,90% |
+| Minimaal beschikbaar geheugen | 513,51 MiB | 387,45 MiB |
+| Synthetische cleanup | 100/100 verwijderd | 1.000/1.000 verwijderd |
+| Resultaat | geslaagd | geslaagd |
+
+De 1.000-user run gebruikte 60 seconden gecontroleerde opbouw en 180 seconden
+steady state. Iedere speler bleef de volledige meetperiode actief en voerde
+minimaal elf reads uit. De mix bestond uit online snapshots, eigen profiel,
+Group Adventures, cloudhistorie en Conclaves. Dit bewijst 1.000 gelijktijdig
+browsende/actieve spelers op de huidige Micro-server met ruime CPU- en bruikbare
+geheugenmarge. Het is geen piek-writeproef waarbij alle spelers exact tegelijk
+een zware economie-, trade- of Group Adventure-transactie vastleggen.
+
+Voor normale productieplanning is **750-1.000 gelijktijdig actieve spelers**
+daarom een verdedigbare capaciteit met marge. De gemeten resources suggereren
+dat meer mogelijk kan zijn, maar boven 1.000 is in deze configuratie nog niet
+bewezen. Het aantal geregistreerde of dagelijks terugkerende spelers mag veel
+hoger liggen zolang zij niet allemaal tegelijk actief zijn en maandquota voor
+egress, Auth en Edge Functions apart worden bewaakt.
 
 De eerste uitvoerbare stap is 100 gelijktijdige virtuele gebruikers. De stap van
 1.000 gebruikers wordt technisch geweigerd zolang geen geslaagd 100-user rapport
