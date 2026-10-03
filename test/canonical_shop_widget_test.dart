@@ -539,6 +539,54 @@ void main() {
     expect(tester.takeException(), isNull);
   });
   testWidgets(
+      'chest reveal starts while its authoritative inventory action is pending',
+      (tester) async {
+    await prepare(tester);
+    final confirmation = Completer<ChestRewardBundle?>();
+    var dispatched = false;
+    await mount(
+      tester,
+      Builder(
+        builder: (context) => TextButton(
+          onPressed: () => showChestReveal(
+            context,
+            ChestTier.wooden,
+            openChest: () {
+              dispatched = true;
+              return confirmation.future;
+            },
+          ),
+          child: const Text('Open immediately'),
+        ),
+      ),
+    );
+    await tester.tap(find.text('Open immediately'));
+    await tester.pump(const Duration(milliseconds: 100));
+    await tester.tap(find.byKey(const Key('chest-reveal-tap-target')));
+    await tester.pump();
+    expect(dispatched, isTrue);
+    expect(find.byKey(const Key('chest-rewards')), findsNothing);
+
+    await tester.pump(const Duration(milliseconds: 1300));
+    expect(find.byKey(const Key('chest-rive-particle-layer')), findsOneWidget);
+    expect(find.byKey(const Key('chest-rewards')), findsNothing);
+
+    confirmation.complete(ChestRewardBundle(
+      tier: ChestTier.wooden,
+      rewards: const [
+        ChestReward(
+          tier: ChestTier.wooden,
+          coins: 100,
+          gems: 0,
+          eggFound: false,
+        ),
+      ],
+    ));
+    await tester.pump(const Duration(milliseconds: 1400));
+    expect(find.byKey(const Key('chest-rewards')), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+  testWidgets(
       'egg collection restores tags and previews its saved view preference at large text',
       (tester) async {
     await prepare(tester);

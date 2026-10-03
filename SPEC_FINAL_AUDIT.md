@@ -1,5 +1,35 @@
 # DragonHaven audit
 
+## v0.06.19 release candidate - 3 October 2026
+
+This candidate advances DragonHaven to display/package version 0.06.19 and
+Android build 10112. Every standard, earned, level and event chest now keeps
+its exact DragonHaven closed/open artwork and existing sound while adding a
+Rive-powered particle burst, animated magic rings, sparks, rays, shake and
+reveal motion. The Rive effect is prewarmed and has a Flutter-rendered fallback
+for devices where the native renderer cannot initialize. Attribution and the
+CC BY licence are available from About DragonHaven.
+
+The authoritative chest-open command is dispatched as soon as the player
+taps. Its server confirmation now runs in parallel with the opening animation;
+reward contents remain hidden until the idempotent inventory result is
+confirmed. A failed or lost confirmation stops the reveal and preserves the
+existing reconciliation path, so presentation latency is removed without
+weakening server ownership or allowing a second claim.
+
+This release changes no database migration, economy rule, rewarded-ad callback
+or canonical game-worker source. The matching production release workflow must
+still pass the exact migration/lint/Auth/application/rewarded-ad preflight and
+will only activate the already matching server bundle after the signed public
+APK is available.
+
+Flutter analysis is clean. The complete Flutter suite passes with 1,362 tests
+and one intentional opt-in skip. Android visual review confirmed the native
+Rive renderer, retained Wooden Chest artwork, readable reward cards and the
+full opening sequence without renderer errors. A focused regression holds the
+authoritative inventory future pending and verifies that animation begins
+immediately while rewards remain hidden until confirmation.
+
 ## v0.06.18 published - 3 October 2026
 
 This candidate advances DragonHaven to display/package version 0.06.18 and

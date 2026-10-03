@@ -624,6 +624,14 @@ String? _translatedDynamicUiPhrase(String text, String languageCode) {
 }
 
 const uiPhraseTranslations = <String, List<String>>{
+  'Open-source licences': [
+    'Open-Source-Lizenzen',
+    'Licencias de código abierto',
+    'Licences open source',
+    'Licenze open source',
+    'Licenças de código aberto',
+    'オープンソースライセンス',
+  ],
   'Confirming with the server': [
     'Bestätigung mit dem Server',
     'Confirmando con el servidor',

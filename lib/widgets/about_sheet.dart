@@ -190,6 +190,27 @@ class _AboutSheetState extends State<_AboutSheet> {
                 ],
               ),
             ),
+            const SizedBox(height: 8),
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton.icon(
+                key: const Key('about-open-source-licenses'),
+                onPressed: () => showLicensePage(
+                  context: context,
+                  applicationName: 'DragonHaven',
+                  applicationVersion: AppInfo.displayVersion,
+                  applicationIcon: Image.asset(
+                    'assets/images/dragonhaven_logo.png',
+                    width: 54,
+                    height: 54,
+                  ),
+                ),
+                icon: const Icon(Icons.article_outlined, size: 18),
+                label: Text(
+                  strings.pick('Open-source licences', 'Open-sourcelicenties'),
+                ),
+              ),
+            ),
             const SizedBox(height: 16),
             _AboutPanel(
               child: Column(

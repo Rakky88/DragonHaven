@@ -15,11 +15,15 @@ import 'screens/special_event_audit_screen.dart';
 import 'screens/event_dragon_sprite_review_screen.dart';
 import 'services/firebase_monitoring.dart';
 import 'services/notification_service.dart';
+import 'services/rive_runtime.dart';
 import 'services/social_repository.dart';
 import 'services/supabase_social_repository.dart';
+import 'services/third_party_licenses.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  registerDragonHavenThirdPartyLicenses();
+  prewarmDragonHavenRive();
   const canonicalStaging =
       bool.fromEnvironment('DRAGONHAVEN_CANONICAL_STAGING');
   if (canonicalStaging) {
@@ -60,11 +64,7 @@ Future<void> main() async {
   const evolutionDemo = bool.fromEnvironment('DRAGONHAVEN_EVOLUTION_DEMO');
   const nestDemo = bool.fromEnvironment('DRAGONHAVEN_NEST_DEMO');
   final onlineConfig = OnlineConfig.fromEnvironment();
-  if (!releaseDemo &&
-      !evolutionDemo &&
-      !nestDemo &&
-      !hatchDemo &&
-      !showcase) {
+  if (!releaseDemo && !evolutionDemo && !nestDemo && !hatchDemo && !showcase) {
     await runAccountStartup(onlineConfig);
     return;
   }

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
@@ -16,6 +17,7 @@ import 'game_icon_sprite.dart';
 import 'dragon_emote_picker.dart';
 import 'profile_portrait_sprite.dart';
 import 'keeper_cosmetic_art.dart';
+import 'rive_chest_burst.dart';
 
 Future<void> showChestReveal(
   BuildContext context,
@@ -68,9 +70,12 @@ class _ChestRevealState extends State<_ChestReveal>
   bool _opened = false;
   bool _opening = false;
   bool _lidRevealed = false;
+  bool _riveBurstActive = false;
   bool _flash = false;
   bool _failed = false;
   ChestRewardBundle? _reward;
+  Timer? _stageTimer;
+  Completer<bool>? _stageWaiter;
   late final AnimationController _float = AnimationController(
     vsync: this,
     duration: const Duration(milliseconds: 1450),
@@ -86,56 +91,105 @@ class _ChestRevealState extends State<_ChestReveal>
 
   @override
   void dispose() {
+    _cancelOpeningSequence();
     _float.dispose();
     _burst.dispose();
     _openingMotion.dispose();
     super.dispose();
   }
 
+  Future<bool> _waitForStage(Duration duration) {
+    final waiter = Completer<bool>();
+    _stageWaiter = waiter;
+    _stageTimer = Timer(duration, () {
+      _stageTimer = null;
+      _stageWaiter = null;
+      if (!waiter.isCompleted) waiter.complete(true);
+    });
+    return waiter.future;
+  }
+
+  void _cancelOpeningSequence() {
+    _stageTimer?.cancel();
+    _stageTimer = null;
+    final waiter = _stageWaiter;
+    _stageWaiter = null;
+    if (waiter != null && !waiter.isCompleted) waiter.complete(false);
+  }
+
   Future<void> _open() async {
     if (_opening || _opened || _failed) return;
     _float.stop();
     setState(() => _opening = true);
-    final ChestRewardBundle? reward;
-    try {
-      reward = await widget.openChest();
-    } on Object {
-      // A lost receipt may already have committed. Leave reconciliation to
-      // the inventory; never offer a fresh purchase from the animation.
+
+    // Dispatch the authoritative inventory action and play the complete
+    // reveal in parallel. This keeps the tap immediate while the eventual
+    // reward still waits for a confirmed, idempotent server result.
+    var confirmationFailed = false;
+    final confirmation = Future<ChestRewardBundle?>.sync(widget.openChest)
+        .onError((Object _, StackTrace __) {
+      confirmationFailed = true;
       if (mounted) {
+        _cancelOpeningSequence();
+        _openingMotion.stop();
         setState(() {
           _failed = true;
           _opening = false;
+          _flash = false;
         });
       }
-      return;
-    }
-    if (!mounted) return;
-    if (reward == null) {
-      Navigator.pop(context);
-      return;
-    }
-    _reward = reward;
+      return null;
+    });
     final callback = widget.onOpen;
     unawaited(Future<void>.sync(
       callback ?? () => HavenAudio.play(_soundForChest(widget.tier)),
     ));
     unawaited(_openingMotion.forward());
-    await Future<void>.delayed(const Duration(milliseconds: 1200));
-    if (!mounted) return;
-    setState(() => _flash = true);
-    await Future<void>.delayed(const Duration(milliseconds: 240));
-    if (!mounted) return;
+    if (!await _waitForStage(const Duration(milliseconds: 1200)) ||
+        !mounted ||
+        _failed) {
+      return;
+    }
+    setState(() {
+      _flash = true;
+      _riveBurstActive = true;
+    });
+    if (!await _waitForStage(const Duration(milliseconds: 240)) ||
+        !mounted ||
+        _failed) {
+      return;
+    }
     setState(() {
       _lidRevealed = true;
     });
     unawaited(_burst.forward());
-    await Future<void>.delayed(const Duration(milliseconds: 260));
-    if (!mounted) return;
+    if (!await _waitForStage(const Duration(milliseconds: 260)) ||
+        !mounted ||
+        _failed) {
+      return;
+    }
     setState(() => _flash = false);
-    await Future<void>.delayed(const Duration(milliseconds: 900));
+    if (!await _waitForStage(const Duration(milliseconds: 900)) ||
+        !mounted ||
+        _failed) {
+      return;
+    }
+
+    final reward = await confirmation;
     if (!mounted) return;
-    setState(() => _opened = true);
+    if (confirmationFailed) {
+      // A lost receipt may already have committed. Leave reconciliation to
+      // the inventory; never offer a fresh purchase from the animation.
+      return;
+    }
+    if (reward == null) {
+      Navigator.pop(context);
+      return;
+    }
+    setState(() {
+      _reward = reward;
+      _opened = true;
+    });
   }
 
   void _close() {
@@ -350,81 +404,122 @@ class _ChestRevealState extends State<_ChestReveal>
                                       child: Stack(
                                         alignment: Alignment.center,
                                         children: [
-                                          Container(
-                                            width: 286,
-                                            height: 286,
-                                            decoration: BoxDecoration(
-                                              shape: BoxShape.circle,
-                                              border: Border.all(
-                                                color: accent.withValues(
-                                                    alpha: .38),
+                                          AnimatedBuilder(
+                                            animation: Listenable.merge([
+                                              _float,
+                                              _openingMotion,
+                                              _burst,
+                                            ]),
+                                            builder: (_, __) => CustomPaint(
+                                              key: const Key(
+                                                  'chest-magic-field'),
+                                              size: const Size.square(300),
+                                              painter: _ChestMagicPainter(
+                                                accent: accent,
+                                                idle: _float.value,
+                                                opening: _openingMotion.value,
+                                                burst: _burst.value,
+                                                revealed: _lidRevealed,
                                               ),
-                                              gradient: RadialGradient(colors: [
-                                                accent.withValues(alpha: .48),
-                                                accent.withValues(alpha: .12),
-                                                Colors.transparent,
-                                              ]),
-                                              boxShadow: [
-                                                BoxShadow(
-                                                  color: accent.withValues(
-                                                      alpha: .32),
-                                                  blurRadius: 56,
-                                                  spreadRadius: 2,
-                                                ),
-                                              ],
                                             ),
                                           ),
                                           if (_opening || _opened)
                                             AnimatedBuilder(
                                               animation: _openingMotion,
-                                              builder: (_, child) =>
-                                                  Transform.scale(
-                                                scale: .35 +
-                                                    _openingMotion.value * .95,
-                                                child: Opacity(
-                                                  opacity:
-                                                      (_openingMotion.value *
-                                                              1.2)
-                                                          .clamp(0, 1),
-                                                  child: child,
-                                                ),
-                                              ),
+                                              builder: (_, child) {
+                                                final progress = Curves
+                                                    .easeOutCubic
+                                                    .transform(
+                                                  _openingMotion.value,
+                                                );
+                                                return Transform.rotate(
+                                                  angle: progress * math.pi,
+                                                  child: Transform.scale(
+                                                    scale: .45 + progress,
+                                                    child: Opacity(
+                                                      opacity: (progress * .72)
+                                                          .clamp(0, .72),
+                                                      child: child,
+                                                    ),
+                                                  ),
+                                                );
+                                              },
                                               child: Image.asset(
                                                 GameVfxAssets.chestBurst,
-                                                width: 305,
-                                                height: 305,
+                                                width: 318,
+                                                height: 318,
                                                 fit: BoxFit.contain,
                                                 cacheWidth: 512,
+                                              ),
+                                            ),
+                                          if (_riveBurstActive)
+                                            AnimatedBuilder(
+                                              animation: _burst,
+                                              builder: (_, child) =>
+                                                  Transform.rotate(
+                                                angle:
+                                                    -.12 + _burst.value * .24,
+                                                child: Transform.scale(
+                                                  scale: .78 +
+                                                      Curves.easeOutBack
+                                                              .transform(_burst
+                                                                  .value) *
+                                                          .35,
+                                                  child: Opacity(
+                                                    opacity:
+                                                        (1 - _burst.value * .18)
+                                                            .clamp(.68, 1),
+                                                    child: child,
+                                                  ),
+                                                ),
+                                              ),
+                                              child: SizedBox.square(
+                                                key: const Key(
+                                                    'chest-rive-particle-layer'),
+                                                dimension: 332,
+                                                child: RiveChestBurst(
+                                                  accent: accent,
+                                                ),
                                               ),
                                             ),
                                           AnimatedBuilder(
                                             animation: Listenable.merge(
                                                 [_float, _openingMotion]),
                                             builder: (_, child) {
-                                              final direction =
-                                                  (_openingMotion.value * 18)
-                                                          .round()
-                                                          .isEven
-                                                      ? 1.0
-                                                      : -1.0;
-                                              final shake = _opening
-                                                  ? (1 - _openingMotion.value) *
-                                                      4 *
-                                                      direction
-                                                  : 0.0;
+                                              final opening =
+                                                  _openingMotion.value;
+                                              final shakeEnvelope =
+                                                  (opening / .58)
+                                                          .clamp(0.0, 1.0) *
+                                                      (1 - opening);
+                                              final shake = math.sin(
+                                                    opening * math.pi * 24,
+                                                  ) *
+                                                  7 *
+                                                  shakeEnvelope;
+                                              final revealBounce =
+                                                  Curves.easeOutBack.transform(
+                                                ((opening - .53) / .47)
+                                                    .clamp(0.0, 1.0),
+                                              );
+                                              final scale = _lidRevealed
+                                                  ? .92 + revealBounce * .14
+                                                  : .96 +
+                                                      _float.value * .035 +
+                                                      opening * .035;
                                               return Transform.translate(
                                                 offset: Offset(
                                                   shake,
                                                   _lidRevealed
-                                                      ? 0
+                                                      ? 8 - revealBounce * 8
                                                       : -5 + _float.value * 10,
                                                 ),
-                                                child: Transform.scale(
-                                                  scale: _lidRevealed
-                                                      ? 1.05
-                                                      : .96 +
-                                                          _float.value * .035,
-                                                  child: child,
+                                                child: Transform.rotate(
+                                                  angle: shake * .006,
+                                                  child: Transform.scale(
+                                                    scale: scale,
+                                                    child: child,
+                                                  ),
                                                 ),
                                               );
                                             },
@@ -579,6 +674,114 @@ class _GlowOrb extends StatelessWidget {
           ),
         ),
       );
+}
+
+class _ChestMagicPainter extends CustomPainter {
+  const _ChestMagicPainter({
+    required this.accent,
+    required this.idle,
+    required this.opening,
+    required this.burst,
+    required this.revealed,
+  });
+
+  final Color accent;
+  final double idle;
+  final double opening;
+  final double burst;
+  final bool revealed;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = size.center(Offset.zero);
+    final pulse = .5 + idle * .5;
+    final reveal = revealed ? Curves.easeOutCubic.transform(burst) : opening;
+    final auraRadius = 105 + pulse * 8 + reveal * 16;
+
+    canvas.drawCircle(
+      center,
+      auraRadius,
+      Paint()
+        ..shader = RadialGradient(
+          colors: [
+            Colors.white.withValues(alpha: .10 + reveal * .12),
+            accent.withValues(alpha: .34 + reveal * .22),
+            accent.withValues(alpha: .08),
+            Colors.transparent,
+          ],
+          stops: const [0, .38, .72, 1],
+        ).createShader(Rect.fromCircle(center: center, radius: auraRadius)),
+    );
+
+    final rayPaint = Paint()
+      ..color = accent.withValues(alpha: .08 + reveal * .32)
+      ..strokeWidth = 2
+      ..strokeCap = StrokeCap.round;
+    for (var i = 0; i < 16; i++) {
+      final angle = (i / 16) * math.pi * 2 + opening * .7;
+      final inner = 108 + reveal * 5;
+      final outer = inner + 10 + reveal * (i.isEven ? 35 : 20);
+      canvas.drawLine(
+        center + Offset(math.cos(angle), math.sin(angle)) * inner,
+        center + Offset(math.cos(angle), math.sin(angle)) * outer,
+        rayPaint,
+      );
+    }
+
+    final ringPaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round
+      ..strokeWidth = 1.5
+      ..color = accent.withValues(alpha: .45 + reveal * .3);
+    for (var i = 0; i < 12; i++) {
+      final start = i * math.pi / 6 + idle * .12 - opening * .35;
+      canvas.drawArc(
+        Rect.fromCircle(center: center, radius: 124 + reveal * 9),
+        start,
+        math.pi / 10,
+        false,
+        ringPaint,
+      );
+    }
+
+    final sparkPaint = Paint()..style = PaintingStyle.fill;
+    for (var i = 0; i < 18; i++) {
+      final orbit = 116 + (i % 4) * 8 + reveal * (8 + i % 3 * 4);
+      final angle = i * 2.399 + idle * .22 + opening * (i.isEven ? 1 : -1);
+      final point = center + Offset(math.cos(angle), math.sin(angle)) * orbit;
+      final twinkle =
+          .35 + .65 * ((math.sin(idle * math.pi * 2 + i * 1.7) + 1) / 2);
+      sparkPaint.color = (i % 3 == 0 ? Colors.white : accent).withValues(
+        alpha: (.32 + reveal * .5) * twinkle,
+      );
+      final radius = (i % 4 == 0 ? 3.2 : 1.7) + reveal * .9;
+      canvas.drawCircle(point, radius, sparkPaint);
+      if (i % 4 == 0) {
+        canvas.drawLine(
+          point - Offset(radius * 2.2, 0),
+          point + Offset(radius * 2.2, 0),
+          Paint()
+            ..color = sparkPaint.color
+            ..strokeWidth = .8,
+        );
+        canvas.drawLine(
+          point - Offset(0, radius * 2.2),
+          point + Offset(0, radius * 2.2),
+          Paint()
+            ..color = sparkPaint.color
+            ..strokeWidth = .8,
+        );
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _ChestMagicPainter oldDelegate) =>
+      oldDelegate.accent != accent ||
+      oldDelegate.idle != idle ||
+      oldDelegate.opening != opening ||
+      oldDelegate.burst != burst ||
+      oldDelegate.revealed != revealed;
 }
 
 Map<String, int> _specialEggCounts(ChestRewardBundle bundle) {
