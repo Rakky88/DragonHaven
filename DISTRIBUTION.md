@@ -1,15 +1,19 @@
 # DragonHaven publiceren en updaten
 
-Laatste geverifieerde GitHub-release: **v0.06.10 / 10103**, 27 september 2026.
-De vaste APK-download, bestaande ondertekening, 1.233 Flutter-tests, 99
-productiemigraties, serverhealth en rewarded-ad SSV zijn gecontroleerd; zie
-[releasebewijs](RELEASE_V0.06.10_VERIFICATION.md). De APK is 582.089.071 bytes
-met SHA-256
-`4e93c34efcda09fd5e17065f04fb65c449cf57f0fb8c1b0f5be4ad0727943888`.
+Laatste geverifieerde GitHub-release: **v0.06.18 / 10111**, 3 oktober 2026.
+De vaste APK- en AAB-downloads, bestaande ondertekening, 1.361 Flutter-tests,
+108 productiemigraties, serverhealth, rewarded-ad SSV en de geauthenticeerde
+game-worker-smokechecks zijn gecontroleerd; zie
+[de release-audit](SPEC_FINAL_AUDIT.md#v00618-published---3-october-2026). De APK
+is 586.097.887 bytes met SHA-256
+`3b59b096c7d2c41e132eedca9eb5af3ee9619348d5808143fa9862c448ec00e8`.
+De Play Store AAB is 580.155.662 bytes met SHA-256
+`ecb4285f324889a73887dbbf5bc6db34103bc9a262d261e4bc2273ccb103d29f`.
 
-- Release: `https://github.com/Rakky88/DragonHaven/releases/tag/v0.06.10`
-- Vaste download: `https://github.com/Rakky88/DragonHaven/releases/latest/download/DragonHaven.apk`
-- Geslaagde releaseworkflow: `https://github.com/Rakky88/DragonHaven/actions/runs/36275584345`
+- Release: `https://github.com/Rakky88/DragonHaven/releases/tag/v0.06.18`
+- Vaste APK-download: `https://github.com/Rakky88/DragonHaven/releases/latest/download/DragonHaven.apk`
+- Vaste AAB-download: `https://github.com/Rakky88/DragonHaven/releases/latest/download/DragonHaven.aab`
+- Geslaagde releaseworkflow: `https://github.com/Rakky88/DragonHaven/actions/runs/37144157243`
 
 Voor de complete Google Play/App Store-checklist, verantwoordelijkheden,
 productiebeveiliging en kostenramingen: [PUBLIC_LAUNCH.md](PUBLIC_LAUNCH.md).

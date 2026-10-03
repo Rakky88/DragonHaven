@@ -1,6 +1,6 @@
 # DragonHaven audit
 
-## v0.06.18 release candidate - 3 October 2026
+## v0.06.18 published - 3 October 2026
 
 This candidate advances DragonHaven to display/package version 0.06.18 and
 Android build 10111. It combines focused Basic/Ascended Trial rankings,
@@ -9,14 +9,38 @@ stronger Keeper-name validation, increased Nameweaver's Quill availability,
 explicit blocking feedback for the few actions that require canonical server
 confirmation, and restored store-aware share/update actions.
 
-The matching server candidate adds migrations 105 through 108 for chest odds,
+The matching server release adds migrations 105 through 108 for chest odds,
 rewarded Trial replacement and Keeper-name policy. The rewarded-ad callback and
-canonical game worker are released from the same immutable app tag. The release
-operation applies the additive schema and callback before publication, requires
-the exact post-deployment server preflight, then activates the game worker only
-after GitHub exposes the signed APK. The worker rollout preserves the existing
-minimum client build and includes automatic rollback and authenticated smoke
-checks.
+canonical game worker were released from the same immutable app tag. The
+release operation applied the additive schema and callback after verifying the
+signed AAB, required the exact post-deployment server preflight, then activated
+the game worker only after GitHub exposed the signed APK.
+
+Release `v0.06.18` was published from exact commit
+`4a5bad96d37f70915c34149c60bafc505127d941`. Its signed
+`nl.dragonhaven.app` APK is 586,097,887 bytes with SHA-256
+`3b59b096c7d2c41e132eedca9eb5af3ee9619348d5808143fa9862c448ec00e8`.
+The Play Store AAB is 580,155,662 bytes with SHA-256
+`ecb4285f324889a73887dbbf5bc6db34103bc9a262d261e4bc2273ccb103d29f`.
+Both use signing-certificate SHA-256
+`477c5a5d7453384ca756265e77af97d5a002a907177ccd2d9065a9bec3414942`.
+GitHub reports the same asset sizes and digests. The release is neither draft
+nor prerelease, is the repository's latest release, and both permanent latest
+asset URLs return HTTP 200.
+
+The complete local Flutter suite passes with 1,361 tests and one intentional
+skip; Flutter analysis and Android native unit tests pass. The coupled GitHub
+release workflow completed successfully as run `37144157243`.
+
+The final production preflight found all 108 migrations, zero database-lint
+errors, and HTTP 200 responses from Auth health, Auth settings, the application
+service and rewarded-ad SSV health. Rewarded SSV function version 23 reports
+the exact release source revision. Production game function version 25 is
+active on ruleset revision 9 with ruleset SHA-256
+`90fded446902355ff3a9d7bda081fdceb586abe30b5eacb369bf45fa4e5fd3fa`
+and minimum client build 10105. Its authenticated initialization replay and
+server-authority smoke checks passed, and the guarded rollout required no
+rollback.
 
 ## v0.06.17 published - 3 October 2026
 
