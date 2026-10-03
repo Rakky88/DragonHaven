@@ -1,5 +1,29 @@
 # DragonHaven audit
 
+## v0.06.16 compact dragon controls and Trial continuity prepared - 3 October 2026
+
+My Dragons uses the shorter `Type` label for dragon-family ordering. Its title,
+sort control, filter control and grid/list switch now use one non-wrapping row;
+a 320-by-760 widget regression verifies that all four controls share the same
+vertical center without overflow.
+
+Verified Trials no longer treat Android's transient `inactive` lifecycle state
+as a real interruption. Android can report that state for a temporary system
+overlay or edge gesture while the Activity remains visible. Previously this
+paused Witchlight Ward and recorded `releasePath`, which converted the active
+trace into a miss and prepared a new pumpkin challenge. Only hidden, paused or
+detached now interrupts a Trial. A lifecycle regression proves that an active
+canonical Trial remains visible and does not show the Continue overlay across
+an `inactive`/`resumed` transition.
+
+The release advances the client to display/package version 0.06.16 and Android
+build 10109. It changes no server schema, economy rule or canonical gameplay
+domain; the healthy v0.06.15 production ruleset remains compatible.
+
+Flutter analysis is clean and the complete suite passes with 1,343 tests and
+one intentional opt-in skip. The living reference-document guards pass after
+their source fingerprints were refreshed.
+
 ## v0.06.15 published - 3 October 2026
 
 Production incident analysis covered all nine prepared server accounts. Eight

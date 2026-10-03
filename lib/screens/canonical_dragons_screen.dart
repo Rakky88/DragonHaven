@@ -181,7 +181,7 @@ class _DragonListState extends State<_DragonList> {
 
   String _sortLabel(AppStrings strings) => switch (_sortMode) {
         _DragonSortMode.name => strings.pick('Name', 'Naam'),
-        _DragonSortMode.dragonType => strings.pick('Dragon type', 'Draaktype'),
+        _DragonSortMode.dragonType => strings.pick('Type', 'Type'),
         _DragonSortMode.acquiredAt => strings.pick('Received', 'Ontvangen'),
         _DragonSortMode.rarity => strings.pick('Rarity', 'Zeldzaamheid'),
       };
@@ -245,14 +245,19 @@ class _DragonListState extends State<_DragonList> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Wrap(
-                spacing: 4,
-                crossAxisAlignment: WrapCrossAlignment.center,
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Text(
-                    strings.pick('My dragons', 'Mijn draken'),
-                    style: Theme.of(context).textTheme.titleLarge,
+                  Expanded(
+                    child: Text(
+                      strings.pick('My dragons', 'Mijn draken'),
+                      key: const Key('owned-dragons-title'),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
                   ),
+                  const SizedBox(width: 4),
                   PopupMenuButton<_DragonSortMode>(
                     key: const Key('owned-dragons-sort'),
                     tooltip: strings.pick(
@@ -283,7 +288,7 @@ class _DragonListState extends State<_DragonList> {
                                 _DragonSortMode.name =>
                                   strings.pick('Name', 'Naam'),
                                 _DragonSortMode.dragonType =>
-                                  strings.pick('Dragon type', 'Draaktype'),
+                                  strings.pick('Type', 'Type'),
                                 _DragonSortMode.acquiredAt =>
                                   strings.pick('Received', 'Ontvangen'),
                                 _DragonSortMode.rarity =>
@@ -328,7 +333,7 @@ class _DragonListState extends State<_DragonList> {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 7),
+                  const SizedBox(width: 4),
                   Badge(
                     isLabelVisible: activeFilterCount > 0,
                     label: Text('$activeFilterCount'),
@@ -345,7 +350,7 @@ class _DragonListState extends State<_DragonList> {
                       icon: const Icon(Icons.filter_alt_rounded),
                     ),
                   ),
-                  const SizedBox(width: 7),
+                  const SizedBox(width: 4),
                   IconButton.filledTonal(
                     key: const Key('owned-dragons-view-toggle'),
                     tooltip: _view == _DragonCollectionView.gallery

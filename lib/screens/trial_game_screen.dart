@@ -78,7 +78,16 @@ class _TrialGameScreenState extends State<TrialGameScreen>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state != AppLifecycleState.resumed) _controller?.pause();
+    // Android also reports `inactive` for transient overlays and some edge
+    // gestures while the Activity stays visible. Pausing a Witchlight trace
+    // there records a releasePath, turns the current path into a miss and
+    // starts a fresh pumpkin round. Only a genuine background/detach boundary
+    // may interrupt a verified Trial.
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.hidden ||
+        state == AppLifecycleState.detached) {
+      _controller?.pause();
+    }
   }
 
   void _verifiedChanged() {

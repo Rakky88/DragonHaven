@@ -123,8 +123,8 @@ void main() {
     await tester.tap(find.byKey(const Key('owned-dragons-sort')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 350));
-    expect(find.text('Dragon type'), findsOneWidget);
-    await tester.tap(find.text('Dragon type'));
+    expect(find.text('Type'), findsOneWidget);
+    await tester.tap(find.text('Type'));
     await tester.pump();
     await finishPreferenceSave();
 
@@ -132,7 +132,7 @@ void main() {
         tester.getTopLeft(find.byKey(Key('canonical-dragon-$id'))).dy;
     expect(top(auroracrownId), lessThan(top(mossproutId)));
     expect(top(mossproutId), lessThan(top(worldrootId)));
-    expect(find.text('Dragon type'), findsOneWidget);
+    expect(find.text('Type'), findsOneWidget);
     expect(server.sent, hasLength(1));
     expect(server.sent.single.action, 'set_preferences');
     expect(
@@ -147,7 +147,7 @@ void main() {
     await tester.tap(find.byKey(const Key('owned-dragons-sort')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 350));
-    await tester.tap(find.text('Dragon type').last);
+    await tester.tap(find.text('Type').last);
     await tester.pump();
     await finishPreferenceSave();
 
@@ -158,6 +158,52 @@ void main() {
       jsonDecode(server.sent.last.payload['changes'] as String),
       containsPair('myDragonsSortDescending', true),
     );
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('My Dragons controls stay on one row on a compact phone',
+      (tester) async {
+    late Directory directory;
+    late CanonicalGameSession session;
+    await tester.runAsync(() async {
+      directory = await Directory.systemTemp.createTemp('dh-dragon-row-');
+      final state = jsonDecode(jsonEncode(fixture)) as Map<String, dynamic>
+        ..['myDragonsSortMode'] = 'dragonType'
+        ..['myDragonsViewMode'] = 'compact';
+      final server = CanonicalUiServer(state);
+      session = CanonicalGameSession(
+        connection: CanonicalUiConnection(server),
+        directory: directory,
+      );
+      await session.synchronize();
+    });
+    addTearDown(() async {
+      session.dispose();
+      await directory.delete(recursive: true);
+    });
+    await tester.binding.setSurfaceSize(const Size(320, 760));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      ChangeNotifierProvider<CanonicalGameSession>.value(
+        value: session,
+        child: MaterialApp(
+          theme: buildAppTheme(),
+          localizationsDelegates: GlobalMaterialLocalizations.delegates,
+          home: const Scaffold(body: CanonicalDragonsScreen()),
+        ),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 400));
+
+    final controls = [
+      find.byKey(const Key('owned-dragons-title')),
+      find.byKey(const Key('owned-dragons-sort')),
+      find.byKey(const Key('owned-dragons-filter')),
+      find.byKey(const Key('owned-dragons-view-toggle')),
+    ];
+    final centers = controls.map(tester.getCenter).map((p) => p.dy).toList();
+    expect(centers.every((dy) => (dy - centers.first).abs() < 1), isTrue);
+    expect(find.text('Type'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }

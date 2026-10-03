@@ -222,4 +222,47 @@ void main() {
     await tester.pump(const Duration(seconds: 2));
     await tester.pumpWidget(const SizedBox.shrink());
   });
+
+  testWidgets('temporary Android inactive state keeps a live Trial running',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(430, 1000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    addTearDown(() => tester.binding
+        .handleAppLifecycleStateChanged(AppLifecycleState.resumed));
+    var elapsed = 0;
+    await tester.runAsync(() => tester.pumpWidget(
+          ChangeNotifierProvider.value(
+            value: session,
+            child: MaterialApp(
+              home: TrialGameScreen(
+                offerId: source.offer.id,
+                dragonId: source.dragonId,
+                source: source,
+                elapsedMilliseconds: () => elapsed,
+              ),
+            ),
+          ),
+        ));
+    final ready = Stopwatch()..start();
+    while (find.byKey(const Key('ruin-breaker-game')).evaluate().isEmpty &&
+        ready.elapsed.inSeconds < 15) {
+      await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 10)));
+      await tester.pump();
+    }
+    expect(find.byKey(const Key('ruin-breaker-game')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('ruin-breaker-game')));
+    elapsed = 250;
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+    await tester.pump(const Duration(milliseconds: 250));
+
+    expect(find.byKey(const Key('resume-verified-trial')), findsNothing);
+    expect(find.text('Trial paused'), findsNothing);
+    expect(find.byKey(const Key('ruin-breaker-game')), findsOneWidget);
+    expect(tester.takeException(), isNull);
+
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await tester.pump();
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
 }
