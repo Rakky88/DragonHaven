@@ -770,6 +770,13 @@ class _TrialOfferCard extends StatelessWidget {
                     top: 8,
                     child: Column(
                       children: [
+                        IconButton.filledTonal(
+                          key: Key('dismiss-trial-${offer.id}'),
+                          tooltip:
+                              strings.pick('Dismiss Trial', 'Proef negeren'),
+                          onPressed: onDismiss,
+                          icon: const Icon(Icons.close_rounded),
+                        ),
                         if (definition.specialEventId != null)
                           IconButton.filled(
                               key: Key('seasonal-rankings-${offer.id}'),
@@ -846,80 +853,71 @@ class _TrialOfferCard extends StatelessWidget {
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(15, 12, 12, 13),
-              child: Column(
+              child: Row(
                 children: [
-                  Row(
-                    children: [
-                      TrialIconSprite(kind: offer.kind, size: 40),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              strings.pick(
-                                definition.subtitleEn,
-                                definition.subtitleNl,
-                              ),
-                              style: const TextStyle(
-                                color: AppColors.muted,
-                                fontSize: 11.5,
-                                height: 1.25,
-                              ),
-                            ),
-                            const SizedBox(height: 5),
-                            Text(
-                              best == 0
-                                  ? strings.pick('No account record yet',
-                                      'Nog geen accountrecord')
-                                  : '${strings.pick('Account best', 'Accountrecord')}: $best',
-                              style: TextStyle(
-                                color: AppColors.eventColor(
-                                    context, AppColors.twilight),
-                                fontSize: 11,
-                                fontWeight: FontWeight.w900,
-                              ),
-                            ),
-                          ],
+                  TrialIconSprite(kind: offer.kind, size: 40),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          strings.pick(
+                            definition.subtitleEn,
+                            definition.subtitleNl,
+                          ),
+                          style: const TextStyle(
+                            color: AppColors.muted,
+                            fontSize: 11.5,
+                            height: 1.25,
+                          ),
                         ),
-                      ),
-                    ],
+                        const SizedBox(height: 5),
+                        Text(
+                          best == 0
+                              ? strings.pick('No account record yet',
+                                  'Nog geen accountrecord')
+                              : '${strings.pick('Account best', 'Accountrecord')}: $best',
+                          style: TextStyle(
+                            color: AppColors.eventColor(
+                                context, AppColors.twilight),
+                            fontSize: 11,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                  const SizedBox(height: 11),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: FilledButton.icon(
-                          key: Key('play-trial-${offer.id}'),
-                          onPressed: onStart,
-                          icon: const Icon(Icons.play_arrow_rounded, size: 19),
-                          label: Text(strings.pick('Play', 'Spelen')),
-                        ),
+                  const SizedBox(width: 8),
+                  SizedBox.square(
+                    dimension: 42,
+                    child: IconButton.filledTonal(
+                      key: Key('refresh-trial-ad-${offer.id}'),
+                      tooltip: strings.pick(
+                        'Watch an ad to swap this Trial',
+                        'Bekijk een advertentie om deze proef te wisselen',
                       ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: FilledButton.tonalIcon(
-                          key: Key('refresh-trial-ad-${offer.id}'),
-                          onPressed: onRefresh,
-                          icon: refreshing
-                              ? const SizedBox.square(
-                                  dimension: 17,
-                                  child:
-                                      CircularProgressIndicator(strokeWidth: 2),
-                                )
-                              : const Icon(Icons.ondemand_video_rounded,
-                                  size: 19),
-                          label: Text(strings.pick('Swap', 'Wissel')),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      IconButton.outlined(
-                        key: Key('dismiss-trial-${offer.id}'),
-                        tooltip: strings.pick('Dismiss Trial', 'Proef negeren'),
-                        onPressed: onDismiss,
-                        icon: const Icon(Icons.close_rounded),
-                      ),
-                    ],
+                      onPressed: onRefresh,
+                      icon: refreshing
+                          ? const SizedBox.square(
+                              dimension: 17,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.swap_horiz_rounded, size: 21),
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Container(
+                    key: Key('play-trial-${offer.id}'),
+                    padding: const EdgeInsets.all(9),
+                    decoration: const BoxDecoration(
+                      color: AppColors.goldLight,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.play_arrow_rounded,
+                      color: AppColors.eventColor(context, AppColors.twilight),
+                    ),
                   ),
                 ],
               ),
