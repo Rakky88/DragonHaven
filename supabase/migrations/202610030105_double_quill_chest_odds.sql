@@ -85,14 +85,12 @@ begin
     end if;
     -- Independent of the normal relic roll: a chest can grant both relics.
     -- Guaranteed Quills do not consume entropy or shift later chest rolls.
-    if case
-        when coalesce((catalog->'quill_chances'->>chest.tier)::double precision, 0) >= 1
-          then true
-        when coalesce((catalog->'quill_chances'->>chest.tier)::double precision, 0) > 0
-          then private.economy_random_unit() <
-            (catalog->'quill_chances'->>chest.tier)::double precision
-        else false
-      end then
+    if coalesce((catalog->'quill_chances'->>chest.tier)::double precision, 0) >= 1 then
+      items := items || jsonb_build_array(private.economy_grant_chest_item(keeper,
+        p_request_id, chest_id, 'relic', 'nameweaversQuill'));
+    elsif coalesce((catalog->'quill_chances'->>chest.tier)::double precision, 0) > 0
+        and private.economy_random_unit() <
+          (catalog->'quill_chances'->>chest.tier)::double precision then
       items := items || jsonb_build_array(private.economy_grant_chest_item(keeper,
         p_request_id, chest_id, 'relic', 'nameweaversQuill'));
     end if;

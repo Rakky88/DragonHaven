@@ -40,11 +40,13 @@ traits carry through hatching; no hidden fact, hatch seed or rarity is rerolled.
 Shared normal relic gates are now Gold 5%, Dragon 10%, Mythical 20%, Sinister
 100%, and S+ Trial 5% (including Event Trials). The weighted 11-relic pool and
 brooch exclusions are unchanged. Nameweaver's Quill has its own independent
-1%/2%/4%/8%/16% roll in Wooden/Silver/Gold/Dragon/Mythical Chests only. It never
-drops from Sinister, Special, Portrait, Title or Music Chests or the direct S+
-roll. An ordinary chest may give a normal relic and a Quill together. Dropped
-Quills are tradeable; crafted and 100-gem shop Quills are bound. The shop lists
-Quill first. Full combined odds are in `RANDOM_REWARDS_AND_ODDS.md`.
+2%/4%/8%/16%/32% roll in Wooden/Silver/Gold/Dragon/Mythical Chests. A Sinister
+Chest guarantees that separate Quill together with its guaranteed normal
+relic. Special, Portrait, Title and Music Chests and the direct S+ roll have no
+Quill roll. An eligible chest may give a normal relic and a Quill together.
+Dropped Quills are tradeable; crafted and 100-gem shop Quills are bound. The
+shop lists Quill first. Full combined odds are in
+`RANDOM_REWARDS_AND_ODDS.md`.
 
 Event Special Chest contents, their 10% emote roll, egg identities, calendars,
 point targets and event-specific guaranteed rewards do not change. Historical
@@ -521,7 +523,7 @@ descending; existing recommendation/acquisition order breaks ties. Ordinary
 Adventures keep their single-focus display and ordering. Inspecting Expertise
 does not select or start a dragon. Duration formulas and rewards are unchanged.
 
-<!-- reference-source-fingerprint: 22819f2d551c4feb -->
+<!-- reference-source-fingerprint: c1822fe96c871ea9 -->
 
 Calendar hardening after v0.05.29: canonical commands normalize the database
 instant to UTC. Legacy offline play retains its local day. Long-adventure
