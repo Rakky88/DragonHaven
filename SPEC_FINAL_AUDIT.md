@@ -1,5 +1,25 @@
 # DragonHaven audit
 
+## v0.06.17 rapid Adventure dispatch prepared - 3 October 2026
+
+The Adventure dragon picker now captures its canonical action after the player
+chooses a dragon. A preceding queued Adventure may be confirmed while the next
+picker is open; the second start therefore uses the newly confirmed server
+revision instead of rejecting the valid selection as stale inventory. The
+existing prediction layer still rejects an offer or dragon that actually
+became unavailable.
+
+A widget regression holds the first start at the server, opens a second dragon
+picker, confirms the first receipt while that picker remains open, and then
+starts the second Adventure. Both durable commands complete and both runs are
+present without an inventory-refresh warning. The focused Adventure,
+optimistic-queue and lifecycle suites pass with 69 tests, and Flutter analysis
+is clean. The complete release suite passes with 1,344 tests and one
+intentional opt-in skip.
+
+The release advances the client to display/package version 0.06.17 and Android
+build 10110. It changes no server schema, ruleset or economy behavior.
+
 ## v0.06.16 published - 3 October 2026
 
 My Dragons uses the shorter `Type` label for dragon-family ordering. Its title,
