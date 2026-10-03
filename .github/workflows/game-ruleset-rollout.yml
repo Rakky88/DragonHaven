@@ -43,6 +43,10 @@ concurrency:
 
 jobs:
   rollout:
+    # Production applies belong to the matching app-release operation. This
+    # standalone workflow remains available for read-only production plans and
+    # isolated staging rollouts only.
+    if: ${{ inputs.environment != 'production' || inputs.mode != 'apply' }}
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment }}
     timeout-minutes: 30
