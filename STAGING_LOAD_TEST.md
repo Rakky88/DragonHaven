@@ -47,6 +47,9 @@ server-authoritative is.
   pull-requesttrigger.
 - Productie-URL én productie-projectreference worden onafhankelijk in workflow
   en runner hard geweigerd.
+- Een uitvoerrun leest de actieve compute-selectie via de Supabase Management
+  API en stopt vóór het maken van testaccounts tenzij staging aantoonbaar op
+  `ci_micro` draait. Het artifact bewaart alleen deze veilige compute-ID.
 - Alleen een `sb_publishable_`-clientkey wordt geaccepteerd; geen service-role
   key of databasewachtwoord.
 - Een echte run vereist de exacte tekst

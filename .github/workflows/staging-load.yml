@@ -124,6 +124,39 @@ jobs:
             *> staging/load-preflight-before.txt
           if (-not $?) { throw 'Staging preflight failed.' }
 
+      - name: Verify the staging database runs on Micro
+        if: ${{ steps.profile.outputs.execute == 'true' }}
+        shell: pwsh
+        env:
+          STAGING_SUPABASE_ACCESS_TOKEN: ${{ secrets.STAGING_SUPABASE_ACCESS_TOKEN }}
+          STAGING_SUPABASE_PROJECT_REF: ${{ secrets.STAGING_SUPABASE_PROJECT_REF }}
+        run: |
+          try {
+            $addons = Invoke-RestMethod -Method Get -TimeoutSec 30 `
+              -Uri "https://api.supabase.com/v1/projects/$env:STAGING_SUPABASE_PROJECT_REF/billing/addons" `
+              -Headers @{ Authorization = "Bearer $env:STAGING_SUPABASE_ACCESS_TOKEN" }
+          } catch {
+            throw 'The active staging compute size could not be verified.'
+          }
+          $compute = @($addons.selected_addons | Where-Object {
+            [string]$_.variant.id -match '^ci_'
+          })
+          if ($compute.Count -ne 1) {
+            throw 'The active staging compute selection was missing or ambiguous.'
+          }
+          $computeId = [string]$compute[0].variant.id
+          [ordered]@{
+            environment = 'staging'
+            productionTarget = $false
+            expectedCompute = 'ci_micro'
+            activeCompute = $computeId
+            verified = $computeId -eq 'ci_micro'
+          } | ConvertTo-Json | Set-Content -LiteralPath staging/compute-tier.json -Encoding utf8
+          if ($computeId -ne 'ci_micro') {
+            throw "The staging load test requires ci_micro; the active selection is $computeId."
+          }
+          'The isolated staging database is verified as Micro.'
+
       - name: Flutter stable for the dependency-free Dart runner
         uses: subosito/flutter-action@v2
         with:

@@ -1059,6 +1059,13 @@ void main() {
     expect(workflow, contains('baseline_run_id'));
     expect(workflow, contains('DragonHaven-staging-load-100'));
     expect(workflow, contains('retention-days: 30'));
+    expect(workflow, contains('/billing/addons'));
+    expect(workflow, contains("expectedCompute = 'ci_micro'"));
+    expect(workflow, contains("activeCompute = \$computeId"));
+    expect(
+      workflow.indexOf('Verify the staging database runs on Micro'),
+      lessThan(workflow.indexOf('Create privacy-safe load plan')),
+    );
     expect(runner, contains("virtualUsers != 100 && virtualUsers != 1000"));
     expect(runner, contains('uniqueConfirmedSyntheticAccountsRequired'));
     expect(runner, contains('thinkTimeSeconds'));
