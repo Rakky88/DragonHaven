@@ -685,6 +685,57 @@ void main() {
   });
 
   testWidgets(
+      'rapid Adventure starts use the revision confirmed while choosing a dragon',
+      (tester) async {
+    await setup(tester, const CanonicalAdventuresScreen(), prepare: (server) {
+      final second =
+          jsonDecode(jsonEncode(server.state['pet'])) as Map<String, dynamic>;
+      second
+        ..['id'] = '22222222-2222-4222-8222-222222222222'
+        ..['name'] = 'Second probe'
+        ..['favorite'] = false;
+      server.state['sanctuaryDragons'] = [second];
+    });
+    await refreshAdventures(tester);
+    await command(tester);
+    final offers = session.snapshot!.adventures
+        .offers(AdventureKind.mini)
+        .take(2)
+        .toList();
+    final dragons = session.snapshot!.dragons
+        .where((dragon) =>
+            dragon.owned &&
+            dragon.stage.name != 'egg' &&
+            dragon.adventureId == null)
+        .take(2)
+        .toList();
+    expect(offers, hasLength(2));
+    expect(dragons, hasLength(2));
+
+    final firstReceipt = Completer<void>();
+    server.hold = firstReceipt.future;
+    await tap(tester, key('canonical-select-adventure-${offers.first}'));
+    await tap(tester, key('canonical-adventure-dragon-${dragons.first.id}'));
+    expect(session.snapshot!.adventures.runs, hasLength(1));
+
+    await tap(tester, key('canonical-select-adventure-${offers.last}'));
+    expect(key('adventure-dragon-picker-scroll'), findsOneWidget);
+    firstReceipt.complete();
+    await command(tester);
+
+    await tap(tester, key('canonical-adventure-dragon-${dragons.last.id}'));
+    await command(tester);
+
+    expect(server.sent.where((intent) => intent.action == 'start_adventure'),
+        hasLength(2));
+    expect(session.snapshot!.adventures.runs, hasLength(2));
+    expect(
+        find.text('Your inventory has changed. Refresh it before continuing.'),
+        findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets(
       'large-text Adventure offer shows expertise loss and gain without amounts',
       (tester) async {
     const id = 'mini_2';

@@ -398,9 +398,13 @@ String _focusLabel(AppStrings s, TrainingFocus focus) => switch (focus) {
 
 Future<void> _chooseDragon(
     BuildContext context, AdventureDefinition definition) async {
-  final actions = CanonicalGameActions(context.read<CanonicalGameSession>());
   final id = await pickCanonicalAdventureDragon(context, definition);
   if (id != null && context.mounted) {
+    // The previous queued Adventure can be confirmed while this picker is
+    // open. Capture the action only after selection so the command uses that
+    // latest confirmed revision; the session predictor still rejects an offer
+    // or dragon that really became unavailable in the meantime.
+    final actions = CanonicalGameActions(context.read<CanonicalGameSession>());
     await runShopAction(
         context, () => actions.startAdventure(definition.id, id));
   }
