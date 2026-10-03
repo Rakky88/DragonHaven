@@ -1,6 +1,6 @@
 # DragonHaven audit
 
-## v0.06.17 rapid Adventure dispatch prepared - 3 October 2026
+## v0.06.17 published - 3 October 2026
 
 The Adventure dragon picker now captures its canonical action after the player
 chooses a dragon. A preceding queued Adventure may be confirmed while the next
@@ -19,6 +19,21 @@ intentional opt-in skip.
 
 The release advances the client to display/package version 0.06.17 and Android
 build 10110. It changes no server schema, ruleset or economy behavior.
+
+The mandatory production preflight found all 104 migrations, zero database
+lint errors, and HTTP 200 responses from Auth health, Auth settings and the
+DragonHaven application service. No server deployment was required. Production
+remains enabled on ruleset revision 8 with SHA-256
+`2a578b477c30ce537b36e1a6bd9cdbc4eed7288dd94a7d98651a5c56130fb3e7`
+and minimum client build 10105.
+
+Release `v0.06.17` was published from exact candidate commit
+`66c94d1bae03c09edaad896fbdcaa3842ed6f33c`. Its signed
+`nl.dragonhaven.app` APK is 585,819,175 bytes with SHA-256
+`d6b8c0c51af40c14dd44770c2181e7e190d137833fedc1df4362af9453cff027`.
+GitHub reports the same digest and size; the release is neither draft nor
+prerelease, is the repository's latest release, and the permanent latest asset
+URL returns HTTP 200 with the same content length.
 
 ## v0.06.16 published - 3 October 2026
 
