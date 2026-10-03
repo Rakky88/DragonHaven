@@ -13,6 +13,9 @@ permissions:
 
 jobs:
   migrate-production:
+    # Historical migration workflow retained as evidence. Production changes
+    # are allowed only inside the matching app-release operation.
+    if: ${{ false }}
     runs-on: ubuntu-latest
     steps:
       - name: Verify explicit migration scope

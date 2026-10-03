@@ -22,6 +22,9 @@ concurrency:
 
 jobs:
   migrate-production:
+    # Historical migration workflow retained as evidence. Production changes
+    # are allowed only inside the matching app-release operation.
+    if: ${{ false }}
     runs-on: ubuntu-latest
     environment: production
     timeout-minutes: 15

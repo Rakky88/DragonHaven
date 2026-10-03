@@ -192,11 +192,8 @@ Write-Host "gh variable set DRAGONHAVEN_ADMOB_REWARDED_COINS_ID --body '$CoinsAd
 Write-Host "gh variable set DRAGONHAVEN_ADMOB_REWARDED_TRIAL_REFRESH_ID --body '$TrialRefreshAdUnitId'"
 Write-Host "gh variable set DRAGONHAVEN_ADMOB_PUBLISHER_ID --body '$PublisherId'"
 Write-Host ''
-Write-Host 'Configureer daarna de SSV-functie voor exact deze commit:'
-Write-Host ('supabase secrets set --project-ref ' + $projectRef +
-    ' --env-file "' + $ssvSecretsPath + '"')
-Write-Host ("supabase functions deploy rewarded-ad-ssv --project-ref $projectRef " +
-    '--no-verify-jwt --use-api')
+Write-Host 'De gegenereerde SSV-configuratie hoort bij de eerstvolgende app-release.'
+Write-Host 'Productiesecrets en de SSV-functie mogen uitsluitend binnen diezelfde release worden bijgewerkt.'
 Write-Host ''
 Write-Host 'SSV-callback voor alle rewarded-ad-units:'
 Write-Host "https://$projectRef.supabase.co/functions/v1/rewarded-ad-ssv"
@@ -206,4 +203,4 @@ Write-Host 'Laat de server-kill-switch en GitHub-enable-variable uit tijdens de 
 Write-Host 'Na een geslaagde interne test is de laatste GitHub-stap:'
 Write-Host "gh variable set DRAGONHAVEN_REWARDED_ADS_ENABLED --body 'true'"
 Write-Host ''
-Write-Host 'Na iedere latere commit: voer dit script opnieuw uit, zet de SSV-secrets opnieuw en deploy de functie opnieuw.'
+Write-Host 'Bij een latere serverwijziging: voer dit script opnieuw uit als onderdeel van de bijbehorende app-release.'

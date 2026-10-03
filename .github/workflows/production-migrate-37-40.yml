@@ -28,7 +28,9 @@ concurrency:
 
 jobs:
   migrate-production:
-    if: inputs.scope == 'snapshot49'
+    # Historical migration workflow retained as evidence. Production changes
+    # are allowed only inside the matching app-release operation.
+    if: ${{ false }}
     runs-on: ubuntu-latest
     environment: production
     timeout-minutes: 15
@@ -83,7 +85,9 @@ jobs:
           retention-days: 30
 
   release39-schema:
-    if: inputs.scope == 'release39'
+    # Historical migration workflow retained as evidence. Production changes
+    # are allowed only inside the matching app-release operation.
+    if: ${{ false }}
     runs-on: ubuntu-latest
     environment: production
     timeout-minutes: 20
@@ -142,7 +146,9 @@ jobs:
           retention-days: 30
 
   release40-schema:
-    if: inputs.scope == 'release40'
+    # Historical migration workflow retained as evidence. Production changes
+    # are allowed only inside the matching app-release operation.
+    if: ${{ false }}
     runs-on: ubuntu-latest
     environment: production
     timeout-minutes: 20
