@@ -13,7 +13,7 @@ import 'package:dragon_haven/models/profile_portrait.dart';
 /// Versioned server snapshot. Changes require a NEW forward migration once 45
 /// has been applied. Never regenerate an already applied migration in place.
 Map<String, Object?> economyChestCatalog() => {
-      'version': 5,
+      'version': 6,
       'portrait': profilePortraitCatalog.map((item) => item.id).toList(),
       'title': accountTitleCatalog.map((item) => item.id).toList(),
       'music': musicCatalog.map((item) => item.id).toList(),
@@ -25,12 +25,12 @@ Map<String, Object?> economyChestCatalog() => {
         for (final r in MysticRelic.values) r.name: r.dropWeight
       },
       'quill_chances': {
-        'wooden': .01,
-        'silver': .02,
-        'gold': .04,
-        'dragon': .08,
-        'mythical': .16,
-        'sinister': 0.0,
+        'wooden': .02,
+        'silver': .04,
+        'gold': .08,
+        'dragon': .16,
+        'mythical': .32,
+        'sinister': 1.0,
       },
       'unique_relics': MysticRelic.values
           .where((r) => r.isEquipable)
@@ -109,7 +109,7 @@ void main(List<String> arguments) {
     return;
   }
   final sql = File('supabase/migrations/'
-          '202609270101_relic_drop_balance_and_quills.sql')
+          '202610030105_double_quill_chest_odds.sql')
       .readAsStringSync();
   if (!sql.contains('\$catalog\$$snapshot\$catalog\$::jsonb')) {
     stderr.writeln(

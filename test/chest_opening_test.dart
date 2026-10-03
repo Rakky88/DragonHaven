@@ -57,9 +57,9 @@ void main() {
       'catalog snapshot matches real client collections and Special definitions',
       () {
     final catalog = economyChestCatalog();
-    final sql = File(
-            'supabase/migrations/202609270101_relic_drop_balance_and_quills.sql')
-        .readAsStringSync();
+    final sql =
+        File('supabase/migrations/202610030105_double_quill_chest_odds.sql')
+            .readAsStringSync();
     final embedded = sql.split(r'$catalog$')[1];
     expect(jsonDecode(embedded), catalog);
     expect(catalog['portrait'], hasLength(100));

@@ -37,16 +37,17 @@ Nameweaver's Quill is not in this guaranteed pool because it remains an
 independent ordinary-chest roll. There is no empty outcome and no additional
 Quill roll for a Level Chest.
 
-## Relic balance and Altar catalogue - 27 September 2026 (prepared)
+## Relic balance and Altar catalogue - 3 October 2026 (prepared)
 
 Ordinary weighted-pool relic gates are now Gold 5%, Dragon 10%, Mythical 20%,
 Sinister 100%, and direct S+ Trial 5%. This multiplies the previous eligible
 gates by five, capped at 100%; the 11-item pool and its weights are unchanged.
 Nameweaver's Quill has a separate, independent Wooden/Silver/Gold/Dragon/Mythical
-roll of 1%/2%/4%/8%/16%, and no Sinister, Special, cosmetic-chest or direct S+
-roll. One chest can therefore grant both a normal relic and a Quill. These
-Quill percentages are final, not another five-times multiplier. Chest Quills
-are tradeable; Altar-crafted and 100-gem shop Quills are bound.
+roll of 2%/4%/8%/16%/32%. A Sinister Chest guarantees that separate Quill in
+addition to its guaranteed normal relic. Special and cosmetic chests and the
+direct S+ roll have no Quill roll. One chest can therefore grant both a normal
+relic and a Quill. Chest Quills are tradeable; Altar-crafted and 100-gem shop
+Quills are bound.
 
 The Altar replaces Moral Echo with Moral Prism and Order Sigil with Order
 Compass, preserving old counts, and adds Soul Mirror at the Compass recipe.
@@ -305,7 +306,7 @@ Ruleset: v0.05.29 published and verified; production schema 65, economy activati
 
 Source baseline: v0.05.16, with subsequent changes and dormant server rules below
 
-<!-- reference-source-fingerprint: 482a2e0bd8dd3911 -->
+<!-- reference-source-fingerprint: 350db5099b132840 -->
 
 Calendar hardening after v0.05.29: canonical commands normalize the database
 instant to UTC. Legacy offline play retains its local day. Long-adventure
@@ -414,12 +415,12 @@ Every integer inside a coin or gem range is equally likely.
 
 | Chest | Coins | Gems | Egg | Relic | Unique chest emote | Other guaranteed reward |
 |---|---:|---:|---:|---:|---:|---|
-| Wooden | 20–40 | None | 1% base; 3% with egg pity | 1% Quill only | 0.5% | — |
-| Silver | 45–80 | 50% none; 25% 1; 25% 2 | 4% base; 12% with egg pity | 2% Quill only | 1% | — |
-| Gold | 90–160 | 28% none; 24% each for 2, 3, or 4 | 12% base; 36% with egg pity | 5% normal + independent 4% Quill | 2% | — |
-| Dragon | 180–300 | 10% none; 22.5% each for 4, 5, 6, or 7 | 100% | 10% normal + independent 8% Quill | 4% | — |
-| Mythical | 400–650 | 8–13, uniform | 100% | 20% normal + independent 16% Quill | 8% | — |
-| Sinister | 400–650 | 8–13, uniform | 100%; then 50% Sinister Egg and 50% ordinary Mysterious Egg | 100% | 12% | — |
+| Wooden | 20–40 | None | 1% base; 3% with egg pity | 2% Quill only | 0.5% | — |
+| Silver | 45–80 | 50% none; 25% 1; 25% 2 | 4% base; 12% with egg pity | 4% Quill only | 1% | — |
+| Gold | 90–160 | 28% none; 24% each for 2, 3, or 4 | 12% base; 36% with egg pity | 5% normal + independent 8% Quill | 2% | — |
+| Dragon | 180–300 | 10% none; 22.5% each for 4, 5, 6, or 7 | 100% | 10% normal + independent 16% Quill | 4% | — |
+| Mythical | 400–650 | 8–13, uniform | 100% | 20% normal + independent 32% Quill | 8% | — |
+| Sinister | 400–650 | 8–13, uniform | 100%; then 50% Sinister Egg and 50% ordinary Mysterious Egg | 100% normal + guaranteed Quill | 12% | — |
 | Golden Wings Special | Exactly 269 | Exactly 10 | 100% Golden Wings Special Egg | None from the chest itself | 10% | — |
 | Witchlight Special | Exactly 313 | Exactly 13 | 100% Witchlight Egg | None from the chest itself | 10% | — |
 | Starlight Gift Special | Exactly 250 | Exactly 12 | 100% Starlit Evergreen Egg | None from the chest itself | 10% | — |
@@ -455,20 +456,20 @@ There is no pity system for dragon rarity, relics, emotes, portraits, titles, mu
 
 | Chest | Normal weighted-pool relic | Independent Quill | At least one relic | Both |
 |---|---:|---:|---:|---:|
-| Wooden | 0% | 1% | 1% | 0% |
-| Silver | 0% | 2% | 2% | 0% |
-| Gold | 5% | 4% | 8.8% | 0.2% |
-| Dragon | 10% | 8% | 17.2% | 0.8% |
-| Mythical | 20% | 16% | 32.8% | 3.2% |
-| Sinister | 100% | 0% | 100% | 0% |
+| Wooden | 0% | 2% | 2% | 0% |
+| Silver | 0% | 4% | 4% | 0% |
+| Gold | 5% | 8% | 12.6% | 0.4% |
+| Dragon | 10% | 16% | 24.4% | 1.6% |
+| Mythical | 20% | 32% | 45.6% | 6.4% |
+| Sinister | 100% | 100% | 100% | 100% |
 | Special, Portrait, Title, Music | 0% | 0% | 0% | 0% |
 
 The normal drop gates are five times their previous value, capped at 100%.
-Sinister still grants one guaranteed normal relic, not five relics. With
+Sinister grants one guaranteed normal relic and one guaranteed Quill. With
 normal gate `p` and Quill gate `q`, `P(any) = p + q - p*q` and `P(both) = p*q`.
 Both rewards are delivered and recorded when both rolls succeed. The Quill
 never replaces the normal relic or uses a weighted-pool ticket. Its final
-1%/2%/4%/8%/16% rates are not multiplied again. It has no pity counter.
+2%/4%/8%/16%/32% ordinary-chest rates have no pity counter.
 
 When the normal relic drop succeeds, selection uses this weighted pool:
 
@@ -819,10 +820,10 @@ are:
 
 | Adventure | Normal relic | Quill | At least one relic | Both |
 |---|---:|---:|---:|---:|
-| Mini | 0% | 1% | 1% | 0% |
-| Short | 2.30% | 2.84% | 5.018% | 0.122% |
-| Long | 6.45% | 5.16% | 11.212% | 0.398% |
-| Group | 7% | 5.60% | 12.10% | 0.50% |
+| Mini | 0% | 2% | 2% | 0% |
+| Short | 2.30% | 5.68% | 7.736% | 0.244% |
+| Long | 6.45% | 10.32% | 15.974% | 0.796% |
+| Group | 7% | 11.20% | 17.20% | 1.00% |
 
 For chest-type weights `w_t`, use `sum(w_t*p_t)`, `sum(w_t*q_t)`,
 `sum(w_t*(p_t+q_t-p_t*q_t))` and `sum(w_t*p_t*q_t)` respectively.
@@ -957,16 +958,16 @@ contain one when later opened. The exact chest-derived odds are:
 | Grade | Normal relic from chest | Quill from chest | At least one from chest | Both from chest | Additional direct normal relic |
 |---|---:|---:|---:|---:|---:|
 | D | 0% | 0% | 0% | 0% | 0% |
-| C | 0% | 1% | 1% | 0% | 0% |
-| B | 0.25% | 1.25% | 1.49% | 0.01% | 0% |
-| A | 1% | 2.10% | 3.06% | 0.04% | 0% |
-| S | 3.55% | 3.44% | 6.844% | 0.146% | 0% |
-| S+ | 5.60% | 4.48% | 9.796% | 0.284% | 5% |
+| C | 0% | 2% | 2% | 0% | 0% |
+| B | 0.25% | 2.50% | 2.73% | 0.02% | 0% |
+| A | 1% | 4.20% | 5.12% | 0.08% | 0% |
+| S | 3.55% | 6.88% | 10.138% | 0.292% | 0% |
+| S+ | 5.60% | 8.96% | 13.992% | 0.568% | 5% |
 
 For S+, at least one relic across the direct reward and opened chest has
-probability `0.05 + 0.95 * 0.09796 = 14.3062%`. At least two has probability
-`0.00284 + 0.05 * (0.09796 - 0.00284) = 0.7596%`; exactly three has probability
-`0.05 * 0.00284 = 0.0142%`. Excluding Quills, at least one normal relic across
+probability `0.05 + 0.95 * 0.13992 = 18.2924%`. At least two has probability
+`0.00568 + 0.05 * (0.13992 - 0.00568) = 1.2392%`; exactly three has probability
+`0.05 * 0.00568 = 0.0284%`. Excluding Quills, at least one normal relic across
 both routes has probability `0.05 + 0.95 * 0.056 = 10.32%`. Receiving a new
 brooch directly excludes it from the later chest's selection pool, without
 changing the normal chest drop gate. These rules apply to standard and event

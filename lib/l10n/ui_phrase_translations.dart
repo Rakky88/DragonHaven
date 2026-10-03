@@ -624,6 +624,38 @@ String? _translatedDynamicUiPhrase(String text, String languageCode) {
 }
 
 const uiPhraseTranslations = <String, List<String>>{
+  'Confirming with the server': [
+    'Bestätigung mit dem Server',
+    'Confirmando con el servidor',
+    'Confirmation auprès du serveur',
+    'Conferma con il server',
+    'A confirmar com o servidor',
+    'サーバーで確認中',
+  ],
+  'Sealing your choice with DragonHaven.': [
+    'DragonHaven besiegelt deine Wahl.',
+    'DragonHaven está sellando tu elección.',
+    'DragonHaven scelle votre choix.',
+    'DragonHaven sta sigillando la tua scelta.',
+    'DragonHaven está a selar a tua escolha.',
+    'DragonHavenが選択を確定しています。',
+  ],
+  'Sealing your choice…': [
+    'Deine Wahl wird besiegelt…',
+    'Sellando tu elección…',
+    'Validation de votre choix…',
+    'La tua scelta viene sigillata…',
+    'A selar a tua escolha…',
+    '選択を確定中…',
+  ],
+  'DragonHaven is safely recording the result.': [
+    'DragonHaven speichert das Ergebnis sicher.',
+    'DragonHaven está guardando el resultado de forma segura.',
+    'DragonHaven enregistre le résultat en toute sécurité.',
+    'DragonHaven sta registrando il risultato in modo sicuro.',
+    'DragonHaven está a guardar o resultado em segurança.',
+    'DragonHavenが結果を安全に記録しています。',
+  ],
   'Close DragonHaven?': [
     'DragonHaven schließen?',
     '¿Cerrar DragonHaven?',

@@ -2556,7 +2556,8 @@ class HouseholdProvider extends ChangeNotifier {
     final eggFound = _random.nextDouble() < eggChance;
     final relicFound = _rollRelicDrop(tier);
     final quillChance = nameweaversQuillDropChance(tier);
-    final quillFound = quillChance > 0 && _random.nextDouble() < quillChance;
+    final quillFound = quillChance >= 1 ||
+        (quillChance > 0 && _random.nextDouble() < quillChance);
     final emoteFound = _rollUniqueDragonEmote(
       DragonEmoteSource.chest,
       _chestEmoteDropChance(tier),
@@ -2746,11 +2747,12 @@ class HouseholdProvider extends ChangeNotifier {
       };
 
   double nameweaversQuillDropChance(ChestTier tier) => switch (tier) {
-        ChestTier.wooden => .01,
-        ChestTier.silver => .02,
-        ChestTier.gold => .04,
-        ChestTier.dragon => .08,
-        ChestTier.mythical => .16,
+        ChestTier.wooden => .02,
+        ChestTier.silver => .04,
+        ChestTier.gold => .08,
+        ChestTier.dragon => .16,
+        ChestTier.mythical => .32,
+        ChestTier.sinister => 1,
         _ => 0,
       };
 

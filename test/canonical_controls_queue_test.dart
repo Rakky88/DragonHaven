@@ -92,4 +92,46 @@ void main() {
     expect(session.confirmedSnapshot!.profile.name, 'Second Name');
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets(
+      'confirmed server action blocks every other control while pending',
+      (tester) async {
+    final hold = Completer<void>();
+    var confirmedTaps = 0;
+    var otherTaps = 0;
+    await setup(
+        tester,
+        Column(children: [
+          CanonicalActionButton(
+              label: 'Permanent choice',
+              confirmation: 'Use this item permanently?',
+              action: () async {
+                confirmedTaps++;
+                await hold.future;
+              }),
+          CanonicalActionButton(
+              label: 'Other action',
+              action: () async {
+                otherTaps++;
+              }),
+        ]));
+
+    await tester.tap(find.text('Permanent choice'));
+    await tester.pump();
+    await tester.tap(find.widgetWithText(FilledButton, 'Confirm'));
+    await tester.pump();
+
+    expect(confirmedTaps, 1);
+    expect(find.byKey(const Key('canonical-server-action-overlay')),
+        findsOneWidget);
+    await tester.tap(find.text('Other action'), warnIfMissed: false);
+    await tester.pump();
+    expect(otherTaps, 0);
+
+    hold.complete();
+    await tester.pump();
+    expect(
+        find.byKey(const Key('canonical-server-action-overlay')), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
 }

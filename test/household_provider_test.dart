@@ -595,7 +595,10 @@ void main() {
     expect(bundle!.openedCount, 10);
     expect(bundle.sinisterEggCount, 10);
     expect(bundle.mysteriousEggCount, 0);
-    expect(bundle.relics, hasLength(10));
+    expect(bundle.relics, hasLength(20));
+    expect(
+        bundle.relics.where((relic) => relic == MysticRelic.nameweaversQuill),
+        hasLength(10));
     expect(game.eggStash, hasLength(10));
     expect(game.eggStash.every((egg) => egg.isSinisterEgg), isTrue);
     expect(game.chestCount(ChestTier.sinister), 0);

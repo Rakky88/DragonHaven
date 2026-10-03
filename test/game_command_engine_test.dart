@@ -123,6 +123,8 @@ void main() {
     final saved = first['state'] as Map<String, dynamic>;
     expect(saved['chestInventory']['sinister'], 0);
     expect(saved['pet']['coins'], greaterThanOrEqualTo(150 + 3 * 400));
+    expect(saved['relicInventory']['nameweaversQuill'], 3,
+        reason: 'Every Sinister Chest grants its separate Quill');
     expect(saved['eggStash'].first['id'], 'legacy-egg-1720000000000');
   });
 

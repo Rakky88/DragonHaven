@@ -64,14 +64,15 @@ void main() {
     }
   });
 
-  test('Quill chances are independent and absent on excluded chest kinds',
+  test('Quill chances are independent and guaranteed beside Sinister relics',
       () async {
     final expected = {
-      ChestTier.wooden: .01,
-      ChestTier.silver: .02,
-      ChestTier.gold: .04,
-      ChestTier.dragon: .08,
-      ChestTier.mythical: .16,
+      ChestTier.wooden: .02,
+      ChestTier.silver: .04,
+      ChestTier.gold: .08,
+      ChestTier.dragon: .16,
+      ChestTier.mythical: .32,
+      ChestTier.sinister: 1.0,
     };
     for (final tier in ChestTier.values) {
       final g = game(_Rolls([], fallback: 0));
@@ -93,8 +94,8 @@ void main() {
     for (final (regular, extra, expected) in [
       (0.0, 0.0, [MysticRelic.moralPrism, quill]),
       (.99, 0.0, [quill]),
-      (0.0, .16, [MysticRelic.moralPrism]),
-      (.99, .16, <MysticRelic>[]),
+      (0.0, .32, [MysticRelic.moralPrism]),
+      (.99, .32, <MysticRelic>[]),
     ]) {
       final g = game(_Rolls([.99, regular, extra]));
       g.chestInventory[ChestTier.mythical] = 1;
@@ -104,6 +105,18 @@ void main() {
       expect(g.relicCount(MysticRelic.moralPrism),
           expected.contains(MysticRelic.moralPrism) ? 1 : 0);
     }
+  });
+
+  test('Sinister chest always grants a pool relic and a separate Quill',
+      () async {
+    final g = game(_Rolls([], fallback: .999));
+    g.chestInventory[ChestTier.sinister] = 1;
+    final reward = (await g.openChest(ChestTier.sinister))!;
+    expect(reward.relicFound, isNotNull);
+    expect(reward.additionalRelics, [quill]);
+    expect(ChestRewardBundle.single(reward).relics, hasLength(2));
+    expect(g.relicCount(quill), 1);
+    expect(g.relicCount(reward.relicFound!), 1);
   });
 
   test('server buys one bound Quill for 100 gems and refuses below that price',

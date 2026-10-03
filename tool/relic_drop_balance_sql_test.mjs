@@ -44,10 +44,12 @@ try {
   `);
   await db.exec(readFileSync(
     'supabase/migrations/202609270101_relic_drop_balance_and_quills.sql', 'utf8'));
+  await db.exec(readFileSync(
+    'supabase/migrations/202610030105_double_quill_chest_odds.sql', 'utf8'));
   const catalog = (await db.query('select private.economy_chest_catalog() as c')).rows[0].c;
-  assert.equal(catalog.version, 5);
+  assert.equal(catalog.version, 6);
   assert.deepEqual(catalog.quill_chances,
-    {wooden: .01, silver: .02, gold: .04, dragon: .08, mythical: .16, sinister: 0});
+    {wooden: .02, silver: .04, gold: .08, dragon: .16, mythical: .32, sinister: 1});
   assert.equal(catalog.relic_weights.nameweaversQuill, 0);
   const shop = (await db.query('select private.economy_shop_catalog() as c')).rows[0].c;
   assert.equal(shop.version, 2);

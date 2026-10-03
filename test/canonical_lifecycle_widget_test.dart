@@ -62,6 +62,10 @@ void main() {
           jsonDecode(jsonEncode(fixture)) as Map<String, dynamic>);
       server.state['eggAltar']
           ['wallet'] = {'fragments': 200, 'essence': 30, 'hearts': 4};
+      // Most lifecycle cases exercise crafted Quills specifically. The shared
+      // probe opens Sinister Chests and therefore owns guaranteed drop Quills.
+      server.state['relicInventory']['nameweaversQuill'] = 0;
+      server.state['untradeableRelicInventory']['nameweaversQuill'] = 0;
       server.state['eggAltar']['crafted']['nameweaversQuill'] = 1;
       prepare?.call(server);
       session = CanonicalGameSession(
