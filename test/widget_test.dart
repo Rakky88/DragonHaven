@@ -2691,10 +2691,11 @@ void main() {
     expect(find.text('Rick Groot'), findsOneWidget);
     expect(find.text('2026'), findsOneWidget);
     expect(find.text('v0.06.17'), findsOneWidget);
-    expect(find.text('Share or update DragonHaven'), findsNothing);
-    expect(find.byKey(const Key('about-copy-download-link')), findsNothing);
+    expect(find.text('Share or update DragonHaven'), findsOneWidget);
+    expect(find.byKey(const Key('about-copy-download-link')), findsOneWidget);
     expect(find.byKey(const Key('about-copy-iphone-link')), findsNothing);
-    expect(find.byKey(const Key('about-download-update')), findsNothing);
+    expect(find.byKey(const Key('about-download-update')), findsOneWidget);
+    expect(find.text('Update'), findsOneWidget);
     expect(find.byKey(const Key('about-buy-me-coffee')), findsOneWidget);
     expect(find.text('Event codes use capital letters without spaces.'),
         findsNothing);

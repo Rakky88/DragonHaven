@@ -14,11 +14,14 @@ met SHA-256
 Voor de complete Google Play/App Store-checklist, verantwoordelijkheden,
 productiebeveiliging en kostenramingen: [PUBLIC_LAUNCH.md](PUBLIC_LAUNCH.md).
 
-De updatekaart in **About DragonHaven** deelt uitsluitend de permanente
-Android-downloadlink. **Update** opent de nieuwste openbare GitHub Release en
-Android vraagt altijd zelf om bevestiging voordat de APK wordt geïnstalleerd.
-De iPhone-knop is bewust niet zichtbaar zolang DragonHaven alleen voor Android
-wordt uitgebracht. De voorbereide, maar niet geactiveerde iOS-basis staat in
+De updatekaart in **About DragonHaven** gebruikt één distributielink voor delen
+en updaten. De huidige losse APK gebruikt de permanente GitHub-downloadlink.
+De Google Play AAB wordt gebouwd met
+`DRAGONHAVEN_ANDROID_STORE_URL=https://play.google.com/store/apps/details?id=nl.dragonhaven.app`
+en opent of kopieert daardoor de Google Play-pagina. Ook automatische
+updateknoppen gebruiken in die build dezelfde storepagina. De iPhone-knop is
+bewust niet zichtbaar zolang DragonHaven alleen voor Android wordt uitgebracht.
+De voorbereide, maar niet geactiveerde iOS-basis staat in
 [IOS_RELEASE.md](IOS_RELEASE.md).
 
 ## Updatecompatibiliteit
@@ -278,4 +281,8 @@ vergelijkt alle lokale en remote migraties, lint de remote database en test de
 publieke Auth health- en e-mailconfiguratie-endpoints. Publiceer niet wanneer
 een van deze controles faalt.
 
-Lokale forks kunnen `DRAGONHAVEN_GITHUB_OWNER`, `DRAGONHAVEN_GITHUB_REPO` en `DRAGONHAVEN_APP_VERSION` via `--dart-define` overschrijven.
+Lokale forks kunnen `DRAGONHAVEN_GITHUB_OWNER`, `DRAGONHAVEN_GITHUB_REPO`,
+`DRAGONHAVEN_ANDROID_STORE_URL` en `DRAGONHAVEN_APP_VERSION` via
+`--dart-define` overschrijven. Alleen de exacte HTTPS Google Play-pagina voor
+application ID `nl.dragonhaven.app` wordt als storelink geaccepteerd; anders
+valt de app veilig terug op de permanente GitHub-downloadlink.

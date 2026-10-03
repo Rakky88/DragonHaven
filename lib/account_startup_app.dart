@@ -764,10 +764,10 @@ class _StartupStatusState extends State<_StartupStatus> {
                                   onPressed: () async {
                                     try {
                                       await PlatformActions.openUrl(
-                                          ReleaseConfig.downloadUrl);
+                                          ReleaseConfig.distributionUrl);
                                     } catch (_) {
                                       await PlatformActions.copyText(
-                                          ReleaseConfig.downloadUrl);
+                                          ReleaseConfig.distributionUrl);
                                     }
                                   }),
                             ] else if (widget.errorCode != null &&

@@ -114,6 +114,45 @@ void main() {
     );
   });
 
+  test('Play builds share and update through the exact DragonHaven listing',
+      () {
+    const playUrl =
+        'https://play.google.com/store/apps/details?id=nl.dragonhaven.app';
+    expect(
+      ReleaseConfig.distributionUrlFor(
+        fallbackUrl: ReleaseConfig.downloadUrl,
+        storeUrl: playUrl,
+      ),
+      playUrl,
+    );
+    expect(
+      ReleaseConfig.distributionUrlFor(
+        fallbackUrl: ReleaseConfig.downloadUrl,
+        storeUrl: 'https://play.google.com/store/apps/details?id=another.app',
+      ),
+      ReleaseConfig.downloadUrl,
+    );
+
+    final releaseWorkflow =
+        File('.github/workflows/release.yml').readAsStringSync();
+    expect(
+      releaseWorkflow,
+      contains(
+        '--dart-define=DRAGONHAVEN_ANDROID_STORE_URL=$playUrl',
+      ),
+    );
+  });
+
+  test('the compiled distribution target is internally consistent', () {
+    if (ReleaseConfig.androidStoreUrl.isEmpty) {
+      expect(ReleaseConfig.usesAndroidStore, isFalse);
+      expect(ReleaseConfig.distributionUrl, ReleaseConfig.downloadUrl);
+      return;
+    }
+    expect(ReleaseConfig.usesAndroidStore, isTrue);
+    expect(ReleaseConfig.distributionUrl, ReleaseConfig.androidStoreUrl);
+  });
+
   test('iOS scaffold keeps the permanent app identity and platform bridge', () {
     final project =
         File('ios/Runner.xcodeproj/project.pbxproj').readAsStringSync();

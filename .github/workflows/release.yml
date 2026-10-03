@@ -232,6 +232,7 @@ jobs:
             --build-number="$BUILD_NUMBER" \
             --dart-define=DRAGONHAVEN_GITHUB_OWNER=${{ github.repository_owner }} \
             --dart-define=DRAGONHAVEN_GITHUB_REPO=${{ github.event.repository.name }} \
+            --dart-define=DRAGONHAVEN_ANDROID_STORE_URL=https://play.google.com/store/apps/details?id=nl.dragonhaven.app \
             --dart-define=DRAGONHAVEN_APP_VERSION="$APP_VERSION" \
             --dart-define=DRAGONHAVEN_BUILD_NUMBER="$BUILD_NUMBER" \
             --dart-define=DRAGONHAVEN_ENVIRONMENT=production \

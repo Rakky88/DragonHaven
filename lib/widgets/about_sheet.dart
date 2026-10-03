@@ -31,8 +31,53 @@ class _AboutSheet extends StatefulWidget {
   State<_AboutSheet> createState() => _AboutSheetState();
 }
 
+enum _AboutReleaseStatus {
+  copied,
+  copyFailed,
+  opening,
+  openFailedCopied,
+  openAndCopyFailed,
+}
+
 class _AboutSheetState extends State<_AboutSheet> {
+  bool _releaseBusy = false;
   bool _supportBusy = false;
+  _AboutReleaseStatus? _releaseStatus;
+
+  void _setReleaseStatus(_AboutReleaseStatus status) {
+    if (!mounted) return;
+    setState(() => _releaseStatus = status);
+  }
+
+  Future<void> _copyDistributionLink() async {
+    try {
+      await PlatformActions.copyText(ReleaseConfig.distributionUrl);
+      _setReleaseStatus(_AboutReleaseStatus.copied);
+    } catch (_) {
+      _setReleaseStatus(_AboutReleaseStatus.copyFailed);
+    }
+  }
+
+  Future<void> _openDistributionPage() async {
+    setState(() => _releaseBusy = true);
+    try {
+      await PlatformActions.openUrl(ReleaseConfig.distributionUrl);
+      _setReleaseStatus(_AboutReleaseStatus.opening);
+    } catch (_) {
+      var copied = false;
+      try {
+        await PlatformActions.copyText(ReleaseConfig.distributionUrl);
+        copied = true;
+      } catch (_) {
+        // The message below also covers the uncommon clipboard failure.
+      }
+      _setReleaseStatus(copied
+          ? _AboutReleaseStatus.openFailedCopied
+          : _AboutReleaseStatus.openAndCopyFailed);
+    } finally {
+      if (mounted) setState(() => _releaseBusy = false);
+    }
+  }
 
   Future<void> _openKofi() async {
     setState(() => _supportBusy = true);
@@ -74,6 +119,43 @@ class _AboutSheetState extends State<_AboutSheet> {
   @override
   Widget build(BuildContext context) {
     final strings = AppStrings.of(context);
+    final usesStore = ReleaseConfig.usesAndroidStore;
+    final releaseStatusMessage = switch (_releaseStatus) {
+      _AboutReleaseStatus.copied => usesStore
+          ? strings.pick(
+              'Google Play link copied.', 'Google Play-link gekopieerd.')
+          : strings.pick(
+              'Android download link copied.',
+              'Android-downloadlink gekopieerd.',
+            ),
+      _AboutReleaseStatus.copyFailed => strings.pick(
+          'The app link could not be copied.',
+          'De app-link kon niet worden gekopieerd.',
+        ),
+      _AboutReleaseStatus.opening => usesStore
+          ? strings.pick('Opening DragonHaven in Google Play…',
+              'DragonHaven wordt geopend in Google Play…')
+          : strings.pick(
+              'Opening the latest DragonHaven download…',
+              'De nieuwste DragonHaven-download wordt geopend…',
+            ),
+      _AboutReleaseStatus.openFailedCopied => strings.pick(
+          'The app page could not be opened. The link was copied instead.',
+          'De app-pagina kon niet worden geopend. De link is daarom gekopieerd.',
+        ),
+      _AboutReleaseStatus.openAndCopyFailed => strings.pick(
+          'The app link could not be opened or copied.',
+          'De app-link kon niet worden geopend of gekopieerd.',
+        ),
+      null => null,
+    };
+    final releaseStatusIsError = switch (_releaseStatus) {
+      _AboutReleaseStatus.copyFailed ||
+      _AboutReleaseStatus.openFailedCopied ||
+      _AboutReleaseStatus.openAndCopyFailed =>
+        true,
+      _ => false,
+    };
     return PullToDismissSheet(
       dragHandleKey: const Key('about-drag-handle'),
       child: SingleChildScrollView(
@@ -104,6 +186,152 @@ class _AboutSheetState extends State<_AboutSheet> {
                     icon: Icons.new_releases_rounded,
                     label: strings.pick('Version', 'Versie'),
                     value: AppInfo.displayVersion,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            _AboutPanel(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: AppColors.eventColor(context, AppColors.mist),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(
+                          Icons.system_update_alt_rounded,
+                          color: AppColors.eventColor(
+                            context,
+                            AppColors.twilight,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 11),
+                      Expanded(
+                        child: Text(
+                          strings.pick(
+                            'Share or update DragonHaven',
+                            'DragonHaven delen of updaten',
+                          ),
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w900,
+                            fontSize: 15,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 5),
+                  Text(
+                    usesStore
+                        ? strings.pick(
+                            'Share the DragonHaven Google Play page, or open it to install the latest available update.',
+                            'Deel de Google Play-pagina van DragonHaven, of open hem om de nieuwste beschikbare update te installeren.',
+                          )
+                        : strings.pick(
+                            'Copy one permanent Android download link for someone else, or open it to install the latest release over this app. Your progress stays safe.',
+                            'Kopieer één vaste Android-downloadlink voor iemand anders, of open hem om de nieuwste release over deze app te installeren. Je voortgang blijft veilig.',
+                          ),
+                    style: const TextStyle(
+                      color: AppColors.muted,
+                      height: 1.35,
+                      fontSize: 13,
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  OutlinedButton.icon(
+                    key: const Key('about-copy-download-link'),
+                    onPressed: _releaseBusy ? null : _copyDistributionLink,
+                    icon: const Icon(Icons.content_copy_rounded, size: 19),
+                    label: Text(
+                      usesStore
+                          ? strings.pick(
+                              'Copy Google Play link',
+                              'Google Play-link kopiëren',
+                            )
+                          : strings.pick(
+                              'Copy download link',
+                              'Downloadlink kopiëren',
+                            ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  FilledButton.icon(
+                    key: const Key('about-download-update'),
+                    onPressed: _releaseBusy ? null : _openDistributionPage,
+                    icon: _releaseBusy
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2.2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Icon(
+                            Icons.system_update_alt_rounded,
+                            size: 19,
+                          ),
+                    label: Text(
+                      usesStore
+                          ? strings.pick(
+                              'Open Google Play',
+                              'Google Play openen',
+                            )
+                          : strings.pick('Update', 'Updaten'),
+                    ),
+                  ),
+                  AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 180),
+                    child: releaseStatusMessage == null
+                        ? const SizedBox.shrink()
+                        : Container(
+                            key: const Key('about-release-status'),
+                            margin: const EdgeInsets.only(top: 12),
+                            padding: const EdgeInsets.all(11),
+                            decoration: BoxDecoration(
+                              color: releaseStatusIsError
+                                  ? AppColors.coral.withValues(alpha: 0.18)
+                                  : AppColors.mintLight,
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Icon(
+                                  releaseStatusIsError
+                                      ? Icons.info_outline_rounded
+                                      : Icons.check_circle_rounded,
+                                  size: 19,
+                                  color: releaseStatusIsError
+                                      ? AppColors.coral
+                                      : AppColors.eventColor(
+                                          context,
+                                          AppColors.twilight,
+                                        ),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    releaseStatusMessage,
+                                    style: const TextStyle(
+                                      color: AppColors.ink,
+                                      height: 1.3,
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                   ),
                 ],
               ),

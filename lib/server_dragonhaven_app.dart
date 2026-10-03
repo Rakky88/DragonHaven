@@ -463,7 +463,9 @@ class _ServerShellState extends State<_ServerShell> {
   Future<void> _checkForUpdate() async {
     try {
       final release = await ReleaseService.fetchLatest();
-      if (mounted && release.hasApk && release.isNewerThanInstalled) {
+      if (mounted &&
+          (release.hasApk || ReleaseConfig.usesAndroidStore) &&
+          release.isNewerThanInstalled) {
         _offerUpdate(release);
       }
     } catch (_) {
@@ -503,7 +505,7 @@ class _ServerShellState extends State<_ServerShell> {
               ));
       if (update == true && mounted) {
         try {
-          await PlatformActions.openUrl(release.downloadUrl);
+          await PlatformActions.openUrl(ReleaseConfig.updateUrlFor(release));
         } catch (_) {
           if (mounted) await showDragonHavenAboutSheet(context);
         }

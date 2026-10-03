@@ -9,6 +9,11 @@ abstract final class ReleaseConfig {
       defaultValue: 'Rakky88');
   static const repository = String.fromEnvironment('DRAGONHAVEN_GITHUB_REPO',
       defaultValue: 'DragonHaven');
+  static const androidApplicationId = 'nl.dragonhaven.app';
+  static const androidStoreUrl = String.fromEnvironment(
+    'DRAGONHAVEN_ANDROID_STORE_URL',
+    defaultValue: '',
+  );
   static const installedVersion = AppInfo.version;
 
   static bool get isConfigured =>
@@ -16,6 +21,34 @@ abstract final class ReleaseConfig {
   static String get repositoryUrl => 'https://github.com/$owner/$repository';
   static String get releasesUrl => '$repositoryUrl/releases/latest';
   static String get downloadUrl => '$releasesUrl/download/DragonHaven.apk';
+  static bool get usesAndroidStore =>
+      _isDragonHavenGooglePlayUrl(androidStoreUrl);
+  static String get distributionUrl => distributionUrlFor(
+        fallbackUrl: downloadUrl,
+      );
+
+  static String distributionUrlFor({
+    required String fallbackUrl,
+    String storeUrl = androidStoreUrl,
+  }) {
+    final normalizedStoreUrl = storeUrl.trim();
+    return _isDragonHavenGooglePlayUrl(normalizedStoreUrl)
+        ? normalizedStoreUrl
+        : fallbackUrl;
+  }
+
+  static String updateUrlFor(LatestRelease release) => distributionUrlFor(
+        fallbackUrl: release.downloadUrl,
+      );
+
+  static bool _isDragonHavenGooglePlayUrl(String value) {
+    final uri = Uri.tryParse(value.trim());
+    return uri != null &&
+        uri.scheme == 'https' &&
+        uri.host == 'play.google.com' &&
+        uri.path == '/store/apps/details' &&
+        uri.queryParameters['id'] == androidApplicationId;
+  }
 
   // Opens Rick Groot's focused Ko-fi tip panel.
   static const kofiUrl =

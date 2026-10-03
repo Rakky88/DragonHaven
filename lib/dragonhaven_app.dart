@@ -381,14 +381,15 @@ class _DragonHavenShellState extends State<DragonHavenShell> {
   }
 
   Future<void> _openUpdate(LatestRelease release) async {
+    final updateUrl = ReleaseConfig.updateUrlFor(release);
     try {
       await (widget.externalUrlOpener ?? PlatformActions.openUrl)(
-        release.downloadUrl,
+        updateUrl,
       );
     } catch (_) {
       var copied = false;
       try {
-        await PlatformActions.copyText(release.downloadUrl);
+        await PlatformActions.copyText(updateUrl);
         copied = true;
       } catch (_) {
         // The message below also covers the uncommon clipboard failure.
