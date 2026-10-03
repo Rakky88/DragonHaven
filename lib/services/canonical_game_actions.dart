@@ -16,6 +16,10 @@ import 'canonical_game_snapshot.dart';
 
 /// Captures the account and inventory actually shown by a screen/dialog.
 /// Delayed callbacks cannot act on a newly signed-in account or a newer view.
+/// Create this after a long-lived picker returns when its selection can be
+/// validated against the latest state. Keep the earlier capture only when a
+/// confirmation must remain bound to the exact price or irreversible state
+/// that it displayed.
 class CanonicalGameActions {
   CanonicalGameActions(this.session)
       : observed = session.snapshot,

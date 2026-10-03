@@ -127,7 +127,6 @@ class _WeaveBeaconCardState extends State<WeaveBeaconCard> {
   Future<void> _donate() async {
     final server = context.read<CanonicalGameSession?>();
     final game = server == null ? context.read<HouseholdProvider>() : null;
-    final actions = server == null ? null : CanonicalGameActions(server);
     final account = _account;
     final conclave = widget.conclaveId;
     final s = AppStrings.of(context);
@@ -180,9 +179,10 @@ class _WeaveBeaconCardState extends State<WeaveBeaconCard> {
         conclave != widget.conclaveId) {
       return;
     }
-    if (actions != null) {
+    if (server != null) {
+      if (!server.canAct) return;
       await runShopAction(context, () async {
-        await actions.donateBeacon(conclave, amount);
+        await CanonicalGameActions(server).donateBeacon(conclave, amount);
       });
     } else {
       await runAltarAction(

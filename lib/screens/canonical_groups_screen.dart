@@ -610,11 +610,23 @@ class _GroupsState extends State<_Groups> {
 
   Future<void> _choose(BuildContext context, AdventureDefinition definition,
       String? lobbyId) async {
-    final actions = CanonicalGameActions(context.read<CanonicalGameSession>());
+    final session = context.read<CanonicalGameSession>();
+    final owner = session.snapshot?.ownerId;
+    final epoch = session.connection.sessionEpoch;
     final id = await pickCanonicalAdventureDragon(context, definition,
         keyPrefix: 'canonical-group-dragon',
         expertiseKeyPrefix: 'canonical-group-expertise');
-    if (id == null || !context.mounted) return;
+    if (id == null ||
+        !context.mounted ||
+        owner == null ||
+        session.snapshot?.ownerId != owner ||
+        session.connection.sessionEpoch != epoch ||
+        !session.canAct) {
+      return;
+    }
+    // A previous queued command may have confirmed while the dragon picker
+    // was open. Use the revision that is current for the chosen dragon.
+    final actions = CanonicalGameActions(session);
     await runShopAction(
         context,
         () => lobbyId == null

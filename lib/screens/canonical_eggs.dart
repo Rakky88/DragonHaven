@@ -897,8 +897,8 @@ class _CanonicalNestEggListTile extends StatelessWidget {
 Future<void> showCanonicalAltarRelicPicker(
     BuildContext context, AltarRelic relic) async {
   final session = context.read<CanonicalGameSession>();
-  final actions = CanonicalGameActions(session);
   final owner = session.snapshot?.ownerId;
+  final epoch = session.connection.sessionEpoch;
   final s = AppStrings.of(context);
   final id = await showModalBottomSheet<String>(
       context: context,
@@ -942,7 +942,7 @@ Future<void> showCanonicalAltarRelicPicker(
   if (!context.mounted ||
       id == null ||
       session.snapshot?.ownerId != owner ||
-      session.connection.sessionEpoch != actions.epoch) {
+      session.connection.sessionEpoch != epoch) {
     return;
   }
   final confirmed = await showDialog<bool>(
@@ -962,12 +962,20 @@ Future<void> showCanonicalAltarRelicPicker(
                     onPressed: () => Navigator.pop(c, true),
                     child: Text(s.pick('Use', 'Gebruiken'))),
               ]));
-  if (!context.mounted || confirmed != true) return;
+  if (!context.mounted ||
+      confirmed != true ||
+      owner == null ||
+      session.snapshot?.ownerId != owner ||
+      session.connection.sessionEpoch != epoch ||
+      !session.canAct) {
+    return;
+  }
   await runShopAction(context, () async {
+    final actions = CanonicalGameActions(session);
     await actions.revealEgg(relic, id);
     if (!context.mounted ||
         session.snapshot?.ownerId != owner ||
-        session.connection.sessionEpoch != actions.epoch) {
+        session.connection.sessionEpoch != epoch) {
       return;
     }
     final egg = session.snapshot?.egg(id);

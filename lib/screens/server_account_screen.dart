@@ -238,7 +238,8 @@ class ServerAccountScreen extends StatelessWidget {
 
   Future<void> _name(BuildContext context) async {
     final session = context.read<CanonicalGameSession>();
-    final actions = CanonicalGameActions(session);
+    final owner = session.snapshot?.ownerId;
+    final epoch = session.connection.sessionEpoch;
     final s = AppStrings.of(context);
     final controller =
         TextEditingController(text: session.snapshot!.profile.name);
@@ -262,8 +263,14 @@ class ServerAccountScreen extends StatelessWidget {
                       child: Text(s.pick('Save', 'Opslaan')))
                 ],
               ));
-      if (name != null && context.mounted) {
-        await runShopAction(context, () => actions.setAccountName(name));
+      if (name != null &&
+          context.mounted &&
+          owner != null &&
+          session.snapshot?.ownerId == owner &&
+          session.connection.sessionEpoch == epoch &&
+          session.canAct) {
+        await runShopAction(
+            context, () => CanonicalGameActions(session).setAccountName(name));
       }
     } finally {
       // Let the dialog finish its reverse transition before disposing its field.
@@ -473,7 +480,8 @@ class _DeviceNotificationAccessState extends State<DeviceNotificationAccess>
 
 Future<void> showServerLanguagePicker(BuildContext context) async {
   final session = context.read<CanonicalGameSession>();
-  final actions = CanonicalGameActions(session);
+  final owner = session.snapshot?.ownerId;
+  final epoch = session.connection.sessionEpoch;
   final selected = session.snapshot!.profile.preferences['languageCode'];
   final code = await showModalBottomSheet<String>(
       context: context,
@@ -509,8 +517,15 @@ Future<void> showServerLanguagePicker(BuildContext context) async {
                                       fontWeight: FontWeight.w800)),
                               onTap: () => Navigator.pop(context, entry.key))),
                   ]))));
-  if (code != null && context.mounted) {
+  if (code != null &&
+      context.mounted &&
+      owner != null &&
+      session.snapshot?.ownerId == owner &&
+      session.connection.sessionEpoch == epoch &&
+      session.canAct) {
     await runShopAction(
-        context, () => actions.setPreferences({'languageCode': code}));
+        context,
+        () => CanonicalGameActions(session)
+            .setPreferences({'languageCode': code}));
   }
 }

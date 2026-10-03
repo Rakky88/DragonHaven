@@ -684,12 +684,13 @@ Future<void> _useCanonicalRelic(BuildContext context, MysticRelic relic) async {
   final session = context.read<CanonicalGameSession>();
   final view = session.snapshot;
   if (view == null || !session.canAct) return;
-  final actions = CanonicalGameActions(session);
+  final owner = view.ownerId;
+  final epoch = session.connection.sessionEpoch;
   final strings = AppStrings.of(context);
   bool current() =>
       context.mounted &&
-      session.connection.sessionEpoch == actions.epoch &&
-      session.snapshot?.ownerId == view.ownerId;
+      session.connection.sessionEpoch == epoch &&
+      session.snapshot?.ownerId == owner;
   if (relic == MysticRelic.nameweaversQuill) {
     await Navigator.push(
         context,
@@ -739,8 +740,11 @@ Future<void> _useCanonicalRelic(BuildContext context, MysticRelic relic) async {
                                 'Zeldzaamheid is nog verborgen')),
                             onTap: () => Navigator.pop(c, egg.id))),
                 ])));
-    if (!context.mounted || !current() || selected == null) return;
+    if (!context.mounted || !current() || selected == null || !session.canAct) {
+      return;
+    }
     await runShopAction(context, () async {
+      final actions = CanonicalGameActions(session);
       await actions.useLens(selected);
       if (!context.mounted || !current()) return;
       final rarity = session.snapshot?.egg(selected)?.revealedRarity;
@@ -801,8 +805,11 @@ Future<void> _useCanonicalRelic(BuildContext context, MysticRelic relic) async {
                                 'Verkort de resterende broedtijd')),
                             onTap: () => Navigator.pop(c, values[index]))),
                 ])));
-    if (!context.mounted || !current() || selected == null) return;
+    if (!context.mounted || !current() || selected == null || !session.canAct) {
+      return;
+    }
     await runShopAction(context, () async {
+      final actions = CanonicalGameActions(session);
       await actions.useChronoshard(selected);
       if (!context.mounted || !current()) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -860,9 +867,13 @@ Future<void> _useCanonicalRelic(BuildContext context, MysticRelic relic) async {
                                     : const Icon(Icons.chevron_right_rounded),
                             onTap: () => Navigator.pop(c, dragon.id))),
                 ]))));
-    if (!context.mounted || !current() || selected == null) return;
-    await runShopAction(context,
-        () => actions.equip(relic, selected == unequip ? null : selected));
+    if (!context.mounted || !current() || selected == null || !session.canAct) {
+      return;
+    }
+    await runShopAction(
+        context,
+        () => CanonicalGameActions(session)
+            .equip(relic, selected == unequip ? null : selected));
     return;
   }
   if (relic.hasUseAnimation) {
@@ -886,7 +897,8 @@ Future<void> showCanonicalDragonRelic(
   final session = context.read<CanonicalGameSession>();
   final view = session.snapshot;
   if (view == null || !session.canAct) return;
-  final actions = CanonicalGameActions(session);
+  final owner = view.ownerId;
+  final epoch = session.connection.sessionEpoch;
   final strings = AppStrings.of(context);
   final eligibleDragons = view.dragons
       .where((d) => d.owned)
@@ -1016,12 +1028,19 @@ Future<void> showCanonicalDragonRelic(
       ),
     ),
   );
-  if (selected == null || !context.mounted) return;
+  if (selected == null ||
+      !context.mounted ||
+      session.connection.sessionEpoch != epoch ||
+      session.snapshot?.ownerId != owner ||
+      !session.canAct) {
+    return;
+  }
   await runShopAction(context, () async {
+    final actions = CanonicalGameActions(session);
     await actions.useRelic(relic, selected.id);
     if (!context.mounted ||
-        session.connection.sessionEpoch != actions.epoch ||
-        session.snapshot?.ownerId != view.ownerId) {
+        session.connection.sessionEpoch != epoch ||
+        session.snapshot?.ownerId != owner) {
       return;
     }
     final dragon = session.snapshot?.dragon(selected.id);

@@ -5,6 +5,7 @@ import 'package:dragon_haven/models/pet.dart';
 import 'package:dragon_haven/models/social.dart';
 import 'package:dragon_haven/providers/household_provider.dart';
 import 'package:dragon_haven/screens/canonical_groups_screen.dart';
+import 'package:dragon_haven/services/canonical_game_actions.dart';
 import 'package:dragon_haven/services/canonical_game_session.dart';
 import 'package:dragon_haven/services/canonical_groups.dart';
 import 'package:dragon_haven/theme/app_theme.dart';
@@ -185,6 +186,12 @@ void main() {
       await tap(find.text('Close'));
       await settle();
       expect(server.sent, isEmpty);
+      // A separate confirmed command can advance the inventory revision while
+      // this long-lived picker remains open. The selected Group Adventure must
+      // use that latest revision instead of the one from before the picker.
+      await tester.runAsync(() => CanonicalGameActions(session)
+          .setPreferences({'musicEnabled': false}));
+      await settle();
       await tap(find.byKey(Key('canonical-group-dragon-${before['id']}')));
       await tester.pump();
       await settle();

@@ -68,13 +68,24 @@ class _TradesState extends State<_Trades> {
     super.dispose();
   }
 
-  Future<void> _choose(CanonicalGameActions actions, {String? tradeId}) async {
+  Future<void> _choose({String? tradeId}) async {
+    final session = context.read<CanonicalGameSession>();
+    final owner = session.snapshot?.ownerId;
+    final epoch = session.connection.sessionEpoch;
     final code = _code.text.trim().toUpperCase();
     if (tradeId == null && !RegExp(r'^DH-[A-F0-9]{8}$').hasMatch(code)) {
       throw const CanonicalGameException('game_keeper_code_invalid');
     }
     final item = await chooseCanonicalTradeItem(context);
-    if (item == null || !mounted) return;
+    if (item == null ||
+        !mounted ||
+        owner == null ||
+        session.snapshot?.ownerId != owner ||
+        session.connection.sessionEpoch != epoch ||
+        !session.canAct) {
+      return;
+    }
+    final actions = CanonicalGameActions(session);
     if (tradeId == null) {
       await actions.offerTrade(code,
           kind: item.kind, key: item.key, variant: item.variant);
@@ -125,7 +136,7 @@ class _TradesState extends State<_Trades> {
                     key: const Key('canonical-offer-trade'),
                     label: s.pick('Choose an item to offer',
                         'Kies een voorwerp om te ruilen'),
-                    action: session.canAct ? () => _choose(actions) : null),
+                    action: session.canAct ? () => _choose() : null),
               ],
               for (final offer in board.offers.where((t) => t.active))
                 Card(
@@ -157,8 +168,7 @@ class _TradesState extends State<_Trades> {
                                         'canonical-reply-trade-${offer.id}'),
                                     label: s.pick('Choose your offer',
                                         'Kies jouw aanbod'),
-                                    action: () =>
-                                        _choose(actions, tradeId: offer.id)),
+                                    action: () => _choose(tradeId: offer.id)),
                               if (offer.amInitiator &&
                                   offer.status == 'awaiting_initiator')
                                 CanonicalActionButton(

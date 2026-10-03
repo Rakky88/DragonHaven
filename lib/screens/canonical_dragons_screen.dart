@@ -870,7 +870,7 @@ class _CanonicalDragonActionsCard extends StatelessWidget {
           title: dragon.name.trim().isEmpty
               ? strings.pick('Name dragon', 'Geef een naam')
               : strings.pick('Rename · 1 Quill', 'Hernoemen · 1 Quill'),
-          action: () => nameCanonicalDragon(context, dragon, owner, actions),
+          action: () => nameCanonicalDragon(context, dragon, owner),
         ),
       _CanonicalDragonActionTile(
         key: const ValueKey('canonical-release-dragon-state'),
@@ -1031,22 +1031,16 @@ class _HighlightControl extends StatelessWidget {
 }
 
 Future<void> nameCanonicalDragon(
-    BuildContext context,
-    CanonicalDragonView dragon,
-    String owner,
-    CanonicalGameActions actions) async {
+    BuildContext context, CanonicalDragonView dragon, String owner) async {
   await showDialog<void>(
       context: context,
-      builder: (_) =>
-          _DragonNameDialog(dragon: dragon, owner: owner, actions: actions));
+      builder: (_) => _DragonNameDialog(dragon: dragon, owner: owner));
 }
 
 class _DragonNameDialog extends StatefulWidget {
-  const _DragonNameDialog(
-      {required this.dragon, required this.owner, required this.actions});
+  const _DragonNameDialog({required this.dragon, required this.owner});
   final CanonicalDragonView dragon;
   final String owner;
-  final CanonicalGameActions actions;
   @override
   State<_DragonNameDialog> createState() => _DragonNameDialogState();
 }
@@ -1082,7 +1076,8 @@ class _DragonNameDialogState extends State<_DragonNameDialog> {
                   label: strings.pick('Save', 'Opslaan'),
                   action: enabled
                       ? () async {
-                          await widget.actions
+                          await CanonicalGameActions(
+                                  context.read<CanonicalGameSession>())
                               .nameDragon(widget.dragon.id, controller.text);
                           if (context.mounted) Navigator.pop(context);
                         }

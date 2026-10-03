@@ -6,6 +6,7 @@ import 'package:dragon_haven/models/mystic_relic.dart';
 import 'package:dragon_haven/models/pet.dart';
 import 'package:dragon_haven/providers/household_provider.dart';
 import 'package:dragon_haven/screens/canonical_trades_screen.dart';
+import 'package:dragon_haven/services/canonical_game_actions.dart';
 import 'package:dragon_haven/services/canonical_game_session.dart';
 import 'package:dragon_haven/services/canonical_trades.dart';
 import 'package:dragon_haven/widgets/canonical_milestones.dart';
@@ -114,6 +115,13 @@ void main() {
       // Opening details alone does not send any offer.
       await tap('canonical-trade-item-chest:gold:0');
       expect(server.sent, isEmpty);
+      // Keep the item details open while another safe command confirms. The
+      // eventual offer must bind to the new revision selected by the player.
+      await tester.runAsync(() => CanonicalGameActions(session)
+          .setPreferences({'musicEnabled': false}));
+      await settle();
+      server.sent.clear();
+      server.receipts.clear();
       server.loseReply = true;
       await tap('canonical-trade-select-item');
       expect(session.canAct, false);

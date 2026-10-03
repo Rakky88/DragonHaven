@@ -43,8 +43,7 @@ Future<bool> showCanonicalMilestone(
         final latest = session.confirmedSnapshot!.dragon(dragon.id);
         if (latest == null) return;
         if (latest.name.trim().isEmpty) {
-          await nameCanonicalDragon(
-              dialogContext, latest, owner!, CanonicalGameActions(session));
+          await nameCanonicalDragon(dialogContext, latest, owner!);
         }
         if (dialogContext.mounted &&
             current() &&
