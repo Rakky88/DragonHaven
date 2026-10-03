@@ -1,9 +1,9 @@
-export type RewardCurrency = "gems" | "coins";
+export type RewardProductKey = "gems" | "coins" | "trial_refresh";
 
 export interface RewardProduct {
-  currency: RewardCurrency;
+  currency: RewardProductKey;
   amount: number;
-  item: RewardCurrency;
+  item: RewardProductKey;
   /// Full public SDK identifier. Google's signed `ad_unit` callback field
   /// contains only the ten-digit unit suffix, so the allowlist maps that
   /// signed suffix back to this canonical identifier before persistence.
@@ -13,12 +13,16 @@ export interface RewardProduct {
 export function configuredRewardProducts(
   gemsAdUnitId: string,
   coinsAdUnitId: string,
+  trialRefreshAdUnitId: string,
 ): ReadonlyMap<string, RewardProduct> {
   const pattern = /^ca-app-pub-[0-9]{16}\/([0-9]{10})$/;
   const gems = gemsAdUnitId.match(pattern);
   const coins = coinsAdUnitId.match(pattern);
+  const trialRefresh = trialRefreshAdUnitId.match(pattern);
   if (
-    !gems || !coins || gemsAdUnitId === coinsAdUnitId || gems[1] === coins[1]
+    !gems || !coins || !trialRefresh ||
+    new Set([gemsAdUnitId, coinsAdUnitId, trialRefreshAdUnitId]).size !== 3 ||
+    new Set([gems[1], coins[1], trialRefresh[1]]).size !== 3
   ) {
     throw new Error("rewarded_ad_configuration_missing");
   }
@@ -35,12 +39,18 @@ export function configuredRewardProducts(
       item: "coins",
       canonicalAdUnitId: coinsAdUnitId,
     }],
+    [trialRefresh[1], {
+      currency: "trial_refresh",
+      amount: 1,
+      item: "trial_refresh",
+      canonicalAdUnitId: trialRefreshAdUnitId,
+    }],
   ]);
 }
 
 export interface VerificationRecord {
   customData: string;
-  currency: RewardCurrency;
+  currency: RewardProductKey;
   adUnitId: string;
   rewardItem: string;
   rewardAmount: number;
@@ -77,6 +87,7 @@ export function rewardedAdHealth(
   sourceRevision: string,
   gemsAdUnitId: string,
   coinsAdUnitId: string,
+  trialRefreshAdUnitId: string,
 ): Response {
   return new Response(
     JSON.stringify({
@@ -85,6 +96,7 @@ export function rewardedAdHealth(
       sourceRevision,
       gemsAdUnitId,
       coinsAdUnitId,
+      trialRefreshAdUnitId,
     }),
     {
       status: 200,

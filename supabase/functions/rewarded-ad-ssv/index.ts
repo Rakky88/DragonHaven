@@ -11,6 +11,8 @@ const base = Deno.env.get("SUPABASE_URL") ?? "";
 const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 const gemsUnit = Deno.env.get("ADMOB_REWARDED_GEMS_AD_UNIT_ID") ?? "";
 const coinsUnit = Deno.env.get("ADMOB_REWARDED_COINS_AD_UNIT_ID") ?? "";
+const trialRefreshUnit =
+  Deno.env.get("ADMOB_REWARDED_TRIAL_REFRESH_AD_UNIT_ID") ?? "";
 const setupProbeCustomData =
   Deno.env.get("REWARDED_AD_SSV_SETUP_CUSTOM_DATA") ?? "";
 const sourceRevision = Deno.env.get("REWARDED_AD_SSV_SOURCE_REVISION") ?? "";
@@ -19,14 +21,19 @@ if (
   !/^https:\/\/[a-z0-9]{20}\.supabase\.co$/.test(base) ||
   serviceKey.length < 32 ||
   !unitPattern.test(gemsUnit) || !unitPattern.test(coinsUnit) ||
-  gemsUnit === coinsUnit ||
+  !unitPattern.test(trialRefreshUnit) ||
+  new Set([gemsUnit, coinsUnit, trialRefreshUnit]).size !== 3 ||
   !/^[0-9a-f]{64}$/.test(setupProbeCustomData) ||
   !/^[0-9a-f]{40}$/.test(sourceRevision)
 ) {
   throw new Error("rewarded_ad_configuration_missing");
 }
 
-const products = configuredRewardProducts(gemsUnit, coinsUnit);
+const products = configuredRewardProducts(
+  gemsUnit,
+  coinsUnit,
+  trialRefreshUnit,
+);
 
 function bytesFromBase64(value: string): Uint8Array {
   const raw = atob(value);
@@ -133,6 +140,7 @@ Deno.serve((request) => {
       sourceRevision,
       gemsUnit,
       coinsUnit,
+      trialRefreshUnit,
     );
   }
   return handleSsv(request, {

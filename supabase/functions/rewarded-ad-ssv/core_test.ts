@@ -13,11 +13,17 @@ import {
 const keyId = 1234567;
 const gemsUnit = "ca-app-pub-1234567890123456/1234567891";
 const coinsUnit = "ca-app-pub-1234567890123456/0987654321";
+const trialRefreshUnit = "ca-app-pub-1234567890123456/1122334455";
 const gemsUnitSuffix = "1234567891";
 const coinsUnitSuffix = "0987654321";
+const trialRefreshUnitSuffix = "1122334455";
 const customData = "a5".repeat(32);
 const setupProbeCustomData = "b7".repeat(32);
-const products = configuredRewardProducts(gemsUnit, coinsUnit);
+const products = configuredRewardProducts(
+  gemsUnit,
+  coinsUnit,
+  trialRefreshUnit,
+);
 
 function assert(value: unknown, message = "assertion failed"): asserts value {
   if (!value) throw new Error(message);
@@ -173,19 +179,30 @@ Deno.test("strict DER conversion round-trips P-256 IEEE-P1363 signatures", () =>
 Deno.test("configured products key signed numeric units to canonical IDs", () => {
   assert(products.get(gemsUnitSuffix)?.canonicalAdUnitId === gemsUnit);
   assert(products.get(coinsUnitSuffix)?.canonicalAdUnitId === coinsUnit);
+  assert(
+    products.get(trialRefreshUnitSuffix)?.canonicalAdUnitId ===
+      trialRefreshUnit,
+  );
   for (
     const invalid of [
-      [gemsUnit, gemsUnit],
-      [gemsUnit, "ca-app-pub-0000000000000000/1234567891"],
-      ["1234567890", coinsUnit],
+      [gemsUnit, gemsUnit, trialRefreshUnit],
+      [gemsUnit, coinsUnit, gemsUnit],
+      ["1234567890", coinsUnit, trialRefreshUnit],
     ]
   ) {
-    expectThrow(() => configuredRewardProducts(invalid[0], invalid[1]));
+    expectThrow(() =>
+      configuredRewardProducts(invalid[0], invalid[1], invalid[2])
+    );
   }
 });
 
 Deno.test("health exposes only the public deployment contract", async () => {
-  const response = rewardedAdHealth("a".repeat(40), gemsUnit, coinsUnit);
+  const response = rewardedAdHealth(
+    "a".repeat(40),
+    gemsUnit,
+    coinsUnit,
+    trialRefreshUnit,
+  );
   assert(response.status === 200);
   assert(response.headers.get("cache-control") === "no-store");
   equal(await response.json(), {
@@ -194,6 +211,7 @@ Deno.test("health exposes only the public deployment contract", async () => {
     sourceRevision: "a".repeat(40),
     gemsAdUnitId: gemsUnit,
     coinsAdUnitId: coinsUnit,
+    trialRefreshAdUnitId: trialRefreshUnit,
   });
 });
 
@@ -283,6 +301,35 @@ Deno.test("the signed coins setup probe also returns 200 without persistence", a
         ? "150"
         : name === "reward_item"
         ? "coins"
+        : value,
+    ]),
+    ["user_id", setupProbeUserId],
+  ];
+  const reply = await handleSsv(await signedRequest(fixture, pairs), deps);
+
+  assert(reply.status === 200);
+  assert(await reply.text() === "setup ok");
+  assert(records.length === 0);
+});
+
+Deno.test("the signed Trial refresh setup probe returns 200 without persistence", async () => {
+  const fixture = await signingFixture();
+  const { deps, records } = setup(fixture.publicKey, {
+    record: () => {
+      throw new Error("setup probe must not reach persistence");
+    },
+  });
+  const pairs: Pair[] = [
+    ...standardPairs().map(([name, value]): Pair => [
+      name,
+      name === "ad_unit"
+        ? admobSetupProbeAdUnit
+        : name === "custom_data"
+        ? setupProbeCustomData
+        : name === "reward_amount"
+        ? "1"
+        : name === "reward_item"
+        ? "trial_refresh"
         : value,
     ]),
     ["user_id", setupProbeUserId],
