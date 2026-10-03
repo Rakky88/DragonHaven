@@ -1,6 +1,6 @@
 # DragonHaven audit
 
-## v0.06.16 compact dragon controls and Trial continuity prepared - 3 October 2026
+## v0.06.16 published - 3 October 2026
 
 My Dragons uses the shorter `Type` label for dragon-family ordering. Its title,
 sort control, filter control and grid/list switch now use one non-wrapping row;
@@ -23,6 +23,21 @@ domain; the healthy v0.06.15 production ruleset remains compatible.
 Flutter analysis is clean and the complete suite passes with 1,343 tests and
 one intentional opt-in skip. The living reference-document guards pass after
 their source fingerprints were refreshed.
+
+The mandatory production preflight found all 104 migrations, zero database
+lint errors, and HTTP 200 responses from Auth health, Auth settings and the
+DragonHaven application service. No server deployment was required for this
+client-only correction. Production remains enabled on ruleset revision 8 with
+SHA-256 `2a578b477c30ce537b36e1a6bd9cdbc4eed7288dd94a7d98651a5c56130fb3e7`
+and minimum client build 10105.
+
+Release `v0.06.16` was published from exact candidate commit
+`58d1381c2b33adc7c7e77eea658056c189aaedb4`. Its signed
+`nl.dragonhaven.app` APK is 585,819,171 bytes with SHA-256
+`65922841432f258d0e9b9d1c1add4b5bd10c2fe4f19b5af357a2ba696c25c10f`.
+GitHub reports the same digest and size; the release is neither draft nor
+prerelease, is the repository's latest release, and the permanent latest asset
+URL returns HTTP 200 with the same content length.
 
 ## v0.06.15 published - 3 October 2026
 
