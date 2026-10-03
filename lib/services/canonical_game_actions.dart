@@ -11,6 +11,7 @@ import '../models/egg_altar.dart';
 import '../models/profile_portrait.dart';
 import '../models/pet.dart';
 import '../models/supporter_pack.dart';
+import '../models/trial.dart';
 import 'canonical_game_session.dart';
 import 'canonical_game_snapshot.dart';
 
@@ -268,6 +269,27 @@ class CanonicalGameActions {
             : result['amount'] != 150)) {
       throw const CanonicalGameException('game_result_invalid');
     }
+  }
+
+  Future<TrialOffer> refreshTrialWithAd(String claimId, String offerId) async {
+    final result = await execute('refresh_trial_with_ad', {
+      'claimId': claimId,
+      'offerId': offerId,
+    });
+    if (result is! Map ||
+        result.length != 4 ||
+        result['accepted'] != true ||
+        result['claimId'] != claimId ||
+        result['replacedOfferId'] != offerId ||
+        result['offer'] is! Map) {
+      throw const CanonicalGameException('game_result_invalid');
+    }
+    final offer =
+        TrialOffer.fromJson(Map<String, dynamic>.from(result['offer'] as Map));
+    if (offer.id == result['replacedOfferId']) {
+      throw const CanonicalGameException('game_result_invalid');
+    }
+    return offer;
   }
 
   Future<void> _socialClaim(

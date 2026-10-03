@@ -1652,7 +1652,7 @@ class _RewardedChestPreview extends StatelessWidget {
     final s = AppStrings.of(context);
     final gems = currency == ItemCurrency.gems;
     final rewardCurrency =
-        gems ? RewardedAdCurrency.gems : RewardedAdCurrency.coins;
+        gems ? RewardedAdPlacement.gems : RewardedAdPlacement.coins;
     final ads = context.watch<CanonicalRewardedAds?>();
     final status = ads?.status;
     final offer = status?.offers[rewardCurrency];
@@ -1744,7 +1744,7 @@ class _RewardedChestPreview extends StatelessWidget {
   }
 
   Future<void> _watch(BuildContext context, CanonicalRewardedAds ads,
-      RewardedAdCurrency currency) async {
+      RewardedAdPlacement currency) async {
     final s = AppStrings.of(context);
     final navigator = Navigator.of(context, rootNavigator: true);
     final loading = DialogRoute<void>(

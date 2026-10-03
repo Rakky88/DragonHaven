@@ -10,6 +10,9 @@ param(
     [string]$CoinsAdUnitId,
 
     [Parameter(Mandatory = $true)]
+    [string]$TrialRefreshAdUnitId,
+
+    [Parameter(Mandatory = $true)]
     [string]$PublisherId,
 
     [string]$SsvSourceRevision = '',
@@ -30,6 +33,7 @@ $setupCustomDataPattern = '^[0-9a-f]{64}$'
 $AndroidAppId = $AndroidAppId.Trim()
 $GemsAdUnitId = $GemsAdUnitId.Trim()
 $CoinsAdUnitId = $CoinsAdUnitId.Trim()
+$TrialRefreshAdUnitId = $TrialRefreshAdUnitId.Trim()
 $PublisherId = $PublisherId.Trim()
 $SsvSourceRevision = $SsvSourceRevision.Trim().ToLowerInvariant()
 $SsvSetupCustomData = $SsvSetupCustomData.Trim().ToLowerInvariant()
@@ -37,6 +41,7 @@ $SsvSetupCustomData = $SsvSetupCustomData.Trim().ToLowerInvariant()
 $appMatch = [regex]::Match($AndroidAppId, $appPattern)
 $gemsMatch = [regex]::Match($GemsAdUnitId, $unitPattern)
 $coinsMatch = [regex]::Match($CoinsAdUnitId, $unitPattern)
+$trialRefreshMatch = [regex]::Match($TrialRefreshAdUnitId, $unitPattern)
 $publisherMatch = [regex]::Match($PublisherId, $publisherPattern)
 
 if (-not $appMatch.Success) {
@@ -48,11 +53,15 @@ if (-not $gemsMatch.Success) {
 if (-not $coinsMatch.Success) {
     throw 'CoinsAdUnitId moet het formaat ca-app-pub-0000000000000000/0000000000 hebben.'
 }
+if (-not $trialRefreshMatch.Success) {
+    throw 'TrialRefreshAdUnitId moet het formaat ca-app-pub-0000000000000000/0000000000 hebben.'
+}
 if (-not $publisherMatch.Success) {
     throw 'PublisherId moet het formaat pub-0000000000000000 hebben.'
 }
-if ($GemsAdUnitId -eq $CoinsAdUnitId) {
-    throw 'Free gems en Free coins moeten twee verschillende rewarded-ad-unit-ID''s gebruiken.'
+if (@(@($GemsAdUnitId, $CoinsAdUnitId, $TrialRefreshAdUnitId) |
+        Select-Object -Unique).Count -ne 3) {
+    throw 'Free gems, Free coins en Refresh Trial moeten verschillende rewarded-ad-unit-ID''s gebruiken.'
 }
 
 $publisherNumber = $publisherMatch.Groups[1].Value
@@ -60,6 +69,7 @@ $idPublisherNumbers = @(
     $appMatch.Groups[1].Value,
     $gemsMatch.Groups[1].Value,
     $coinsMatch.Groups[1].Value
+    $trialRefreshMatch.Groups[1].Value
 )
 if (@($idPublisherNumbers | Where-Object { $_ -ne $publisherNumber }).Count -ne 0) {
     throw 'De app-ID, beide ad-unit-ID''s en publisher-ID horen niet bij hetzelfde AdMob-account.'
@@ -112,6 +122,7 @@ $defines = [ordered]@{
     DRAGONHAVEN_ADMOB_ANDROID_APP_ID = $AndroidAppId
     DRAGONHAVEN_ADMOB_REWARDED_GEMS_ID = $GemsAdUnitId
     DRAGONHAVEN_ADMOB_REWARDED_COINS_ID = $CoinsAdUnitId
+    DRAGONHAVEN_ADMOB_REWARDED_TRIAL_REFRESH_ID = $TrialRefreshAdUnitId
 }
 [IO.File]::WriteAllText(
     $definesPath,
@@ -135,6 +146,7 @@ $appAdsLine = $appAdsTemplate.Replace('pub-XXXXXXXXXXXXXXXX', $PublisherId)
 $ssvSecrets = @(
     "ADMOB_REWARDED_GEMS_AD_UNIT_ID=$GemsAdUnitId"
     "ADMOB_REWARDED_COINS_AD_UNIT_ID=$CoinsAdUnitId"
+    "ADMOB_REWARDED_TRIAL_REFRESH_AD_UNIT_ID=$TrialRefreshAdUnitId"
     "REWARDED_AD_SSV_SETUP_CUSTOM_DATA=$SsvSetupCustomData"
     "REWARDED_AD_SSV_SOURCE_REVISION=$SsvSourceRevision"
 ) -join [Environment]::NewLine
@@ -177,6 +189,7 @@ Write-Host "gh variable set DRAGONHAVEN_REWARDED_ADS_ENABLED --body 'false'"
 Write-Host "gh variable set DRAGONHAVEN_ADMOB_ANDROID_APP_ID --body '$AndroidAppId'"
 Write-Host "gh variable set DRAGONHAVEN_ADMOB_REWARDED_GEMS_ID --body '$GemsAdUnitId'"
 Write-Host "gh variable set DRAGONHAVEN_ADMOB_REWARDED_COINS_ID --body '$CoinsAdUnitId'"
+Write-Host "gh variable set DRAGONHAVEN_ADMOB_REWARDED_TRIAL_REFRESH_ID --body '$TrialRefreshAdUnitId'"
 Write-Host "gh variable set DRAGONHAVEN_ADMOB_PUBLISHER_ID --body '$PublisherId'"
 Write-Host ''
 Write-Host 'Configureer daarna de SSV-functie voor exact deze commit:'
@@ -185,7 +198,7 @@ Write-Host ('supabase secrets set --project-ref ' + $projectRef +
 Write-Host ("supabase functions deploy rewarded-ad-ssv --project-ref $projectRef " +
     '--no-verify-jwt --use-api')
 Write-Host ''
-Write-Host 'SSV-callback voor beide rewarded-ad-units:'
+Write-Host 'SSV-callback voor alle rewarded-ad-units:'
 Write-Host "https://$projectRef.supabase.co/functions/v1/rewarded-ad-ssv"
 Write-Host ''
 Write-Host 'Publiceer .tools/app-ads.txt exact op /app-ads.txt van de ontwikkelaarswebsite.'

@@ -7,6 +7,8 @@ const _repairMigrationPath =
     'supabase/migrations/202609230095_rewarded_ads_privacy_notice.sql';
 const _transactionRegexRepairPath =
     'supabase/migrations/202609270100_rewarded_ad_transaction_regex.sql';
+const _trialRefreshMigrationPath =
+    'supabase/migrations/202610030106_rewarded_trial_refresh.sql';
 
 String _compact(String value) => value.replaceAll(RegExp(r'\s+'), ' ').trim();
 
@@ -24,6 +26,8 @@ void main() {
   late String repairSql;
   late String repairCompact;
   late String transactionRegexRepairCompact;
+  late String trialRefreshSql;
+  late String trialRefreshCompact;
 
   setUpAll(() {
     sql = File(_migrationPath).readAsStringSync();
@@ -32,6 +36,8 @@ void main() {
     repairCompact = _compact(repairSql);
     transactionRegexRepairCompact =
         _compact(File(_transactionRegexRepairPath).readAsStringSync());
+    trialRefreshSql = File(_trialRefreshMigrationPath).readAsStringSync();
+    trialRefreshCompact = _compact(trialRefreshSql);
   });
 
   test('reward issuance is dormant with fixed product limits and rewards', () {
@@ -239,5 +245,162 @@ void main() {
         compact,
         contains(
             'public.commit_canonical_game_command(uuid,uuid,uuid,jsonb,jsonb) to service_role'));
+  });
+
+  test('Trial refresh issuance binds one exact available unstarted offer', () {
+    expect(trialRefreshCompact,
+        contains("conrelid='private.rewarded_ad_claims'::regclass"));
+    expect(
+        trialRefreshCompact,
+        contains(
+            "if removed<>4 then raise exception 'rewarded_ad_schema_invalid'"));
+    final issue = _between(
+      trialRefreshSql,
+      'create function public.issue_my_trial_refresh_ad_claim(',
+      'create or replace function public.record_rewarded_ad_verification(',
+    );
+    final normalized = _compact(issue);
+    expect(
+      normalized,
+      contains(
+        "where offer->>'id'=p_offer_id and offer->>'startedAt' is null",
+      ),
+    );
+    expect(
+      normalized,
+      contains(
+        "insert into private.rewarded_ad_claims(owner_id,currency,reward_day,daily_slot, token_sha256,issued_at,expires_at,target_offer_id)",
+      ),
+    );
+    expect(
+      normalized,
+      contains(
+        "values(keeper,'trial_refresh',today,slot_number, encode(extensions.digest(convert_to(token_value,'utf8'),'sha256'),'hex'), at_time,least(at_time+runtime.claim_lifetime,midnight),p_offer_id)",
+      ),
+    );
+    expect(
+      normalized,
+      contains(
+        "private.consume_economy_rate_limit( keeper,'rewarded_ad.trial_refresh_issue',120,86400)",
+      ),
+    );
+  });
+
+  test('Trial refresh verification has a fixed signed reward contract', () {
+    final callback = _between(
+      trialRefreshSql,
+      'create or replace function public.record_rewarded_ad_verification(',
+      'alter table private.canonical_game_intents',
+    );
+    final normalized = _compact(callback);
+    expect(
+      normalized,
+      contains("p_currency not in ('gems','coins','trial_refresh')"),
+    );
+    expect(normalized, contains('p_reward_item is distinct from p_currency'));
+    expect(
+      normalized,
+      contains(
+        "select case p_currency when 'gems' then gems_reward when 'coins' then coins_reward else 1 end into strict expected_amount",
+      ),
+    );
+    expect(
+      trialRefreshCompact,
+      contains(
+        "(currency='trial_refresh' and reward_amount=1)",
+      ),
+    );
+  });
+
+  test('Trial refresh context is owner, claim and offer bound', () {
+    final context = _between(
+      trialRefreshSql,
+      'create function private.canonical_trial_refresh_ad_context(',
+      'alter function public.begin_revisioned_game_command(',
+    );
+    final normalized = _compact(context);
+    expect(
+      normalized,
+      contains(
+        "p_payload is distinct from jsonb_build_object( 'claimId',p_payload->>'claimId','offerId',p_payload->>'offerId')",
+      ),
+    );
+    expect(
+      normalized,
+      contains(
+        "where id=(p_payload->>'claimId')::uuid and owner_id=p_owner for update",
+      ),
+    );
+    expect(
+      normalized,
+      contains(
+        "claim.status<>'verified' or claim.currency<>'trial_refresh' or claim.target_offer_id<>p_payload->>'offerId'",
+      ),
+    );
+    expect(
+      normalized,
+      contains(
+        "where offer->>'id'=claim.target_offer_id and offer->>'startedAt' is null",
+      ),
+    );
+    expect(
+      normalized,
+      contains(
+        "'offerId',claim.target_offer_id,'currency','trial_refresh','amount',1",
+      ),
+    );
+  });
+
+  test('Trial replacement and one-use claim commit atomically', () {
+    final commit = _between(
+      trialRefreshSql,
+      'create function public.commit_canonical_game_command(',
+      'revoke all on function public.issue_my_trial_refresh_ad_claim(',
+    );
+    final normalized = _compact(commit);
+    final stateCommit = commit.indexOf(
+      'receipt:=public.commit_canonical_game_command_v105(',
+    );
+    final claimCommit = commit.indexOf(
+      "update private.rewarded_ad_claims set status='claimed'",
+    );
+    final rowCountCheck = commit.indexOf(
+      "if changed<>1 then raise exception 'rewarded_ad_state_changed'",
+    );
+    expect(stateCommit, greaterThanOrEqualTo(0));
+    expect(claimCommit, greaterThan(stateCommit));
+    expect(rowCountCheck, greaterThan(claimCommit));
+    expect(
+      normalized,
+      contains(
+        "p_result->>'replacedOfferId'<>current_context->>'offerId'",
+      ),
+    );
+    expect(
+      normalized,
+      contains("p_result->'offer'->>'id'=current_context->>'offerId'"),
+    );
+  });
+
+  test('only the app can issue and only the game service can settle refreshes',
+      () {
+    expect(
+      trialRefreshCompact,
+      contains(
+        'revoke all on function public.issue_my_trial_refresh_ad_claim(text) from public,anon',
+      ),
+    );
+    expect(
+      trialRefreshCompact,
+      contains(
+        'grant execute on function public.issue_my_trial_refresh_ad_claim(text) to authenticated',
+      ),
+    );
+    expect(
+      trialRefreshCompact,
+      contains(
+        'public.begin_revisioned_game_command(uuid,uuid,text,jsonb,integer,text,bigint), public.commit_canonical_game_command(uuid,uuid,uuid,jsonb,jsonb) to service_role',
+      ),
+    );
   });
 }

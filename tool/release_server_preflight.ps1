@@ -7,6 +7,7 @@ param(
     [switch]$RequireRewardedAds,
     [string]$ExpectedRewardedGemsAdUnitId = '',
     [string]$ExpectedRewardedCoinsAdUnitId = '',
+    [string]$ExpectedRewardedTrialRefreshAdUnitId = '',
     [string]$ExpectedRewardedSsvSourceRevision = ''
 )
 
@@ -48,14 +49,22 @@ if ($RequireRewardedAds) {
         $ExpectedRewardedCoinsAdUnitId.Trim(),
         $rewardedUnitPattern
     )
-    if (-not $gemsUnitMatch.Success -or -not $coinsUnitMatch.Success) {
-        throw 'Rewarded-ad preflight requires two valid production ad-unit IDs.'
+    $trialRefreshUnitMatch = [regex]::Match(
+        $ExpectedRewardedTrialRefreshAdUnitId.Trim(),
+        $rewardedUnitPattern
+    )
+    if (-not $gemsUnitMatch.Success -or -not $coinsUnitMatch.Success -or
+        -not $trialRefreshUnitMatch.Success) {
+        throw 'Rewarded-ad preflight requires three valid production ad-unit IDs.'
     }
-    if ($ExpectedRewardedGemsAdUnitId.Trim() -eq
-        $ExpectedRewardedCoinsAdUnitId.Trim()) {
-        throw 'Rewarded-ad preflight requires two distinct ad-unit IDs.'
+    if (@(@($ExpectedRewardedGemsAdUnitId.Trim(),
+            $ExpectedRewardedCoinsAdUnitId.Trim(),
+            $ExpectedRewardedTrialRefreshAdUnitId.Trim()) |
+            Select-Object -Unique).Count -ne 3) {
+        throw 'Rewarded-ad preflight requires three distinct ad-unit IDs.'
     }
-    if ($gemsUnitMatch.Groups[1].Value -ne $coinsUnitMatch.Groups[1].Value) {
+    if ($gemsUnitMatch.Groups[1].Value -ne $coinsUnitMatch.Groups[1].Value -or
+        $gemsUnitMatch.Groups[1].Value -ne $trialRefreshUnitMatch.Groups[1].Value) {
         throw 'Rewarded-ad preflight requires ad units from one publisher account.'
     }
     if ($gemsUnitMatch.Groups[1].Value -eq '3940256099942544') {
@@ -226,7 +235,9 @@ try {
             [string]$rewarded.gemsAdUnitId -cne
                 $ExpectedRewardedGemsAdUnitId.Trim() -or
             [string]$rewarded.coinsAdUnitId -cne
-                $ExpectedRewardedCoinsAdUnitId.Trim()) {
+                $ExpectedRewardedCoinsAdUnitId.Trim() -or
+            [string]$rewarded.trialRefreshAdUnitId -cne
+                $ExpectedRewardedTrialRefreshAdUnitId.Trim()) {
             throw 'The deployed rewarded-ad-ssv source or ad-unit configuration differs from this release.'
         }
         $rewardedHealthStatus = $rewardedResponse.Status

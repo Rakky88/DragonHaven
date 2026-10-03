@@ -306,7 +306,7 @@ Ruleset: v0.05.29 published and verified; production schema 65, economy activati
 
 Source baseline: v0.05.16, with subsequent changes and dormant server rules below
 
-<!-- reference-source-fingerprint: 2976d9b4d126f242 -->
+<!-- reference-source-fingerprint: a69b7d6e6eae6d00 -->
 
 Calendar hardening after v0.05.29: canonical commands normalize the database
 instant to UTC. Legacy offline play retains its local day. Long-adventure
@@ -888,6 +888,14 @@ It no longer forces event-only offers. Existing offers are preserved. A
 persisted occurrence key prevents repeating this activation refill. Duplicate
 kinds may occupy multiple slots. Personal previews use the same rules with a
 separate occurrence.
+
+The rewarded **Swap Trial** action binds the watched ad to one exact unstarted
+offer. After Google verifies the reward, that offer is replaced atomically.
+The replacement repeats the same two-stage draw above until it differs from
+the cancelled Trial, so the resulting distribution is the normal eligible
+rotation conditioned on excluding that one kind. Unlock and active-event rules
+are evaluated again at the swap. A retry cannot replace another offer or grant
+another draw because the verified ad claim is single-use.
 
 ### 4.2 Trial reward by grade
 

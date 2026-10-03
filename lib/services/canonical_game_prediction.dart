@@ -63,6 +63,7 @@ CanonicalGameSnapshot? predictGameDisplay(CanonicalGameSnapshot confirmed,
     switch (action) {
       case 'refresh':
       case 'claim_rewarded_ad':
+      case 'refresh_trial_with_ad':
         // Time-based refills are still decided and committed by the server.
         // Keeping the last confirmed public view as a preview lets the
         // scheduled command use the durable optimistic queue without briefly

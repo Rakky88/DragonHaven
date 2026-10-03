@@ -235,6 +235,37 @@ abstract final class GameCommandEngine {
             'currency': currency,
             'amount': amount,
           };
+        case 'refresh_trial_with_ad':
+          final claimId = args.text('claimId');
+          final offerId = args.text('offerId');
+          final context = verifiedRewardedAdClaim;
+          if (!RegExp(r'^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$')
+                  .hasMatch(claimId) ||
+              context == null ||
+              context.length != 9 ||
+              context['version'] != 1 ||
+              context['ownerId'] != keeperId ||
+              context['action'] != action ||
+              context['claimId'] != claimId ||
+              context['offerId'] != offerId ||
+              context['currency'] != 'trial_refresh' ||
+              context['amount'] != 1 ||
+              context['transactionId'] is! String ||
+              context['fingerprint'] is! String ||
+              !RegExp(r'^[0-9a-f]{64}$')
+                  .hasMatch(context['fingerprint'] as String)) {
+            throw const GameCommandException('rewarded_ad_claim_unavailable');
+          }
+          final replacement = await game.refreshTrial(offerId);
+          if (replacement == null) {
+            throw const GameCommandException('game_action_unavailable');
+          }
+          result = {
+            'accepted': true,
+            'claimId': claimId,
+            'replacedOfferId': offerId,
+            'offer': replacement.toJson(),
+          };
         case 'claim_event_reward':
           result = await game.claimEventReward(args.text('eventKey'));
         case 'refresh':

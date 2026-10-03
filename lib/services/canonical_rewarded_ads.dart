@@ -43,8 +43,8 @@ final class CanonicalRewardedAds extends ChangeNotifier {
   final RewardedAdsConfig config;
   final String? _owner;
   final int _epoch;
-  final _busy = <RewardedAdCurrency>{};
-  final _errors = <RewardedAdCurrency, String>{};
+  final _busy = <RewardedAdPlacement>{};
+  final _errors = <RewardedAdPlacement, String>{};
   RewardedAdsStatus? _status;
   RewardedAdsConsentState? _consent;
   bool _initializing = false;
@@ -54,30 +54,32 @@ final class CanonicalRewardedAds extends ChangeNotifier {
   Duration _verificationBackoff = _initialVerificationBackoff;
   Timer? _nextRefresh;
   final _prepared =
-      <RewardedAdCurrency, ({LoadedRewardedAd ad, DateTime at})>{};
-  final _preparing = <RewardedAdCurrency, Future<void>>{};
-  final _earned = <String, RewardedAdCurrency>{};
+      <RewardedAdPlacement, ({LoadedRewardedAd ad, DateTime at})>{};
+  final _preparing = <RewardedAdPlacement, Future<void>>{};
+  final _earned = <String, RewardedAdPlacement>{};
+  final _trialOfferClaims = <String, String>{};
   Future<void> _journalWrites = Future.value();
   Future<void>? _refreshing;
   bool _journalLoaded = false;
 
   File get _journal =>
       File('${session.snapshots.directory.path}/rewarded-earned-$_owner.json');
-  bool preparing(RewardedAdCurrency currency) =>
+  bool preparing(RewardedAdPlacement currency) =>
       _preparing.containsKey(currency);
-  bool ready(RewardedAdCurrency currency) => _prepared.containsKey(currency);
-  bool earnedPending(RewardedAdCurrency currency) =>
+  bool ready(RewardedAdPlacement currency) => _prepared.containsKey(currency);
+  bool earnedPending(RewardedAdPlacement currency) =>
       _earned.containsValue(currency);
 
-  Future<void> prepare(RewardedAdCurrency currency) {
+  Future<void> prepare(RewardedAdPlacement currency) {
     final pending = _preparing[currency];
     if (pending != null) return pending;
     if (!_current || !canRequestAds || _busy.isNotEmpty) return Future.value();
     final offer = _status?.offers[currency];
     if (_status?.enabled != true ||
-        offer == null ||
-        offer.remaining <= 0 ||
-        offer.activeClaim != null) {
+        (currency != RewardedAdPlacement.trialRefresh &&
+            (offer == null ||
+                offer.remaining <= 0 ||
+                offer.activeClaim != null))) {
       return Future.value();
     }
     final cached = _prepared[currency];
@@ -93,7 +95,7 @@ final class CanonicalRewardedAds extends ChangeNotifier {
           _prepared.remove(currency);
           await cached.ad.dispose();
         }
-        final ad = await platform.load(config.adUnitId(currency.name));
+        final ad = await platform.load(config.adUnitId(currency.wireName));
         if (!_current || !canRequestAds) {
           await ad.dispose();
         } else {
@@ -113,7 +115,7 @@ final class CanonicalRewardedAds extends ChangeNotifier {
 
   void _warmAds() {
     if (!_current || !canRequestAds || _busy.isNotEmpty) return;
-    for (final currency in RewardedAdCurrency.values) {
+    for (final currency in rewardedCurrencyPlacements) {
       unawaited(prepare(currency));
     }
   }
@@ -133,27 +135,49 @@ final class CanonicalRewardedAds extends ChangeNotifier {
       final claims = value['claims'] as Map;
       if (claims.length > 20) return;
       for (final entry in claims.entries) {
+        final raw = entry.value;
+        final placementName = raw is String
+            ? raw
+            : raw is Map
+                ? raw['placement']
+                : null;
         if (entry.key is String &&
             RegExp(r'^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$')
                 .hasMatch(entry.key as String) &&
-            RewardedAdCurrency.values.any((c) => c.name == entry.value)) {
-          _earned[entry.key as String] =
-              RewardedAdCurrency.values.byName(entry.value as String);
+            placementName is String &&
+            RewardedAdPlacement.values.any((c) => c.name == placementName)) {
+          final placement = RewardedAdPlacement.values.byName(placementName);
+          _earned[entry.key as String] = placement;
+          if (placement == RewardedAdPlacement.trialRefresh &&
+              raw is Map &&
+              raw['offerId'] is String &&
+              (raw['offerId'] as String).isNotEmpty) {
+            _trialOfferClaims[entry.key as String] = raw['offerId'] as String;
+          }
         }
       }
     } on Object {/* A local display journal cannot authorize currency. */}
   }
 
-  Future<void> _saveEarned() {
+  Future<void> _saveEarned({bool requireWrite = false}) {
     final contents = jsonEncode({
       'owner': _owner,
-      'claims': {for (final e in _earned.entries) e.key: e.value.name}
+      'claims': {
+        for (final e in _earned.entries)
+          e.key: e.value == RewardedAdPlacement.trialRefresh
+              ? {
+                  'placement': e.value.name,
+                  'offerId': _trialOfferClaims[e.key],
+                }
+              : e.value.name
+      }
     });
-    _journalWrites = _journalWrites.then((_) async {
+    final write = _journalWrites.then((_) async {
       await _journal.parent.create(recursive: true);
       await _journal.writeAsString(contents, flush: true);
-    }).catchError((Object _) {});
-    return _journalWrites;
+    });
+    _journalWrites = write.catchError((Object _) {});
+    return requireWrite ? write : _journalWrites;
   }
 
   Future<void> _reconcileEarned() async {
@@ -162,7 +186,8 @@ final class CanonicalRewardedAds extends ChangeNotifier {
       _requireCurrent();
       if (state.terminal) {
         if (state.status == 'claimed' &&
-            !session.hasConfirmedRewardedAd(entry.key)) {
+            (entry.value == RewardedAdPlacement.trialRefresh ||
+                !session.hasConfirmedRewardedAd(entry.key))) {
           final refreshed = await session.refreshWalletAfterReward();
           _requireCurrent();
           // This best-effort read can be skipped while another command or
@@ -172,12 +197,17 @@ final class CanonicalRewardedAds extends ChangeNotifier {
         }
         _requireCurrent();
         _earned.remove(entry.key);
-        session.settleRewardedAdPreview(entry.key);
+        _trialOfferClaims.remove(entry.key);
+        if (entry.value != RewardedAdPlacement.trialRefresh) {
+          session.settleRewardedAdPreview(entry.key);
+        }
         if (state.status != 'claimed') {
           _errors[entry.value] = 'rewarded_ad_verification_failed';
         }
         await _saveEarned();
-      } else {
+      } else if (state.verified) {
+        await _claimVerified(entry.value, entry.key);
+      } else if (entry.value != RewardedAdPlacement.trialRefresh) {
         final committed = session.hasConfirmedRewardedAd(entry.key);
         if (!committed) session.previewRewardedAd(entry.key, entry.value.name);
       }
@@ -189,8 +219,8 @@ final class CanonicalRewardedAds extends ChangeNotifier {
   bool get privacyOptionsRequired =>
       config.enabled && (_consent?.privacyOptionsRequired ?? false);
   bool get canRequestAds => config.enabled && _consent?.canRequestAds == true;
-  bool busy(RewardedAdCurrency currency) => _busy.contains(currency);
-  String? error(RewardedAdCurrency currency) => _errors[currency];
+  bool busy(RewardedAdPlacement currency) => _busy.contains(currency);
+  String? error(RewardedAdPlacement currency) => _errors[currency];
   bool get current => _current;
 
   bool get _current =>
@@ -318,8 +348,25 @@ final class CanonicalRewardedAds extends ChangeNotifier {
     _nextRefresh = Timer(delay, _runScheduledRefresh);
   }
 
-  Future<RewardedAdWatchOutcome> watch(RewardedAdCurrency currency,
+  Future<RewardedAdWatchOutcome> watch(RewardedAdPlacement currency,
       {Future<void> Function()? beforeShow}) async {
+    if (currency == RewardedAdPlacement.trialRefresh) {
+      throw ArgumentError.value(currency, 'currency');
+    }
+    return _watch(currency, beforeShow: beforeShow);
+  }
+
+  Future<RewardedAdWatchOutcome> watchTrialRefresh(String offerId,
+      {Future<void> Function()? beforeShow}) {
+    if (offerId.trim().isEmpty) {
+      throw ArgumentError.value(offerId, 'offerId');
+    }
+    return _watch(RewardedAdPlacement.trialRefresh,
+        trialOfferId: offerId, beforeShow: beforeShow);
+  }
+
+  Future<RewardedAdWatchOutcome> _watch(RewardedAdPlacement currency,
+      {String? trialOfferId, Future<void> Function()? beforeShow}) async {
     _requireCurrent();
     if (!config.enabled ||
         _consent?.canRequestAds != true ||
@@ -339,11 +386,13 @@ final class CanonicalRewardedAds extends ChangeNotifier {
     var handedToPlatform = false;
     try {
       if (_status == null) await refresh(recoverVerified: false);
-      final offer = _status!.offer(currency);
-      if (!_status!.enabled || offer.remaining <= 0) {
+      final offer = _status!.offers[currency];
+      if (!_status!.enabled ||
+          (currency != RewardedAdPlacement.trialRefresh &&
+              (offer == null || offer.remaining <= 0))) {
         throw StateError('rewarded_ad_daily_limit');
       }
-      final active = offer.activeClaim;
+      final active = offer?.activeClaim;
       if (active != null) {
         if (active.verified) {
           final claimed =
@@ -359,10 +408,25 @@ final class CanonicalRewardedAds extends ChangeNotifier {
       loaded = _prepared.remove(currency)?.ad;
       if (loaded == null) throw StateError('rewarded_ad_load_unavailable');
       _requireCurrent();
-      claim =
-          await repository.issue(currency).timeout(const Duration(seconds: 15));
+      claim = await repository
+          .issue(currency, trialOfferId: trialOfferId)
+          .timeout(const Duration(seconds: 15));
       _requireCurrent();
       _verificationBackoff = _initialVerificationBackoff;
+      if (currency == RewardedAdPlacement.trialRefresh) {
+        // Persist the one-use claim before Android leaves the foreground. A
+        // process death after the video can then still finish the exact swap.
+        _earned[claim.id] = currency;
+        _trialOfferClaims[claim.id] = trialOfferId!;
+        try {
+          await _saveEarned(requireWrite: true);
+        } on Object {
+          _earned.remove(claim.id);
+          _trialOfferClaims.remove(claim.id);
+          unawaited(_cancelFailedShow(claim.id));
+          rethrow;
+        }
+      }
       handedToPlatform = true;
       late final bool earned;
       try {
@@ -386,6 +450,12 @@ final class CanonicalRewardedAds extends ChangeNotifier {
       _requireCurrent();
 
       if (earned) {
+        if (currency == RewardedAdPlacement.trialRefresh) {
+          final claimed = await _waitForTrialRefresh(claim.id);
+          return claimed
+              ? RewardedAdWatchOutcome.rewarded
+              : RewardedAdWatchOutcome.pendingVerification;
+        }
         if (session.hasConfirmedRewardedAd(claim.id)) {
           return RewardedAdWatchOutcome.rewarded;
         }
@@ -423,6 +493,9 @@ final class CanonicalRewardedAds extends ChangeNotifier {
     try {
       await repository.cancel(claimId);
       _requireCurrent();
+      _earned.remove(claimId);
+      _trialOfferClaims.remove(claimId);
+      await _saveEarned();
       await refresh(recoverVerified: false);
     } on Object {
       if (_current) _scheduleRefreshRetry();
@@ -437,7 +510,7 @@ final class CanonicalRewardedAds extends ChangeNotifier {
     }
   }
 
-  Future<bool> _claimVerified(RewardedAdCurrency currency, String claimId,
+  Future<bool> _claimVerified(RewardedAdPlacement currency, String claimId,
       {bool alreadyBusy = false}) async {
     // Full-screen ads background Android. The lifecycle owner first refreshes
     // the canonical session; only then may this automatic economic command run.
@@ -447,11 +520,22 @@ final class CanonicalRewardedAds extends ChangeNotifier {
       notifyListeners();
     }
     try {
-      await CanonicalGameActions(session).claimRewardedAd(claimId);
+      if (currency == RewardedAdPlacement.trialRefresh) {
+        final offerId = _trialOfferClaims[claimId];
+        if (offerId == null) return false;
+        await CanonicalGameActions(session)
+            .refreshTrialWithAd(claimId, offerId);
+      } else {
+        await CanonicalGameActions(session).claimRewardedAd(claimId);
+      }
       _requireCurrent();
       _earned.remove(claimId);
-      session.settleRewardedAdPreview(claimId);
+      _trialOfferClaims.remove(claimId);
+      if (currency != RewardedAdPlacement.trialRefresh) {
+        session.settleRewardedAdPreview(claimId);
+      }
       await _saveEarned();
+      if (currency == RewardedAdPlacement.trialRefresh) return true;
       RewardedAdsStatus? next;
       try {
         next = await repository.status();
@@ -481,6 +565,30 @@ final class CanonicalRewardedAds extends ChangeNotifier {
         notifyListeners();
       }
     }
+  }
+
+  Future<bool> _waitForTrialRefresh(String claimId) async {
+    for (var attempt = 0; attempt < 12; attempt++) {
+      if (attempt > 0) {
+        await Future<void>.delayed(const Duration(milliseconds: 500));
+      }
+      _requireCurrent();
+      final state = await repository.claimStatus(claimId);
+      _requireCurrent();
+      if (state.verified) {
+        return _claimVerified(RewardedAdPlacement.trialRefresh, claimId,
+            alreadyBusy: true);
+      }
+      if (state.terminal) {
+        _earned.remove(claimId);
+        _trialOfferClaims.remove(claimId);
+        await _saveEarned();
+        return state.status == 'claimed';
+      }
+    }
+    _nextRefresh?.cancel();
+    _nextRefresh = Timer(Duration.zero, _runScheduledRefresh);
+    return false;
   }
 
   Future<void> showPrivacyOptions() async {
@@ -554,7 +662,9 @@ final class CanonicalRewardedAds extends ChangeNotifier {
     }
     _prepared.clear();
     for (final claimId in _earned.keys) {
-      session.settleRewardedAdPreview(claimId);
+      if (_earned[claimId] != RewardedAdPlacement.trialRefresh) {
+        session.settleRewardedAdPreview(claimId);
+      }
     }
     super.dispose();
   }

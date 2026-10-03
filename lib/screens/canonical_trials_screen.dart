@@ -11,16 +11,19 @@ import 'package:provider/provider.dart';
 
 import '../l10n/app_strings.dart';
 import '../models/pet.dart';
+import '../models/rewarded_ad.dart';
 import '../models/trial.dart';
 import '../services/canonical_game_actions.dart';
 import '../services/canonical_game_session.dart';
 import '../services/canonical_game_snapshot.dart';
 import '../services/canonical_trial_run_source.dart';
+import '../services/canonical_rewarded_ads.dart';
 import '../widgets/canonical_game_controls.dart';
 import '../widgets/draconomicon_shortcut.dart';
 import '../widgets/expertise_score_badge.dart';
 import '../widgets/shop_economy_scope.dart';
 import '../widgets/trial_icon_sprite.dart';
+import '../widgets/ui_bits.dart';
 import 'canonical_adventures_screen.dart';
 import 'canonical_dragons_screen.dart';
 import 'trial_game_screen.dart';
@@ -74,6 +77,12 @@ class _TrialsState extends State<_Trials> {
     final now = _anchor!.add(_elapsed.elapsed);
     final s = AppStrings.of(context);
     final actions = CanonicalGameActions(session);
+    final rewardedAds = context.watch<CanonicalRewardedAds?>();
+    if (rewardedAds != null &&
+        rewardedAds.canRequestAds &&
+        rewardedAds.status?.enabled == true) {
+      unawaited(rewardedAds.prepare(RewardedAdPlacement.trialRefresh));
+    }
     final active = view.trialAttempt;
     final reserved = view.data['trials']['attempt'] != null;
     return ListView(
@@ -227,7 +236,24 @@ class _TrialsState extends State<_Trials> {
                               .execute('dismiss_trial', {'offerId': offer.id});
                         }));
                       }
-                    : null),
+                    : null,
+                onRefresh: session.canAct &&
+                        !reserved &&
+                        rewardedAds?.status?.enabled == true &&
+                        rewardedAds?.canRequestAds == true &&
+                        rewardedAds?.busy(RewardedAdPlacement.trialRefresh) !=
+                            true &&
+                        rewardedAds?.earnedPending(
+                                RewardedAdPlacement.trialRefresh) !=
+                            true
+                    ? () => _watchRefreshAd(context, rewardedAds!, offer)
+                    : null,
+                refreshing: rewardedAds
+                            ?.busy(RewardedAdPlacement.trialRefresh) ==
+                        true ||
+                    rewardedAds
+                            ?.earnedPending(RewardedAdPlacement.trialRefresh) ==
+                        true),
           if (view.trialOffers.isEmpty) const _EmptyTrials(),
         ]);
   }
@@ -401,6 +427,73 @@ class _TrialsState extends State<_Trials> {
                 builder: (_) => TrialGameScreen(
                     offerId: offer.id, dragonId: id, source: source))));
   }
+
+  Future<void> _watchRefreshAd(
+      BuildContext context, CanonicalRewardedAds ads, TrialOffer offer) async {
+    final strings = AppStrings.of(context);
+    final navigator = Navigator.of(context, rootNavigator: true);
+    final loading = DialogRoute<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => PopScope(
+        canPop: false,
+        child: Dialog.fullscreen(
+          child: Center(
+            child: Column(mainAxisSize: MainAxisSize.min, children: [
+              const CircularProgressIndicator(),
+              const SizedBox(height: 20),
+              Text(strings.pick('Preparing ad…', 'Advertentie voorbereiden…')),
+            ]),
+          ),
+        ),
+      ),
+    );
+    unawaited(navigator.push(loading));
+    void closeLoading() {
+      if (navigator.mounted && loading.isActive) navigator.removeRoute(loading);
+    }
+
+    try {
+      final outcome = await ads.watchTrialRefresh(
+        offer.id,
+        beforeShow: () async {
+          closeLoading();
+          await loading.completed;
+          await WidgetsBinding.instance.endOfFrame;
+        },
+      );
+      closeLoading();
+      if (!context.mounted || !ads.current) return;
+      switch (outcome) {
+        case RewardedAdWatchOutcome.rewarded:
+          showAppSnackBar(
+              context,
+              strings.pick(
+                  'A new Trial is ready.', 'Er staat een nieuwe proef klaar.'));
+        case RewardedAdWatchOutcome.closedEarly:
+          showAppSnackBar(
+              context,
+              strings.pick('The ad was closed before the Trial was changed.',
+                  'De advertentie werd gesloten voordat de proef werd gewijzigd.'));
+        case RewardedAdWatchOutcome.pendingVerification ||
+              RewardedAdWatchOutcome.rewardPreviewed:
+          showAppSnackBar(
+              context,
+              strings.pick(
+                  'The ad is still being verified. The Trial will change automatically.',
+                  'De advertentie wordt nog gecontroleerd. De proef verandert automatisch.'));
+      }
+    } on Object {
+      closeLoading();
+      if (!context.mounted || !ads.current) return;
+      showAppSnackBar(
+          context,
+          strings.pick('The ad could not be completed. Please try again later.',
+              'De advertentie kon niet worden afgerond. Probeer het later opnieuw.'));
+    } finally {
+      closeLoading();
+    }
+  }
 }
 
 class _EmptyTrials extends StatelessWidget {
@@ -571,9 +664,15 @@ class _TrialStreakCard extends StatelessWidget {
 
 class _TrialOfferCard extends StatelessWidget {
   const _TrialOfferCard(
-      {required this.offer, required this.best, this.onStart, this.onDismiss});
+      {required this.offer,
+      required this.best,
+      required this.refreshing,
+      this.onStart,
+      this.onDismiss,
+      this.onRefresh});
   final int best;
-  final VoidCallback? onStart, onDismiss;
+  final bool refreshing;
+  final VoidCallback? onStart, onDismiss, onRefresh;
 
   final TrialOffer offer;
 
@@ -671,13 +770,6 @@ class _TrialOfferCard extends StatelessWidget {
                     top: 8,
                     child: Column(
                       children: [
-                        IconButton.filledTonal(
-                          key: Key('dismiss-trial-${offer.id}'),
-                          tooltip:
-                              strings.pick('Dismiss Trial', 'Proef negeren'),
-                          onPressed: onDismiss,
-                          icon: const Icon(Icons.close_rounded),
-                        ),
                         if (definition.specialEventId != null)
                           IconButton.filled(
                               key: Key('seasonal-rankings-${offer.id}'),
@@ -754,52 +846,80 @@ class _TrialOfferCard extends StatelessWidget {
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(15, 12, 12, 13),
-              child: Row(
+              child: Column(
                 children: [
-                  TrialIconSprite(kind: offer.kind, size: 40),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          strings.pick(
-                            definition.subtitleEn,
-                            definition.subtitleNl,
-                          ),
-                          style: const TextStyle(
-                            color: AppColors.muted,
-                            fontSize: 11.5,
-                            height: 1.25,
-                          ),
+                  Row(
+                    children: [
+                      TrialIconSprite(kind: offer.kind, size: 40),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              strings.pick(
+                                definition.subtitleEn,
+                                definition.subtitleNl,
+                              ),
+                              style: const TextStyle(
+                                color: AppColors.muted,
+                                fontSize: 11.5,
+                                height: 1.25,
+                              ),
+                            ),
+                            const SizedBox(height: 5),
+                            Text(
+                              best == 0
+                                  ? strings.pick('No account record yet',
+                                      'Nog geen accountrecord')
+                                  : '${strings.pick('Account best', 'Accountrecord')}: $best',
+                              style: TextStyle(
+                                color: AppColors.eventColor(
+                                    context, AppColors.twilight),
+                                fontSize: 11,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(height: 5),
-                        Text(
-                          best == 0
-                              ? strings.pick('No account record yet',
-                                  'Nog geen accountrecord')
-                              : '${strings.pick('Account best', 'Accountrecord')}: $best',
-                          style: TextStyle(
-                            color: AppColors.eventColor(
-                                context, AppColors.twilight),
-                            fontSize: 11,
-                            fontWeight: FontWeight.w900,
-                          ),
-                        ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 8),
-                  Container(
-                    padding: const EdgeInsets.all(9),
-                    decoration: const BoxDecoration(
-                      color: AppColors.goldLight,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      Icons.play_arrow_rounded,
-                      color: AppColors.eventColor(context, AppColors.twilight),
-                    ),
+                  const SizedBox(height: 11),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: FilledButton.icon(
+                          key: Key('play-trial-${offer.id}'),
+                          onPressed: onStart,
+                          icon: const Icon(Icons.play_arrow_rounded, size: 19),
+                          label: Text(strings.pick('Play', 'Spelen')),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: FilledButton.tonalIcon(
+                          key: Key('refresh-trial-ad-${offer.id}'),
+                          onPressed: onRefresh,
+                          icon: refreshing
+                              ? const SizedBox.square(
+                                  dimension: 17,
+                                  child:
+                                      CircularProgressIndicator(strokeWidth: 2),
+                                )
+                              : const Icon(Icons.ondemand_video_rounded,
+                                  size: 19),
+                          label: Text(strings.pick('Swap', 'Wissel')),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      IconButton.outlined(
+                        key: Key('dismiss-trial-${offer.id}'),
+                        tooltip: strings.pick('Dismiss Trial', 'Proef negeren'),
+                        onPressed: onDismiss,
+                        icon: const Icon(Icons.close_rounded),
+                      ),
+                    ],
                   ),
                 ],
               ),

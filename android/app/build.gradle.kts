@@ -60,6 +60,7 @@ val rewardedAdsTestUnitId = "ca-app-pub-3940256099942544/5224354917"
 val admobAppId = havenBuildDefines["DRAGONHAVEN_ADMOB_ANDROID_APP_ID"] ?: rewardedAdsTestAppId
 val admobGemsUnitId = havenBuildDefines["DRAGONHAVEN_ADMOB_REWARDED_GEMS_ID"] ?: rewardedAdsTestUnitId
 val admobCoinsUnitId = havenBuildDefines["DRAGONHAVEN_ADMOB_REWARDED_COINS_ID"] ?: rewardedAdsTestUnitId
+val admobTrialRefreshUnitId = havenBuildDefines["DRAGONHAVEN_ADMOB_REWARDED_TRIAL_REFRESH_ID"] ?: rewardedAdsTestUnitId
 val admobAppIdPattern = Regex("^ca-app-pub-[0-9]{16}~[0-9]{10}$")
 val admobUnitIdPattern = Regex("^ca-app-pub-[0-9]{16}/[0-9]{10}$")
 require(rewardedAdsMode in setOf("disabled", "test", "production")) {
@@ -73,7 +74,8 @@ if (rewardedAdsMode == "test") {
         "Google test ads are restricted to explicit debug or profile builds."
     }
     require(admobAppId == rewardedAdsTestAppId &&
-        admobGemsUnitId == rewardedAdsTestUnitId && admobCoinsUnitId == rewardedAdsTestUnitId) {
+        admobGemsUnitId == rewardedAdsTestUnitId && admobCoinsUnitId == rewardedAdsTestUnitId &&
+        admobTrialRefreshUnitId == rewardedAdsTestUnitId) {
         "Test builds must use Google's official sample ad identifiers."
     }
 }
@@ -89,14 +91,17 @@ if (rewardedAdsMode == "production") {
     }
     require(admobUnitIdPattern.matches(admobGemsUnitId) && admobGemsUnitId != rewardedAdsTestUnitId &&
         admobUnitIdPattern.matches(admobCoinsUnitId) && admobCoinsUnitId != rewardedAdsTestUnitId &&
-        admobGemsUnitId != admobCoinsUnitId) {
-        "Two distinct real rewarded ad-unit IDs are required."
+        admobUnitIdPattern.matches(admobTrialRefreshUnitId) && admobTrialRefreshUnitId != rewardedAdsTestUnitId &&
+        setOf(admobGemsUnitId, admobCoinsUnitId, admobTrialRefreshUnitId).size == 3) {
+        "Three distinct real rewarded ad-unit IDs are required."
     }
     val appPublisher = admobAppId.substringAfter("ca-app-pub-").substringBefore('~')
     val gemsPublisher = admobGemsUnitId.substringAfter("ca-app-pub-").substringBefore('/')
     val coinsPublisher = admobCoinsUnitId.substringAfter("ca-app-pub-").substringBefore('/')
-    require(appPublisher == gemsPublisher && appPublisher == coinsPublisher) {
-        "The AdMob app ID and both rewarded ad-unit IDs must share one publisher account."
+    val trialRefreshPublisher = admobTrialRefreshUnitId.substringAfter("ca-app-pub-").substringBefore('/')
+    require(appPublisher == gemsPublisher && appPublisher == coinsPublisher &&
+        appPublisher == trialRefreshPublisher) {
+        "The AdMob app ID and all rewarded ad-unit IDs must share one publisher account."
     }
 }
 

@@ -74,7 +74,7 @@ class _ShopAdRepository implements RewardedAdsRepository {
           dailyLimit: 3,
           nextResetAt: DateTime.now().add(const Duration(days: 1)),
           offers: {
-            for (final currency in RewardedAdCurrency.values)
+            for (final currency in rewardedCurrencyPlacements)
               currency: RewardedAdOffer(
                   currency: currency,
                   reward: currency.fallbackReward,
@@ -82,7 +82,8 @@ class _ShopAdRepository implements RewardedAdsRepository {
                   remaining: 3)
           });
   @override
-  Future<RewardedAdClaim> issue(RewardedAdCurrency currency) async {
+  Future<RewardedAdClaim> issue(RewardedAdPlacement currency,
+      {String? trialOfferId}) async {
     await releaseIssue.future;
     return RewardedAdClaim(
         id: '22222222-2222-4222-8222-222222222222',
@@ -391,6 +392,7 @@ void main() {
               mode: RewardedAdsMode.test,
               gemsAdUnitId: RewardedAdsConfig.androidRewardedTestUnitId,
               coinsAdUnitId: RewardedAdsConfig.androidRewardedTestUnitId,
+              trialRefreshAdUnitId: RewardedAdsConfig.androidRewardedTestUnitId,
               platformSupported: true));
       await tester.runAsync(ads.initialize);
       await mount(
@@ -431,7 +433,7 @@ void main() {
       expect(nativeShows, 1);
       expect(find.byType(Dialog, skipOffstage: false), findsNothing);
       final currency =
-          gems ? RewardedAdCurrency.gems : RewardedAdCurrency.coins;
+          gems ? RewardedAdPlacement.gems : RewardedAdPlacement.coins;
       expect(ads.busy(currency), isTrue);
       expect(server.sent, isEmpty);
       platform.shown!.fullScreenContentCallback!

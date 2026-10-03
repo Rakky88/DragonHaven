@@ -11,12 +11,14 @@ final class RewardedAdsConfig {
     required RewardedAdsMode mode,
     required String gemsAdUnitId,
     required String coinsAdUnitId,
+    required String trialRefreshAdUnitId,
     bool? platformSupported,
   }) {
     final config = RewardedAdsConfig._(
       mode: mode,
       gemsAdUnitId: gemsAdUnitId.trim(),
       coinsAdUnitId: coinsAdUnitId.trim(),
+      trialRefreshAdUnitId: trialRefreshAdUnitId.trim(),
       platformSupported: platformSupported ?? Platform.isAndroid,
     );
     config._validate();
@@ -27,6 +29,7 @@ final class RewardedAdsConfig {
     required this.mode,
     required this.gemsAdUnitId,
     required this.coinsAdUnitId,
+    required this.trialRefreshAdUnitId,
     required this.platformSupported,
   });
 
@@ -37,6 +40,7 @@ final class RewardedAdsConfig {
   final RewardedAdsMode mode;
   final String gemsAdUnitId;
   final String coinsAdUnitId;
+  final String trialRefreshAdUnitId;
   final bool platformSupported;
 
   bool get enabled => mode != RewardedAdsMode.disabled && platformSupported;
@@ -45,6 +49,7 @@ final class RewardedAdsConfig {
   String adUnitId(String currency) => switch (currency) {
         'gems' => gemsAdUnitId,
         'coins' => coinsAdUnitId,
+        'trial_refresh' => trialRefreshAdUnitId,
         _ => throw ArgumentError.value(currency, 'currency'),
       };
 
@@ -60,8 +65,14 @@ final class RewardedAdsConfig {
         defaultValue: androidRewardedTestUnitId);
     const coins = String.fromEnvironment('DRAGONHAVEN_ADMOB_REWARDED_COINS_ID',
         defaultValue: androidRewardedTestUnitId);
+    const trialRefresh = String.fromEnvironment(
+        'DRAGONHAVEN_ADMOB_REWARDED_TRIAL_REFRESH_ID',
+        defaultValue: androidRewardedTestUnitId);
     return RewardedAdsConfig(
-        mode: mode, gemsAdUnitId: gems, coinsAdUnitId: coins);
+        mode: mode,
+        gemsAdUnitId: gems,
+        coinsAdUnitId: coins,
+        trialRefreshAdUnitId: trialRefresh);
   }
 
   void _validate() {
@@ -69,17 +80,22 @@ final class RewardedAdsConfig {
     if (mode == RewardedAdsMode.disabled) return;
     if (mode == RewardedAdsMode.test) {
       if (gemsAdUnitId != androidRewardedTestUnitId ||
-          coinsAdUnitId != androidRewardedTestUnitId) {
+          coinsAdUnitId != androidRewardedTestUnitId ||
+          trialRefreshAdUnitId != androidRewardedTestUnitId) {
         throw const FormatException('rewarded_ads_test_id_required');
       }
       return;
     }
     if (!pattern.hasMatch(gemsAdUnitId) ||
         !pattern.hasMatch(coinsAdUnitId) ||
-        gemsAdUnitId == coinsAdUnitId ||
+        !pattern.hasMatch(trialRefreshAdUnitId) ||
+        {gemsAdUnitId, coinsAdUnitId, trialRefreshAdUnitId}.length != 3 ||
         gemsAdUnitId.split('/').first != coinsAdUnitId.split('/').first ||
+        gemsAdUnitId.split('/').first !=
+            trialRefreshAdUnitId.split('/').first ||
         gemsAdUnitId == androidRewardedTestUnitId ||
-        coinsAdUnitId == androidRewardedTestUnitId) {
+        coinsAdUnitId == androidRewardedTestUnitId ||
+        trialRefreshAdUnitId == androidRewardedTestUnitId) {
       throw const FormatException('rewarded_ads_production_ids_invalid');
     }
   }

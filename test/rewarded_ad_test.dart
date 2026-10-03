@@ -33,9 +33,10 @@ void main() {
   test('strict server status exposes the fixed rewards and pending claim', () {
     final parsed = RewardedAdsStatus.fromJson(status);
     expect(parsed.enabled, isTrue);
-    expect(parsed.offer(RewardedAdCurrency.gems).reward, 15);
-    expect(parsed.offer(RewardedAdCurrency.gems).activeClaim!.verified, isTrue);
-    expect(parsed.offer(RewardedAdCurrency.coins).reward, 150);
+    expect(parsed.offer(RewardedAdPlacement.gems).reward, 15);
+    expect(
+        parsed.offer(RewardedAdPlacement.gems).activeClaim!.verified, isTrue);
+    expect(parsed.offer(RewardedAdPlacement.coins).reward, 150);
   });
 
   test('server status rejects altered rewards, counts and extra fields', () {
@@ -56,7 +57,7 @@ void main() {
     (reservedAttempt['offers'] as Map)['coins']['remaining'] = 2;
     expect(
         RewardedAdsStatus.fromJson(reservedAttempt)
-            .offer(RewardedAdCurrency.coins)
+            .offer(RewardedAdPlacement.coins)
             .remaining,
         2);
 
@@ -78,7 +79,14 @@ void main() {
       'currency': 'coins',
       'expiresAt': '2026-09-23T12:15:00Z',
     });
-    expect(claim.currency, RewardedAdCurrency.coins);
+    expect(claim.currency, RewardedAdPlacement.coins);
+    final trialClaim = RewardedAdClaim.fromJson({
+      'id': claimId,
+      'token': token,
+      'currency': 'trial_refresh',
+      'expiresAt': '2026-09-23T12:15:00Z',
+    });
+    expect(trialClaim.currency, RewardedAdPlacement.trialRefresh);
     expect(
         () => RewardedAdClaim.fromJson({
               'id': claimId,
@@ -94,6 +102,7 @@ void main() {
       mode: RewardedAdsMode.test,
       gemsAdUnitId: RewardedAdsConfig.androidRewardedTestUnitId,
       coinsAdUnitId: RewardedAdsConfig.androidRewardedTestUnitId,
+      trialRefreshAdUnitId: RewardedAdsConfig.androidRewardedTestUnitId,
     );
     expect(testConfig.testMode, isTrue);
 
@@ -102,6 +111,7 @@ void main() {
               mode: RewardedAdsMode.production,
               gemsAdUnitId: RewardedAdsConfig.androidRewardedTestUnitId,
               coinsAdUnitId: RewardedAdsConfig.androidRewardedTestUnitId,
+              trialRefreshAdUnitId: RewardedAdsConfig.androidRewardedTestUnitId,
             ),
         throwsA(isA<FormatException>()));
 
@@ -109,14 +119,18 @@ void main() {
       mode: RewardedAdsMode.production,
       gemsAdUnitId: 'ca-app-pub-1234567890123456/1234567890',
       coinsAdUnitId: 'ca-app-pub-1234567890123456/0987654321',
+      trialRefreshAdUnitId: 'ca-app-pub-1234567890123456/1111111111',
     );
     expect(
         production.adUnitId('gems'), 'ca-app-pub-1234567890123456/1234567890');
+    expect(production.adUnitId('trial_refresh'),
+        'ca-app-pub-1234567890123456/1111111111');
     expect(
         () => RewardedAdsConfig(
               mode: RewardedAdsMode.production,
               gemsAdUnitId: 'ca-app-pub-1234567890123456/1234567890',
               coinsAdUnitId: 'ca-app-pub-9999999999999999/0987654321',
+              trialRefreshAdUnitId: 'ca-app-pub-1234567890123456/1111111111',
             ),
         throwsA(isA<FormatException>()));
   });

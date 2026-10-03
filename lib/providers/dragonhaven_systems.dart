@@ -1203,6 +1203,58 @@ extension DragonHavenSystems on HouseholdProvider {
     await _notifyAndSave();
   }
 
+  Future<TrialOffer?> refreshTrial(String offerId) async {
+    _refreshTrialOffers();
+    final index = trialOffers
+        .indexWhere((offer) => offer.id == offerId && offer.startedAt == null);
+    if (index < 0) return null;
+    final previous = trialOffers[index];
+    final now = _clock();
+    final activeWindows = _activeSpecialAdventureWindows(now);
+    final seasonalKinds = activeWindows
+        .map((window) => trialKindByName(window.event.trialKindName))
+        .whereType<TrialKind>()
+        .toList(growable: false);
+    final unlockedAscendedFocuses = unlockedAscendedTrialFocuses(ownedDragons);
+    late TrialKind kind;
+    // Conditional rerolls preserve the normal rotation weights while
+    // guaranteeing that watching an ad actually changes the Trial.
+    var attempts = 0;
+    do {
+      kind = chooseTrialOfferKind(
+        _random,
+        unlockedAscendedFocuses: unlockedAscendedFocuses,
+        activeEventKinds: seasonalKinds,
+      );
+      attempts++;
+    } while (kind == previous.kind && attempts < 32);
+    if (kind == previous.kind) {
+      final eligible = <TrialKind>{
+        ...classicTrialKindByFocus.values,
+        for (final focus in unlockedAscendedFocuses)
+          ascendedTrialKindByFocus[focus]!,
+        ...seasonalKinds,
+      }..remove(previous.kind);
+      kind = eligible.first;
+    }
+    final eventId = trialDefinitions[kind]?.specialEventId;
+    final specialWindow = eventId == null
+        ? null
+        : activeWindows.cast<SpecialAdventureWindow?>().firstWhere(
+              (window) => window?.event.id == eventId,
+              orElse: () => null,
+            );
+    final replacement = TrialOffer(
+      id: _newId(),
+      kind: kind,
+      appearedAt: now,
+      specialEventKey: specialWindow?.key,
+    );
+    trialOffers[index] = replacement;
+    await _notifyAndSave();
+    return replacement;
+  }
+
   Future<bool> beginTrial(String offerId) async {
     _refreshTrialOffers();
     final index = trialOffers.indexWhere((offer) => offer.id == offerId);

@@ -13,7 +13,7 @@ import 'package:flutter_test/flutter_test.dart';
 final _now = DateTime.utc(2026, 9, 7, 12);
 final _seed = List.filled(32, 'a5').join();
 
-Map<String, dynamic> _fixture() {
+Map<String, dynamic> _fixture({bool withTrials = false}) {
   final identities = ServerEntropy(_seed, stream: 'identities');
   final game = HouseholdProvider(
     random: ServerEntropy(_seed, stream: 'rewards'),
@@ -41,6 +41,7 @@ Map<String, dynamic> _fixture() {
     )
   ];
   game.eggAltar.wallet = const WeaveWallet(20, 2, 0);
+  if (withTrials) game.availableTrials;
   final result = game.exportState();
   game.dispose();
   return result;
@@ -293,6 +294,87 @@ void main() {
     }
     expect(state['pet']['gems'], 300);
     expect(state['pet']['coins'], 150);
+  });
+
+  test('a verified Trial refresh replaces only its bound available offer',
+      () async {
+    const claimId = '33333333-3333-4333-8333-333333333333';
+    final state = _fixture(withTrials: true);
+    final before = (state['trialOffers'] as List)
+        .map((offer) => Map<String, dynamic>.from(offer as Map))
+        .toList();
+    final target = before.first;
+    final offerId = target['id'] as String;
+    final result = await GameCommandEngine.execute(
+      state: state,
+      action: 'refresh_trial_with_ad',
+      payload: {'claimId': claimId, 'offerId': offerId},
+      secretSeed: _seed,
+      now: _now,
+      keeperId: '11111111-1111-4111-8111-111111111111',
+      verifiedRewardedAdClaim: {
+        'version': 1,
+        'ownerId': '11111111-1111-4111-8111-111111111111',
+        'action': 'refresh_trial_with_ad',
+        'claimId': claimId,
+        'offerId': offerId,
+        'currency': 'trial_refresh',
+        'amount': 1,
+        'transactionId': 'google-trial-refresh-1',
+        'fingerprint': _seed,
+      },
+    );
+    final after = (result['state']['trialOffers'] as List)
+        .map((offer) => Map<String, dynamic>.from(offer as Map))
+        .toList();
+    expect(after, hasLength(before.length));
+    expect(after.first['id'], isNot(offerId));
+    expect(after.first['kind'], isNot(target['kind']));
+    expect(after.skip(1).toList(), before.skip(1).toList());
+    expect(result['result']['replacedOfferId'], offerId);
+    expect(result['result']['offer']['id'], after.first['id']);
+  });
+
+  test('Trial refresh refuses a forged claim or an in-progress Trial',
+      () async {
+    const claimId = '33333333-3333-4333-8333-333333333333';
+    final state = _fixture(withTrials: true);
+    final offerId = (state['trialOffers'] as List).first['id'] as String;
+    await expectLater(
+      _execute(state, 'refresh_trial_with_ad', {
+        'claimId': claimId,
+        'offerId': offerId,
+      }),
+      throwsA(isA<GameCommandException>().having(
+          (error) => error.code, 'code', 'rewarded_ad_claim_unavailable')),
+    );
+    final started = await _execute(state, 'start_trial', {
+      'offerId': offerId,
+      'dragonId': state['pet']['id'],
+    });
+    await expectLater(
+      GameCommandEngine.execute(
+        state: Map<String, dynamic>.from(started['state'] as Map),
+        action: 'refresh_trial_with_ad',
+        payload: {'claimId': claimId, 'offerId': offerId},
+        secretSeed: _seed,
+        now: _now,
+        keeperId: '11111111-1111-4111-8111-111111111111',
+        verifiedRewardedAdClaim: {
+          'version': 1,
+          'ownerId': '11111111-1111-4111-8111-111111111111',
+          'action': 'refresh_trial_with_ad',
+          'claimId': claimId,
+          'offerId': offerId,
+          'currency': 'trial_refresh',
+          'amount': 1,
+          'transactionId': 'google-trial-refresh-2',
+          'fingerprint': _seed,
+        },
+      ),
+      throwsA(isA<GameCommandException>()
+          .having((error) => error.code, 'code', 'game_attempt_in_progress')),
+    );
   });
 
   test('tagging protects a Sinister egg and its return requires confirmation',

@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:ui' as ui;
+import 'package:dragon_haven/models/pet.dart';
 import 'package:dragon_haven/models/social.dart';
 import 'package:dragon_haven/models/trial.dart';
 import 'package:dragon_haven/providers/household_provider.dart';
@@ -13,35 +14,53 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 
 class _RankingsOnline extends OnlineAccountProvider {
-  _RankingsOnline(HouseholdProvider game)
+  _RankingsOnline(HouseholdProvider game, {this.entriesFor})
       : super(
             repository: const DisabledSocialRepository(),
             inventorySnapshot: () => OnlineInventorySnapshot.fromGame(game));
   final rankingRequests = <(String, TrialRankingScope)>[];
+  final List<TrialRankingEntry> Function(String trialKey)? entriesFor;
   @override
   bool get isSignedIn => true;
   @override
   Future<List<TrialRankingEntry>?> loadTrialRankings(
       {required String trialKey, required TrialRankingScope scope}) async {
     rankingRequests.add((trialKey, scope));
-    return [
-      TrialRankingEntry(
-          position: 1,
-          entryKey: trialKey,
-          displayName: 'Luna',
-          title: 'title_001',
-          portraitKey: 'portrait_001',
-          score: 8138,
-          isCurrentUser: true),
-    ];
+    return entriesFor?.call(trialKey) ??
+        [
+          TrialRankingEntry(
+              position: 1,
+              entryKey: trialKey,
+              displayName: 'Luna',
+              title: 'title_001',
+              portraitKey: 'portrait_001',
+              score: 8138,
+              isCurrentUser: true),
+        ];
   }
 }
 
-void _expectAllStandardChoicesVisible(WidgetTester tester) {
+void _unlockAscendedRankings(HouseholdProvider game) {
+  game.pet = Pet(
+    id: 'rankings-mastery-dragon',
+    name: 'Mastery',
+    stage: DragonStage.ascended,
+    firstEgg: false,
+    evolutionPath: 'mastery',
+  );
+}
+
+void _expectStandardChoicesVisible(
+    WidgetTester tester, Iterable<TrialKind> expected) {
   final viewport =
       tester.getRect(find.byKey(const Key('trial-rankings-sheet')));
+  final visible = expected.toSet();
   for (final kind in standardTrialKinds) {
     final choice = find.byKey(Key('trial-ranking-kind-${kind.name}'));
+    if (!visible.contains(kind)) {
+      expect(choice, findsNothing, reason: '${kind.name} belongs to other tab');
+      continue;
+    }
     expect(choice.hitTestable(), findsOneWidget, reason: kind.name);
     final bounds = tester.getRect(choice);
     expect(bounds.left, greaterThanOrEqualTo(viewport.left), reason: kind.name);
@@ -87,6 +106,7 @@ void main() {
       var now = DateTime.utc(2026, 9, 12);
       final game =
           HouseholdProvider(persistenceEnabled: false, clock: () => now);
+      _unlockAscendedRankings(game);
       final online = _RankingsOnline(game);
       final end = now.add(const Duration(days: 2));
       await tester.runAsync(() => game.synchronizeSeasonalEventPreviews(
@@ -122,13 +142,14 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.byKey(const Key('trial-ranking-kind-rosevowRelay')),
           findsOneWidget);
-      for (final kind in standardTrialKinds) {
-        expect(
-            find.byKey(Key('trial-ranking-kind-${kind.name}')), findsOneWidget);
+      expect(find.text('Basic'), findsOneWidget);
+      expect(find.text('Ascended'), findsOneWidget);
+      if (scale > 1) {
+        await tester.ensureVisible(
+            find.byKey(const Key('trial-ranking-kind-cavernFlight')));
+        await tester.pumpAndSettle();
       }
-      expect(find.text('Basic trials'), findsOneWidget);
-      expect(find.text('Ascended trials'), findsOneWidget);
-      if (scale == 1) _expectAllStandardChoicesVisible(tester);
+      _expectStandardChoicesVisible(tester, standardTrialKinds.take(3));
       expect(
           find.descendant(
               of: find.byKey(const Key('trial-ranking-kind-selector')),
@@ -137,49 +158,35 @@ void main() {
                   (widget.axisDirection == AxisDirection.left ||
                       widget.axisDirection == AxisDirection.right))),
           findsNothing);
-      // All six are visible together at normal text size. Enlarged system
-      // text may use vertical scrolling without hiding choices sideways.
+      await tester.ensureVisible(find.text('Ascended'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Ascended'));
+      await tester.pumpAndSettle();
+      if (scale > 1) {
+        await tester.ensureVisible(
+            find.byKey(const Key('trial-ranking-kind-spiritAlignment')));
+        await tester.pumpAndSettle();
+      }
+      _expectStandardChoicesVisible(tester, standardTrialKinds.skip(3));
       final lastStandard =
           find.byKey(const Key('trial-ranking-kind-runeOrbit'));
       await tester.ensureVisible(lastStandard);
       await tester.pumpAndSettle();
       await tester.tap(lastStandard);
       await tester.pumpAndSettle();
-      if (scale > 1) {
-        await tester.dragUntilVisible(
-            find.byKey(const Key('trial-ranking-entry-runeOrbit')),
-            find.byType(NestedScrollView),
-            const Offset(0, -100));
-        await tester.pumpAndSettle();
-      }
       expect(find.byKey(const Key('trial-ranking-entry-runeOrbit')),
           findsOneWidget);
       final seasonalChoice =
           find.byKey(const Key('trial-ranking-kind-rosevowRelay'));
-      // After reading a result the scrollable header may be outside the
-      // sliver viewport. Scroll back to build it before selecting the event.
-      await tester.dragUntilVisible(
-          seasonalChoice, find.byType(NestedScrollView), const Offset(0, 100));
+      await tester.ensureVisible(seasonalChoice);
       await tester.pumpAndSettle();
       await tester.tap(seasonalChoice);
       await tester.pumpAndSettle();
-      if (scale > 1) {
-        await tester.dragUntilVisible(
-            find.byKey(const Key('trial-ranking-entry-rosevowRelay')),
-            find.byType(NestedScrollView),
-            const Offset(0, -100));
-        await tester.pumpAndSettle();
-      }
       expect(find.byKey(const Key('trial-ranking-entry-rosevowRelay')),
           findsOneWidget);
       expect(tester.takeException(), isNull);
       const review = bool.fromEnvironment('EVENT_RANKING_REVIEW');
       if (review) {
-        tester
-            .state<NestedScrollViewState>(find.byType(NestedScrollView))
-            .outerController
-            .jumpTo(0);
-        await tester.pumpAndSettle();
         final imageContext =
             tester.element(find.byKey(const Key('trial-rankings-sheet')));
         await tester.runAsync(() async {
@@ -220,13 +227,6 @@ void main() {
           findsNothing);
       expect(find.byKey(const Key('trial-ranking-entry-rosevowRelay')),
           findsNothing);
-      if (scale > 1) {
-        await tester.dragUntilVisible(
-            find.byKey(const Key('trial-ranking-entry-cavernFlight')),
-            find.byType(NestedScrollView),
-            const Offset(0, -100));
-        await tester.pumpAndSettle();
-      }
       expect(find.byKey(const Key('trial-ranking-entry-cavernFlight')),
           findsOneWidget);
       await tester.runAsync(() => game.synchronizeSeasonalEventPreviews(
@@ -252,6 +252,7 @@ void main() {
     addTearDown(() => tester.binding.setSurfaceSize(null));
     final game = HouseholdProvider(
         persistenceEnabled: false, clock: () => DateTime.utc(2026, 9, 12));
+    _unlockAscendedRankings(game);
     final online = _RankingsOnline(game);
     expect(game.trialRankingEventWindow, isNull);
     await tester.pumpWidget(MultiProvider(
@@ -273,22 +274,178 @@ void main() {
     ));
     await tester.tap(find.text('Conclave rankings'));
     await tester.pumpAndSettle();
-    expect(find.text('Basic trials'), findsOneWidget);
-    expect(find.text('Ascended trials'), findsOneWidget);
+    expect(find.text('Basic'), findsOneWidget);
+    expect(find.text('Ascended'), findsOneWidget);
     expect(find.byKey(const Key('trial-ranking-scope-selector')), findsNothing);
-    _expectAllStandardChoicesVisible(tester);
-    for (final kind in standardTrialKinds) {
+    _expectStandardChoicesVisible(tester, standardTrialKinds.take(3));
+    for (final kind in standardTrialKinds.take(3)) {
       await tester.tap(find.byKey(Key('trial-ranking-kind-${kind.name}')));
       await tester.pumpAndSettle();
       expect(
           find.byKey(Key('trial-ranking-entry-${kind.name}')), findsOneWidget);
       expect(online.rankingRequests,
           contains((kind.name, TrialRankingScope.conclave)));
-      _expectAllStandardChoicesVisible(tester);
+      _expectStandardChoicesVisible(tester, standardTrialKinds.take(3));
+      expect(tester.takeException(), isNull);
+    }
+    await tester.tap(find.text('Ascended'));
+    await tester.pumpAndSettle();
+    _expectStandardChoicesVisible(tester, standardTrialKinds.skip(3));
+    for (final kind in standardTrialKinds.skip(3)) {
+      await tester.tap(find.byKey(Key('trial-ranking-kind-${kind.name}')));
+      await tester.pumpAndSettle();
+      expect(
+          find.byKey(Key('trial-ranking-entry-${kind.name}')), findsOneWidget);
+      expect(online.rankingRequests,
+          contains((kind.name, TrialRankingScope.conclave)));
+      _expectStandardChoicesVisible(tester, standardTrialKinds.skip(3));
       expect(tester.takeException(), isNull);
     }
     await tester.pumpWidget(const SizedBox.shrink());
     online.dispose();
     game.dispose();
+  });
+
+  testWidgets(
+      'Ascended ranking tab stays hidden until an Ascended dragon exists',
+      (tester) async {
+    final game = HouseholdProvider(
+        persistenceEnabled: false, clock: () => DateTime.utc(2026, 9, 12));
+    final online = _RankingsOnline(game);
+    await tester.pumpWidget(MultiProvider(
+      providers: [
+        ChangeNotifierProvider.value(value: game),
+        ChangeNotifierProvider<OnlineAccountProvider>.value(value: online),
+      ],
+      child: MaterialApp(
+        home: Builder(
+          builder: (context) => TextButton(
+            onPressed: () => showTrialRankingsSheet(context,
+                scopes: const [TrialRankingScope.world],
+                initialScope: TrialRankingScope.world),
+            child: const Text('Open locked rankings'),
+          ),
+        ),
+      ),
+    ));
+    await tester.tap(find.text('Open locked rankings'));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('trial-ranking-tier-selector')), findsNothing);
+    expect(find.text('Basic trials'), findsOneWidget);
+    _expectStandardChoicesVisible(tester, standardTrialKinds.take(3));
+    await tester.pumpWidget(const SizedBox.shrink());
+    online.dispose();
+    game.dispose();
+  });
+
+  testWidgets('the current Keeper score is centered in the ranking viewport',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final game = HouseholdProvider(
+        persistenceEnabled: false, clock: () => DateTime.utc(2026, 9, 12));
+    final entries = List.generate(
+      20,
+      (index) => TrialRankingEntry(
+        position: index + 1,
+        entryKey: 'keeper-$index',
+        displayName: 'Keeper $index',
+        title: 'title_001',
+        portraitKey: 'portrait_001',
+        score: 20000 - index,
+        isCurrentUser: index == 14,
+      ),
+    );
+    final online = _RankingsOnline(game, entriesFor: (_) => entries);
+    await tester.pumpWidget(MultiProvider(
+      providers: [
+        ChangeNotifierProvider.value(value: game),
+        ChangeNotifierProvider<OnlineAccountProvider>.value(value: online),
+      ],
+      child: MaterialApp(
+        home: Builder(
+          builder: (context) => TextButton(
+            onPressed: () => showTrialRankingsSheet(context,
+                scopes: const [TrialRankingScope.world],
+                initialScope: TrialRankingScope.world),
+            child: const Text('Open centered rankings'),
+          ),
+        ),
+      ),
+    ));
+    await tester.tap(find.text('Open centered rankings'));
+    await tester.pumpAndSettle();
+    final viewport = tester.getRect(
+        find.byKey(const Key('trial-ranking-list-world-cavernFlight')));
+    final current =
+        tester.getRect(find.byKey(const Key('trial-ranking-entry-keeper-14')));
+    expect((viewport.center.dy - current.center.dy).abs(), lessThan(2));
+    await tester.pumpWidget(const SizedBox.shrink());
+    online.dispose();
+    game.dispose();
+  });
+
+  testWidgets('first and last Keeper scores stay at their list boundary',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    for (final currentIndex in const [0, 19]) {
+      final game = HouseholdProvider(
+          persistenceEnabled: false, clock: () => DateTime.utc(2026, 9, 12));
+      final entries = List.generate(
+        20,
+        (index) => TrialRankingEntry(
+          position: index + 1,
+          entryKey: 'boundary-keeper-$index',
+          displayName: 'Boundary Keeper $index',
+          title: 'title_001',
+          portraitKey: 'portrait_001',
+          score: 20000 - index,
+          isCurrentUser: index == currentIndex,
+        ),
+      );
+      final online = _RankingsOnline(game, entriesFor: (_) => entries);
+      await tester.pumpWidget(MultiProvider(
+        providers: [
+          ChangeNotifierProvider.value(value: game),
+          ChangeNotifierProvider<OnlineAccountProvider>.value(value: online),
+        ],
+        child: MaterialApp(
+          home: Builder(
+            builder: (context) => TextButton(
+              onPressed: () => showTrialRankingsSheet(context,
+                  scopes: const [TrialRankingScope.world],
+                  initialScope: TrialRankingScope.world),
+              child: const Text('Open boundary rankings'),
+            ),
+          ),
+        ),
+      ));
+      await tester.tap(find.text('Open boundary rankings'));
+      await tester.pumpAndSettle();
+
+      final list =
+          find.byKey(const Key('trial-ranking-list-world-cavernFlight'));
+      final scrollable = find.descendant(
+        of: list,
+        matching: find.byType(Scrollable),
+      );
+      final position = tester.state<ScrollableState>(scrollable).position;
+      expect(
+        position.pixels,
+        closeTo(
+          currentIndex == 0
+              ? position.minScrollExtent
+              : position.maxScrollExtent,
+          0.1,
+        ),
+      );
+
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pumpAndSettle();
+      online.dispose();
+      game.dispose();
+    }
   });
 }

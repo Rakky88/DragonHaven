@@ -4,7 +4,8 @@ import '../models/rewarded_ad.dart';
 
 abstract interface class RewardedAdsRepository {
   Future<RewardedAdsStatus> status();
-  Future<RewardedAdClaim> issue(RewardedAdCurrency currency);
+  Future<RewardedAdClaim> issue(RewardedAdPlacement placement,
+      {String? trialOfferId});
   Future<RewardedAdClaimStatus> claimStatus(String claimId);
   Future<bool> cancel(String claimId);
 }
@@ -19,9 +20,15 @@ final class SupabaseRewardedAdsRepository implements RewardedAdsRepository {
       await client.rpc('get_my_rewarded_ad_status').timeout(_timeout));
 
   @override
-  Future<RewardedAdClaim> issue(RewardedAdCurrency currency) async =>
-      RewardedAdClaim.fromJson(await client.rpc('issue_my_rewarded_ad_claim',
-          params: {'p_currency': currency.name}).timeout(_timeout));
+  Future<RewardedAdClaim> issue(RewardedAdPlacement placement,
+          {String? trialOfferId}) async =>
+      RewardedAdClaim.fromJson(placement == RewardedAdPlacement.trialRefresh
+          ? await client.rpc('issue_my_trial_refresh_ad_claim', params: {
+              'p_offer_id': trialOfferId,
+            }).timeout(_timeout)
+          : await client.rpc('issue_my_rewarded_ad_claim', params: {
+              'p_currency': placement.wireName,
+            }).timeout(_timeout));
 
   @override
   Future<RewardedAdClaimStatus> claimStatus(String claimId) async =>

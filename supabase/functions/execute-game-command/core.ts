@@ -41,6 +41,7 @@ const commandKeys: Record<string, readonly string[]> = {
   start_trial: ["offerId", "dragonId"],
   claim_group_reward: ["lobbyId"], claim_pair_reward: ["adventureId"], claim_podium_prize: ["prizeId"],
   claim_rewarded_ad: ["claimId"],
+  refresh_trial_with_ad: ["claimId", "offerId"],
   checkpoint_trial: ["attemptId", "inputs", "elapsedMs", "finish"],
   cancel_trial: ["attemptId"],
   resume_trial: ["attemptId"],
@@ -283,13 +284,18 @@ export async function handleCommand(request: Request, deps: Dependencies): Promi
         counterpart.social_context.sourceId !== command.payload.tradeId) throw new Error("invalid_counterparty_lease");
     } else if (counterpart !== undefined && counterpart !== null) throw new Error("unexpected_counterparty_lease");
     const rewardedAdClaim = leased.rewarded_ad_context;
-    if (command.action === "claim_rewarded_ad") {
+    if (command.action === "claim_rewarded_ad" || command.action === "refresh_trial_with_ad") {
+      const trialRefresh = command.action === "refresh_trial_with_ad";
       if (!object(rewardedAdClaim) ||
-        !exactKeys(rewardedAdClaim, ["version", "ownerId", "action", "claimId", "currency", "amount", "transactionId", "fingerprint"]) ||
+        !exactKeys(rewardedAdClaim, ["version", "ownerId", "action", "claimId",
+          ...(trialRefresh ? ["offerId"] : []), "currency", "amount", "transactionId", "fingerprint"]) ||
         rewardedAdClaim.version !== 1 || rewardedAdClaim.ownerId !== owner ||
         rewardedAdClaim.action !== command.action || rewardedAdClaim.claimId !== command.payload.claimId ||
-        (rewardedAdClaim.currency !== "gems" && rewardedAdClaim.currency !== "coins") ||
-        (rewardedAdClaim.currency === "gems" ? rewardedAdClaim.amount !== 15 : rewardedAdClaim.amount !== 150) ||
+        (trialRefresh
+          ? rewardedAdClaim.offerId !== command.payload.offerId ||
+            rewardedAdClaim.currency !== "trial_refresh" || rewardedAdClaim.amount !== 1
+          : (rewardedAdClaim.currency !== "gems" && rewardedAdClaim.currency !== "coins") ||
+            (rewardedAdClaim.currency === "gems" ? rewardedAdClaim.amount !== 15 : rewardedAdClaim.amount !== 150)) ||
         typeof rewardedAdClaim.transactionId !== "string" || rewardedAdClaim.transactionId.length < 1 ||
         rewardedAdClaim.transactionId.length > 256 || typeof rewardedAdClaim.fingerprint !== "string" ||
         !hash.test(rewardedAdClaim.fingerprint)) throw new Error("invalid_rewarded_ad_context");

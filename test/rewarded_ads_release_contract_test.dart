@@ -20,8 +20,10 @@ void main() {
     expect(
       gradle,
       contains(
-          'appPublisher == gemsPublisher && appPublisher == coinsPublisher'),
+          'appPublisher == gemsPublisher && appPublisher == coinsPublisher &&'),
     );
+    expect(gradle, contains('appPublisher == trialRefreshPublisher'));
+    expect(gradle, contains('admobTrialRefreshUnitId'));
     expect(
       gradle,
       contains('implementation("androidx.work:work-runtime:2.11.2")'),
@@ -79,6 +81,7 @@ void main() {
     expect(preflight, contains('[string]\$rewarded.sourceRevision -cne'));
     expect(preflight, contains('[string]\$rewarded.gemsAdUnitId -cne'));
     expect(preflight, contains('[string]\$rewarded.coinsAdUnitId -cne'));
+    expect(preflight, contains('[string]\$rewarded.trialRefreshAdUnitId -cne'));
     expect(preflight, contains("\$result['RewardedAdsVerified'] = \$true"));
   });
 }

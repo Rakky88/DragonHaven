@@ -1,7 +1,26 @@
-enum RewardedAdCurrency { gems, coins }
+enum RewardedAdPlacement { gems, coins, trialRefresh }
 
-extension RewardedAdCurrencyValue on RewardedAdCurrency {
-  int get fallbackReward => this == RewardedAdCurrency.gems ? 15 : 150;
+const rewardedCurrencyPlacements = [
+  RewardedAdPlacement.gems,
+  RewardedAdPlacement.coins,
+];
+
+extension RewardedAdPlacementValue on RewardedAdPlacement {
+  String get wireName => switch (this) {
+        RewardedAdPlacement.gems => 'gems',
+        RewardedAdPlacement.coins => 'coins',
+        RewardedAdPlacement.trialRefresh => 'trial_refresh',
+      };
+  int get fallbackReward => switch (this) {
+        RewardedAdPlacement.gems => 15,
+        RewardedAdPlacement.coins => 150,
+        RewardedAdPlacement.trialRefresh => 1,
+      };
+
+  static RewardedAdPlacement? fromWireName(String value) =>
+      RewardedAdPlacement.values
+          .where((placement) => placement.wireName == value)
+          .firstOrNull;
 }
 
 final class RewardedAdClaim {
@@ -14,7 +33,7 @@ final class RewardedAdClaim {
 
   final String id;
   final String token;
-  final RewardedAdCurrency currency;
+  final RewardedAdPlacement currency;
   final DateTime expiresAt;
 
   factory RewardedAdClaim.fromJson(Object? value) {
@@ -29,14 +48,14 @@ final class RewardedAdClaim {
         token is! String ||
         !RegExp(r'^[0-9a-f]{64}$').hasMatch(token) ||
         currency is! String ||
-        !RewardedAdCurrency.values.any((item) => item.name == currency) ||
+        RewardedAdPlacementValue.fromWireName(currency) == null ||
         expiresAt == null) {
       throw const FormatException('rewarded_ad_claim_invalid');
     }
     return RewardedAdClaim(
       id: id,
       token: token,
-      currency: RewardedAdCurrency.values.byName(currency),
+      currency: RewardedAdPlacementValue.fromWireName(currency)!,
       expiresAt: expiresAt.toUtc(),
     );
   }
@@ -79,14 +98,14 @@ final class RewardedAdOffer {
     required this.remaining,
     this.activeClaim,
   });
-  final RewardedAdCurrency currency;
+  final RewardedAdPlacement currency;
   final int reward;
   final int claimedToday;
   final int remaining;
   final RewardedAdActiveClaim? activeClaim;
 
   factory RewardedAdOffer.fromJson(
-      RewardedAdCurrency currency, Object? value, int dailyLimit) {
+      RewardedAdPlacement currency, Object? value, int dailyLimit) {
     final json = _object(value);
     final reward = json['reward'];
     final claimed = json['claimedToday'];
@@ -126,8 +145,8 @@ final class RewardedAdsStatus {
   final bool enabled;
   final int dailyLimit;
   final DateTime nextResetAt;
-  final Map<RewardedAdCurrency, RewardedAdOffer> offers;
-  RewardedAdOffer offer(RewardedAdCurrency currency) => offers[currency]!;
+  final Map<RewardedAdPlacement, RewardedAdOffer> offers;
+  RewardedAdOffer offer(RewardedAdPlacement currency) => offers[currency]!;
 
   factory RewardedAdsStatus.fromJson(Object? value) {
     final json = _object(value);
@@ -143,7 +162,8 @@ final class RewardedAdsStatus {
         dailyLimit < 1 ||
         dailyLimit > 20 ||
         reset == null ||
-        !RewardedAdCurrency.values.every((c) => offers.containsKey(c.name))) {
+        !rewardedCurrencyPlacements
+            .every((c) => offers.containsKey(c.wireName))) {
       throw const FormatException('rewarded_ads_status_invalid');
     }
     return RewardedAdsStatus(
@@ -151,9 +171,9 @@ final class RewardedAdsStatus {
       dailyLimit: dailyLimit,
       nextResetAt: reset.toUtc(),
       offers: {
-        for (final currency in RewardedAdCurrency.values)
+        for (final currency in rewardedCurrencyPlacements)
           currency: RewardedAdOffer.fromJson(
-              currency, offers[currency.name], dailyLimit),
+              currency, offers[currency.wireName], dailyLimit),
       },
     );
   }

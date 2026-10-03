@@ -90,6 +90,7 @@ jobs:
           ADS_ANDROID_APP_ID: ${{ vars.DRAGONHAVEN_ADMOB_ANDROID_APP_ID }}
           ADS_GEMS_AD_UNIT_ID: ${{ vars.DRAGONHAVEN_ADMOB_REWARDED_GEMS_ID }}
           ADS_COINS_AD_UNIT_ID: ${{ vars.DRAGONHAVEN_ADMOB_REWARDED_COINS_ID }}
+          ADS_TRIAL_REFRESH_AD_UNIT_ID: ${{ vars.DRAGONHAVEN_ADMOB_REWARDED_TRIAL_REFRESH_ID }}
           ADS_PUBLISHER_ID: ${{ vars.DRAGONHAVEN_ADMOB_PUBLISHER_ID }}
         run: |
           $enabled = if ([string]::IsNullOrWhiteSpace($env:ADS_ENABLED)) {
@@ -110,6 +111,7 @@ jobs:
               'ADS_ANDROID_APP_ID',
               'ADS_GEMS_AD_UNIT_ID',
               'ADS_COINS_AD_UNIT_ID',
+              'ADS_TRIAL_REFRESH_AD_UNIT_ID',
               'ADS_PUBLISHER_ID'
             )) {
               if ([string]::IsNullOrWhiteSpace(
@@ -125,12 +127,14 @@ jobs:
             -AndroidAppId $env:ADS_ANDROID_APP_ID `
             -GemsAdUnitId $env:ADS_GEMS_AD_UNIT_ID `
             -CoinsAdUnitId $env:ADS_COINS_AD_UNIT_ID `
+            -TrialRefreshAdUnitId $env:ADS_TRIAL_REFRESH_AD_UNIT_ID `
             -PublisherId $env:ADS_PUBLISHER_ID `
             -SsvSourceRevision $env:GITHUB_SHA
           'DRAGONHAVEN_REWARDED_ADS_MODE=production' >> $env:GITHUB_ENV
           "DRAGONHAVEN_ADMOB_ANDROID_APP_ID=$($env:ADS_ANDROID_APP_ID.Trim())" >> $env:GITHUB_ENV
           "DRAGONHAVEN_ADMOB_REWARDED_GEMS_ID=$($env:ADS_GEMS_AD_UNIT_ID.Trim())" >> $env:GITHUB_ENV
           "DRAGONHAVEN_ADMOB_REWARDED_COINS_ID=$($env:ADS_COINS_AD_UNIT_ID.Trim())" >> $env:GITHUB_ENV
+          "DRAGONHAVEN_ADMOB_REWARDED_TRIAL_REFRESH_ID=$($env:ADS_TRIAL_REFRESH_AD_UNIT_ID.Trim())" >> $env:GITHUB_ENV
 
       - name: Verify linked production server
         shell: pwsh
@@ -152,6 +156,7 @@ jobs:
               RequireRewardedAds = $true
               ExpectedRewardedGemsAdUnitId = $env:DRAGONHAVEN_ADMOB_REWARDED_GEMS_ID
               ExpectedRewardedCoinsAdUnitId = $env:DRAGONHAVEN_ADMOB_REWARDED_COINS_ID
+              ExpectedRewardedTrialRefreshAdUnitId = $env:DRAGONHAVEN_ADMOB_REWARDED_TRIAL_REFRESH_ID
               ExpectedRewardedSsvSourceRevision = $env:GITHUB_SHA
             }
           }
@@ -217,6 +222,7 @@ jobs:
               --dart-define=DRAGONHAVEN_ADMOB_ANDROID_APP_ID="$DRAGONHAVEN_ADMOB_ANDROID_APP_ID"
               --dart-define=DRAGONHAVEN_ADMOB_REWARDED_GEMS_ID="$DRAGONHAVEN_ADMOB_REWARDED_GEMS_ID"
               --dart-define=DRAGONHAVEN_ADMOB_REWARDED_COINS_ID="$DRAGONHAVEN_ADMOB_REWARDED_COINS_ID"
+              --dart-define=DRAGONHAVEN_ADMOB_REWARDED_TRIAL_REFRESH_ID="$DRAGONHAVEN_ADMOB_REWARDED_TRIAL_REFRESH_ID"
             )
           fi
           flutter build appbundle --release --no-pub \

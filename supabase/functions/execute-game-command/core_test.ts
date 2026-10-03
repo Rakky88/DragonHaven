@@ -219,6 +219,39 @@ Deno.test("rewarded ads use only the sealed lease context", async () => {
   equal(forged.calls, []);
 });
 
+Deno.test("Trial refresh ads bind the sealed claim to one exact offer", async () => {
+  const claimId = "55555555-5555-4555-8555-555555555555";
+  const offerId = "66666666-6666-4666-8666-666666666666";
+  const rewardContext = {version: 1, ownerId: owner, action: "refresh_trial_with_ad", claimId,
+    offerId, currency: "trial_refresh", amount: 1, transactionId: "google-trial-refresh-1", fingerprint: hash};
+  const rewardCommand = {...body, action: "refresh_trial_with_ad", payload: {claimId, offerId}};
+  const rewardResult = {accepted: true, claimId, replacedOfferId: offerId,
+    offer: {id: "77777777-7777-4777-8777-777777777777"}};
+  const captured: JsonObject[] = [];
+  const {deps} = setup({rpc: async (name) => {
+    if (name === "begin_revisioned_game_command") return {...leased, rewarded_ad_context: rewardContext};
+    if (name === "commit_canonical_game_command") return {...saved, result: rewardResult};
+    throw new Error("unexpected RPC");
+  }, evaluate: async (input) => {
+    captured.push(input); return {protocol: 2, state: {private: "saved"}, result: rewardResult};
+  }});
+  assert((await handleCommand(request(rewardCommand), deps)).status === 200);
+  equal(captured[0].verifiedRewardedAdClaim, rewardContext);
+
+  const extraField = setup();
+  assert((await handleCommand(request({...rewardCommand,
+    payload: {claimId, offerId, amount: 1}}), extraField.deps)).status === 400);
+  equal(extraField.calls, []);
+
+  const mismatched = setup({rpc: async (name) => {
+    if (name === "begin_revisioned_game_command") return {...leased, rewarded_ad_context: rewardContext};
+    throw new Error("unexpected RPC");
+  }});
+  assert((await handleCommand(request({...rewardCommand,
+    payload: {claimId, offerId: "77777777-7777-4777-8777-777777777777"}}), mismatched.deps)).status === 503);
+  equal(mismatched.inputs, []);
+});
+
 Deno.test("missing, forged and unavailable authentication never reaches a game RPC", async () => {
   for (const mode of ["missing", "forged", "unavailable"]) {
     const { deps, calls } = setup({ authenticate: async () => {
