@@ -1,8 +1,8 @@
 # DragonHaven audit
 
-## v0.06.19 release candidate - 3 October 2026
+## v0.06.19 published - 3 October 2026
 
-This candidate advances DragonHaven to display/package version 0.06.19 and
+This release advances DragonHaven to display/package version 0.06.19 and
 Android build 10112. Every standard, earned, level and event chest now keeps
 its exact DragonHaven closed/open artwork and existing sound while adding a
 Rive-powered particle burst, animated magic rings, sparks, rays, shake and
@@ -17,11 +17,10 @@ confirmed. A failed or lost confirmation stops the reveal and preserves the
 existing reconciliation path, so presentation latency is removed without
 weakening server ownership or allowing a second claim.
 
-This release changes no database migration, economy rule, rewarded-ad callback
-or canonical game-worker source. The matching production release workflow must
-still pass the exact migration/lint/Auth/application/rewarded-ad preflight and
-will only activate the already matching server bundle after the signed public
-APK is available.
+This release changes no database migration or economy rule. The coupled
+production workflow rebuilt and deployed the matching rewarded-ad callback,
+then activated the canonical game worker only after the signed public APK was
+available.
 
 Flutter analysis is clean. The complete Flutter suite passes with 1,362 tests
 and one intentional opt-in skip. Android visual review confirmed the native
@@ -29,6 +28,28 @@ Rive renderer, retained Wooden Chest artwork, readable reward cards and the
 full opening sequence without renderer errors. A focused regression holds the
 authoritative inventory future pending and verifies that animation begins
 immediately while rewards remain hidden until confirmation.
+
+Release `v0.06.19` was published from exact commit
+`a4dd1f9ecf3e84457a6be022c83c8d7f24d74cf0`. Its signed
+`nl.dragonhaven.app` APK is 609,031,195 bytes with SHA-256
+`f9f01220bf52b8784752d34c2e4cf342a7b0a4ad42610f1fe3ef541c0019a4c1`.
+The Play Store AAB is 600,053,385 bytes with SHA-256
+`752f65f71da965f1d8c508c00b9b7c94bb21bf1e57c8a028d99d1534922c7dfa`.
+Both use signing-certificate SHA-256
+`477c5a5d7453384ca756265e77af97d5a002a907177ccd2d9065a9bec3414942`.
+GitHub reports the same sizes and digests. The release is neither draft nor
+prerelease, is the repository's latest release, and both permanent latest
+asset URLs return HTTP 200 with the exact content lengths.
+
+The coupled GitHub release workflow completed successfully as run
+`37152263225`. Its final production preflight found all 108 migrations, zero
+database-lint errors, and HTTP 200 responses from Auth health, Auth settings,
+the application service and rewarded-ad SSV health. Rewarded SSV function
+version 25 reports the exact release source revision. Production game function
+version 27 is active on ruleset revision 10 with ruleset SHA-256
+`a2ec1572cb8df10b0a5a53c3bea87807e5656104c8cf11a78b4e2606942d4f9f`.
+Its authenticated initialization replay and server-authority smoke checks
+passed, and the guarded rollout required no rollback.
 
 ## v0.06.18 published - 3 October 2026
 
