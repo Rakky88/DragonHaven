@@ -1675,72 +1675,152 @@ class _RewardedChestPreview extends StatelessWidget {
                 ? s.pick('Reward pending', 'Beloning in behandeling')
                 : ads?.initializing == true
                     ? s.pick('Preparing ads…', 'Advertenties voorbereiden…')
-                    : status?.enabled == true && remaining == 0
-                        ? s.pick('Daily limit reached', 'Daglimiet bereikt')
-                        : status?.enabled == true && ads?.canRequestAds == true
-                            ? s.pick('Watch an ad $remaining/$limit',
-                                'Bekijk een advertentie $remaining/$limit')
-                            : status?.enabled != true
-                                ? s.pick('Watch an ad 3/3',
-                                    'Bekijk een advertentie 3/3')
-                                : s.pick('Not available yet',
-                                    'Nog niet beschikbaar');
-    return Card(
-        key: Key('rewarded-chest-${currency.name}'),
-        child: Padding(
-            padding: const EdgeInsets.all(18),
-            child: Column(children: [
-              Image.asset(ChestTier.gold.assetPath, height: 110),
-              Text(
-                  gems
-                      ? s.pick('Free gems', 'Gratis edelstenen')
-                      : s.pick('Free coins', 'Gratis munten'),
-                  style: Theme.of(context).textTheme.titleLarge),
-              const SizedBox(height: 8),
-              Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                GameIconSprite(gems ? GameIconKind.gem : GameIconKind.coin,
-                    size: 28),
-                const SizedBox(width: 6),
-                Text('$reward', style: Theme.of(context).textTheme.titleLarge),
-              ]),
-              const SizedBox(height: 8),
-              Text(
-                  status?.enabled == true
-                      ? gems
-                          ? s.pick(
-                              'Watch an ad to receive $reward gems. Up to $limit per UTC day in this shop.',
-                              'Bekijk een advertentie voor $reward edelstenen. Maximaal $limit per UTC-dag in deze shop.')
-                          : s.pick(
-                              'Watch an ad to receive $reward coins. Up to $limit per UTC day in this shop.',
-                              'Bekijk een advertentie voor $reward munten. Maximaal $limit per UTC-dag in deze shop.')
-                      : gems
-                          ? s.pick(
-                              'Watch an ad to receive 15 gems. Up to 3 per day in this shop. Advertising will be enabled after its store setup is complete.',
-                              'Bekijk een advertentie voor 15 edelstenen. Maximaal 3 per dag in deze shop. Reclame wordt actief zodra de winkelconfiguratie klaar is.')
-                          : s.pick(
-                              'Watch an ad to receive 150 coins. Up to 3 per day in this shop. Advertising will be enabled after its store setup is complete.',
-                              'Bekijk een advertentie voor 150 munten. Maximaal 3 per dag in deze shop. Reclame wordt actief zodra de winkelconfiguratie klaar is.'),
-                  textAlign: TextAlign.center),
-              const SizedBox(height: 12),
-              if (ads?.error(rewardCurrency) ==
-                  'rewarded_ad_verification_failed')
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: Text(
+                    : s.pick('Watch an ad $remaining/$limit',
+                        'Bekijk een advertentie $remaining/$limit');
+    final accent = gems ? const Color(0xFF7650B8) : const Color(0xFFC58A16);
+    final foreground = gems ? const Color(0xFF2B174D) : const Color(0xFF4A3000);
+    return Container(
+      key: Key('rewarded-chest-${currency.name}'),
+      constraints: const BoxConstraints(maxWidth: 520),
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: gems
+              ? const [Color(0xFFF5F0FF), Color(0xFFDDCBFF)]
+              : const [Color(0xFFFFF8DE), Color(0xFFFFDFA0)],
+        ),
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(color: accent.withValues(alpha: .36)),
+        boxShadow: [
+          BoxShadow(
+            color: accent.withValues(alpha: .18),
+            blurRadius: 24,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Stack(
+        children: [
+          Positioned(
+            right: -34,
+            top: -42,
+            child: Container(
+              width: 142,
+              height: 142,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withValues(alpha: .28),
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(18, 16, 18, 17),
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 104,
+                      height: 90,
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: .58),
+                        borderRadius: BorderRadius.circular(22),
+                        border: Border.all(color: Colors.white70),
+                      ),
+                      child: Image.asset(
+                        ChestTier.gold.assetPath,
+                        fit: BoxFit.contain,
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            gems
+                                ? s.pick('Free gems', 'Gratis edelstenen')
+                                : s.pick('Free coins', 'Gratis munten'),
+                            style: TextStyle(
+                              color: foreground,
+                              fontSize: 22,
+                              height: 1.05,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 11, vertical: 7),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: .74),
+                              borderRadius: BorderRadius.circular(99),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                GameIconSprite(
+                                  gems ? GameIconKind.gem : GameIconKind.coin,
+                                  size: 28,
+                                ),
+                                const SizedBox(width: 7),
+                                Text(
+                                  '$reward',
+                                  style: TextStyle(
+                                    color: foreground,
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.w900,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 14),
+                if (ads?.error(rewardCurrency) ==
+                    'rewarded_ad_verification_failed')
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: Text(
                       s.pick(
                           'The ad reward could not be verified. Your balance has been restored.',
                           'De advertentiebeloning kon niet worden bevestigd. Je saldo is hersteld.'),
                       textAlign: TextAlign.center,
-                      style: TextStyle(
-                          color: Theme.of(context).colorScheme.error)),
+                      style:
+                          TextStyle(color: Theme.of(context).colorScheme.error),
+                    ),
+                  ),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    onPressed: ready
+                        ? () => _watch(context, ads!, rewardCurrency)
+                        : null,
+                    style: FilledButton.styleFrom(
+                      backgroundColor: accent,
+                      foregroundColor: Colors.white,
+                      disabledBackgroundColor: accent.withValues(alpha: .26),
+                      disabledForegroundColor:
+                          foreground.withValues(alpha: .55),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                    ),
+                    icon: const Icon(Icons.ondemand_video_rounded),
+                    label: Text(buttonText),
+                  ),
                 ),
-              FilledButton.icon(
-                  onPressed: ready
-                      ? () => _watch(context, ads!, rewardCurrency)
-                      : null,
-                  icon: const Icon(Icons.ondemand_video_rounded),
-                  label: Text(buttonText)),
-            ])));
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _watch(BuildContext context, CanonicalRewardedAds ads,

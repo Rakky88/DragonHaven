@@ -477,6 +477,10 @@ void main() {
           findsOneWidget);
       expect(find.descendant(of: card, matching: find.text('Watch an ad 3/3')),
           findsOneWidget);
+      expect(
+          find.descendant(
+              of: card, matching: find.textContaining('Up to 3 per UTC day')),
+          findsNothing);
       expect(server.sent, isEmpty);
       expect(tester.takeException(), isNull);
     });

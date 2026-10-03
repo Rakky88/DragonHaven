@@ -10,6 +10,7 @@ import 'dart:convert';
 
 import '../models/adventure.dart';
 import '../models/account_preferences.dart';
+import '../models/keeper_name_policy.dart';
 import '../models/audio_settings.dart';
 import '../models/notification_settings.dart';
 import '../models/social_reward_claim.dart';
@@ -645,10 +646,13 @@ abstract final class GameCommandEngine {
   }
 
   static String _accountName(_Arguments args) {
-    final name = args.text('name', max: 24).trim();
-    if (name.isEmpty ||
-        name.length > 24 ||
-        RegExp(r'[\x00-\x1f\x7f]').hasMatch(name)) {
+    final name = KeeperNamePolicy.normalize(
+        args.text('name', max: KeeperNamePolicy.maximumLength));
+    final issue = KeeperNamePolicy.issue(name);
+    if (issue == KeeperNameIssue.inappropriate) {
+      throw const GameCommandException('keeper_name_inappropriate');
+    }
+    if (issue != null) {
       throw const GameCommandException('invalid_argument');
     }
     return name;

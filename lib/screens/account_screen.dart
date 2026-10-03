@@ -18,6 +18,7 @@ import '../widgets/game_icon_sprite.dart';
 import '../widgets/online_account_access.dart';
 import '../widgets/profile_portrait_sprite.dart';
 import '../widgets/keeper_cosmetic_art.dart';
+import '../widgets/keeper_name_validation.dart';
 
 enum _CloudConflictChoice { viewCloud, keepLocal, replaceCloud }
 
@@ -973,24 +974,33 @@ class AccountScreen extends StatelessWidget {
   Future<void> _editName(BuildContext context, String current) async {
     final controller = TextEditingController(text: current);
     final strings = AppStrings.of(context);
+    final formKey = GlobalKey<FormState>();
     final result = await showDialog<String>(
       context: context,
       builder: (dialogContext) => AlertDialog(
         scrollable: true,
         title:
             Text(strings.pick('Edit keeper name', 'Naam van hoeder wijzigen')),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          maxLength: 24,
-          textCapitalization: TextCapitalization.words,
+        content: Form(
+          key: formKey,
+          child: TextFormField(
+            controller: controller,
+            autofocus: true,
+            maxLength: 24,
+            textCapitalization: TextCapitalization.words,
+            validator: (value) => keeperNameValidationMessage(strings, value),
+          ),
         ),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(dialogContext),
               child: Text(strings.tr('cancel'))),
           FilledButton(
-              onPressed: () => Navigator.pop(dialogContext, controller.text),
+              onPressed: () {
+                if (formKey.currentState?.validate() == true) {
+                  Navigator.pop(dialogContext, controller.text.trim());
+                }
+              },
               child: Text(strings.tr('save'))),
         ],
       ),

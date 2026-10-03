@@ -8,6 +8,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../app_info.dart';
 import '../l10n/app_strings.dart';
 import '../models/music_track.dart';
+import '../models/keeper_level.dart';
 import '../services/canonical_game_actions.dart';
 import '../services/canonical_game_session.dart';
 import '../services/canonical_rewarded_ads.dart';
@@ -18,6 +19,8 @@ import '../providers/online_account_provider.dart';
 import 'privacy_screen.dart';
 import 'notification_settings_screen.dart' show NotificationPreferenceToggle;
 import '../services/notification_service.dart';
+import '../widgets/keeper_name_validation.dart';
+import '../widgets/game_icon_sprite.dart';
 
 class ServerAccountScreen extends StatelessWidget {
   const ServerAccountScreen({super.key, required this.auth});
@@ -41,58 +44,13 @@ class ServerAccountScreen extends StatelessWidget {
           trailing: const Icon(Icons.edit_outlined),
           onTap: session.canAct ? () => _name(context) : null,
         ),
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(14),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Row(children: [
-                  const Icon(Icons.auto_awesome_rounded,
-                      color: Color(0xFFD6A92E)),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      s.pick(
-                        'Keeper Level ${view.profile.keeperLevel}',
-                        'Hoederniveau ${view.profile.keeperLevel}',
-                      ),
-                      style: const TextStyle(
-                          fontSize: 17, fontWeight: FontWeight.w900),
-                    ),
-                  ),
-                  if (view.profile.pendingKeeperLevelRewardLevels.isNotEmpty)
-                    Badge.count(
-                      count: view.profile.pendingKeeperLevelRewardLevels.length,
-                      child: const Icon(Icons.inventory_2_rounded),
-                    ),
-                ]),
-                const SizedBox(height: 10),
-                LinearProgressIndicator(
-                  value: view.profile.keeperProgress,
-                  minHeight: 9,
-                  borderRadius: BorderRadius.circular(99),
-                ),
-                const SizedBox(height: 7),
-                Text(
-                  view.profile.keeperLevel >= 40
-                      ? s.pick(
-                          'Maximum level reached', 'Maximaal niveau bereikt')
-                      : '${view.profile.keeperXp - view.profile.keeperLevelFloorXp} / '
-                          '${view.profile.keeperNextLevelXp - view.profile.keeperLevelFloorXp} XP',
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-                if (view.profile.pendingKeeperLevelRewardLevels.isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 6),
-                    child: Text(s.pick(
-                      'A Level Chest is waiting in Inventory.',
-                      'Er staat een Levelkist klaar in Inventaris.',
-                    )),
-                  ),
-              ],
-            ),
-          ),
+        _KeeperLevelCard(
+          level: view.profile.keeperLevel,
+          xp: view.profile.keeperXp,
+          floorXp: view.profile.keeperLevelFloorXp,
+          nextLevelXp: view.profile.keeperNextLevelXp,
+          progress: view.profile.keeperProgress,
+          pendingRewards: view.profile.pendingKeeperLevelRewardLevels.length,
         ),
         ListTile(
           leading: const Icon(Icons.face_retouching_natural),
@@ -243,20 +201,29 @@ class ServerAccountScreen extends StatelessWidget {
     final s = AppStrings.of(context);
     final controller =
         TextEditingController(text: session.snapshot!.profile.name);
+    final formKey = GlobalKey<FormState>();
     try {
       final name = await showDialog<String>(
           context: context,
           builder: (context) => AlertDialog(
                 title: Text(s.pick('Keeper name', 'Naam van je hoeder')),
-                content: TextField(
-                    controller: controller, maxLength: 24, autofocus: true),
+                content: Form(
+                  key: formKey,
+                  child: TextFormField(
+                    controller: controller,
+                    maxLength: 24,
+                    autofocus: true,
+                    textCapitalization: TextCapitalization.words,
+                    validator: (value) => keeperNameValidationMessage(s, value),
+                  ),
+                ),
                 actions: [
                   TextButton(
                       onPressed: () => Navigator.pop(context),
                       child: Text(s.tr('cancel'))),
                   FilledButton(
                       onPressed: () {
-                        if (controller.text.trim().isNotEmpty) {
+                        if (formKey.currentState?.validate() == true) {
                           Navigator.pop(context, controller.text.trim());
                         }
                       },
@@ -278,6 +245,345 @@ class ServerAccountScreen extends StatelessWidget {
       controller.dispose();
     }
   }
+}
+
+class _KeeperLevelCard extends StatelessWidget {
+  const _KeeperLevelCard({
+    required this.level,
+    required this.xp,
+    required this.floorXp,
+    required this.nextLevelXp,
+    required this.progress,
+    required this.pendingRewards,
+  });
+
+  final int level;
+  final int xp;
+  final int floorXp;
+  final int nextLevelXp;
+  final double progress;
+  final int pendingRewards;
+
+  @override
+  Widget build(BuildContext context) {
+    final s = AppStrings.of(context);
+    final maximum = level >= maximumKeeperLevel;
+    final earnedInLevel = xp - floorXp;
+    final requiredInLevel = nextLevelXp - floorXp;
+    final nextLevel = (level + 1).clamp(1, maximumKeeperLevel);
+    return Container(
+      key: const Key('keeper-level-card'),
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF25184C), Color(0xFF6849A1)],
+        ),
+        borderRadius: BorderRadius.circular(26),
+        border: Border.all(color: const Color(0x66FFE49A)),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x303C236F),
+            blurRadius: 22,
+            offset: Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Stack(
+        children: [
+          const Positioned(
+            right: -34,
+            top: -42,
+            child: _KeeperLevelGlow(size: 132),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(18, 17, 12, 13),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 54,
+                      height: 54,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFE49A),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 2),
+                        boxShadow: const [
+                          BoxShadow(color: Color(0x66FFD66E), blurRadius: 16),
+                        ],
+                      ),
+                      child: Text(
+                        '$level',
+                        style: const TextStyle(
+                          color: Color(0xFF35215E),
+                          fontWeight: FontWeight.w900,
+                          fontSize: 22,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            s.pick(
+                                'Keeper Level $level', 'Hoederniveau $level'),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 19,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            maximum
+                                ? s.pick('Maximum level reached',
+                                    'Maximaal niveau bereikt')
+                                : s.pick('Next: Level $nextLevel',
+                                    'Volgende: niveau $nextLevel'),
+                            style: const TextStyle(
+                              color: Color(0xFFE4D8F5),
+                              fontWeight: FontWeight.w700,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (pendingRewards > 0)
+                      Badge.count(
+                        count: pendingRewards,
+                        backgroundColor: const Color(0xFFFFD66E),
+                        textColor: const Color(0xFF35215E),
+                        child: const Icon(Icons.inventory_2_rounded,
+                            color: Colors.white),
+                      ),
+                    IconButton(
+                      key: const Key('keeper-level-info'),
+                      tooltip: s.pick(
+                          'How to earn Keeper XP', 'Zo verdien je Hoeder-XP'),
+                      color: Colors.white,
+                      onPressed: () => _showXpInfo(context),
+                      icon: const Icon(Icons.info_outline_rounded),
+                    ),
+                  ],
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 18),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(99),
+                  child: LinearProgressIndicator(
+                    key: const Key('keeper-level-progress'),
+                    value: progress,
+                    minHeight: 11,
+                    color: const Color(0xFFFFD66E),
+                    backgroundColor: Colors.white24,
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(18, 7, 18, 12),
+                child: Row(
+                  children: [
+                    const GameIconSprite(GameIconKind.experience, size: 22),
+                    const SizedBox(width: 6),
+                    Text(
+                      maximum
+                          ? '${_compactXp(xp)} XP'
+                          : '${_compactXp(earnedInLevel)} / ${_compactXp(requiredInLevel)} XP',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (pendingRewards > 0)
+                Container(
+                  margin: const EdgeInsets.fromLTRB(14, 0, 14, 8),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+                  decoration: BoxDecoration(
+                    color: const Color(0x24FFE49A),
+                    borderRadius: BorderRadius.circular(13),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.redeem_rounded,
+                          size: 20, color: Color(0xFFFFE49A)),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          s.pick(
+                            'A Level Chest is waiting in Inventory.',
+                            'Er staat een Levelkist klaar in Inventaris.',
+                          ),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              Theme(
+                data: Theme.of(context).copyWith(
+                  dividerColor: Colors.transparent,
+                  splashColor: Colors.white10,
+                  hoverColor: Colors.white10,
+                ),
+                child: ExpansionTile(
+                  key: const Key('keeper-level-rewards'),
+                  iconColor: const Color(0xFFFFE49A),
+                  collapsedIconColor: const Color(0xFFFFE49A),
+                  textColor: Colors.white,
+                  collapsedTextColor: Colors.white,
+                  tilePadding: const EdgeInsets.fromLTRB(18, 0, 18, 4),
+                  childrenPadding: const EdgeInsets.fromLTRB(18, 0, 18, 17),
+                  leading: const Icon(Icons.card_giftcard_rounded,
+                      color: Color(0xFFFFE49A)),
+                  title: Text(
+                    s.pick('Level rewards', 'Levelbeloningen'),
+                    style: const TextStyle(fontWeight: FontWeight.w900),
+                  ),
+                  subtitle: Text(
+                    s.pick('Open one Level Chest after every new level.',
+                        'Open na elk nieuw niveau één Levelkist.'),
+                    style: const TextStyle(
+                      color: Color(0xFFDCCFED),
+                      fontSize: 11,
+                    ),
+                  ),
+                  children: [
+                    _KeeperRewardLine(
+                        icon: Icons.emoji_emotions_rounded,
+                        text: s.pick('A level-specific emote',
+                            'Een levelspecifieke emote')),
+                    _KeeperRewardLine(
+                        icon: Icons.egg_alt_rounded,
+                        text: s.pick('One egg · 25% Mythical chance',
+                            'Eén ei · 25% kans op Mythisch')),
+                    _KeeperRewardLine(
+                        icon: Icons.military_tech_rounded,
+                        text: s.pick('A badge for that Keeper Level',
+                            'Een badge voor dat Hoederniveau')),
+                    _KeeperRewardLine(
+                        icon: Icons.auto_awesome_rounded,
+                        text: s.pick('One guaranteed random Relic',
+                            'Eén gegarandeerd willekeurig reliek')),
+                    _KeeperRewardLine(
+                        icon: Icons.workspace_premium_rounded,
+                        text: s.pick(
+                            'Level 40: exclusive frame and achievement',
+                            'Niveau 40: exclusieve lijst en achievement')),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _showXpInfo(BuildContext context) {
+    final s = AppStrings.of(context);
+    return showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        key: const Key('keeper-level-xp-dialog'),
+        icon: const GameIconSprite(GameIconKind.experience, size: 72),
+        title: Text(s.pick('How to earn Keeper XP', 'Zo verdien je Hoeder-XP')),
+        content: Text(
+          s.pick(
+            'After a dragon reaches Level 50, every Dragon XP point it earns goes to your Keeper level instead. Adventures, Trials, Dragon School and Starlight Treats all count. XP boosts on that dragon also carry over.',
+            'Zodra een draak level 50 bereikt, gaat elk nieuw Draak-XP-punt naar je Hoederniveau. Avonturen, Trials, Dragon School en Starlight Treats tellen allemaal mee. XP-boosts op die draak tellen ook door.',
+          ),
+        ),
+        actions: [
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: Text(s.pick('Got it', 'Begrepen')),
+          ),
+        ],
+      ),
+    );
+  }
+
+  static String _compactXp(int value) {
+    if (value >= 1000000000) {
+      return '${(value / 1000000000).toStringAsFixed(value >= 10000000000 ? 0 : 1)}B';
+    }
+    if (value >= 1000000) {
+      return '${(value / 1000000).toStringAsFixed(value >= 10000000 ? 0 : 1)}M';
+    }
+    if (value >= 1000) {
+      return '${(value / 1000).toStringAsFixed(value >= 10000 ? 0 : 1)}K';
+    }
+    return '$value';
+  }
+}
+
+class _KeeperLevelGlow extends StatelessWidget {
+  const _KeeperLevelGlow({required this.size});
+  final double size;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        width: size,
+        height: size,
+        decoration: const BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: RadialGradient(
+            colors: [Color(0x55FFE49A), Color(0x00FFE49A)],
+          ),
+        ),
+      );
+}
+
+class _KeeperRewardLine extends StatelessWidget {
+  const _KeeperRewardLine({required this.icon, required this.text});
+  final IconData icon;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.only(top: 9),
+        child: Row(
+          children: [
+            Container(
+              width: 34,
+              height: 34,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: .1),
+                borderRadius: BorderRadius.circular(11),
+              ),
+              child: Icon(icon, size: 19, color: const Color(0xFFFFE49A)),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                text,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
+                  height: 1.25,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
 }
 
 class DeviceNotificationAccess extends StatefulWidget {

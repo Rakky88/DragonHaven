@@ -899,8 +899,8 @@ extension DragonHavenSystems on HouseholdProvider {
 
   Future<void> completeOnboarding(String value) async {
     if (onboardingComplete) return;
-    final normalized = value.trim();
-    if (normalized.isEmpty || normalized.length > 24) return;
+    final normalized = KeeperNamePolicy.normalize(value);
+    if (!KeeperNamePolicy.isAllowed(normalized)) return;
     accountName = normalized;
     // The starter incubation starts when the verified keeper claims it,
     // never while waiting for registration or email confirmation.
@@ -911,10 +911,8 @@ extension DragonHavenSystems on HouseholdProvider {
   }
 
   Future<void> updateAccountName(String value) async {
-    final normalized = value.trim();
-    if (normalized.isEmpty ||
-        normalized.length > 24 ||
-        normalized == accountName) {
+    final normalized = KeeperNamePolicy.normalize(value);
+    if (!KeeperNamePolicy.isAllowed(normalized) || normalized == accountName) {
       return;
     }
     accountName = normalized;

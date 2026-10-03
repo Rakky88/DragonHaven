@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../models/keeper_name_policy.dart';
 import '../models/social.dart';
 import 'social_repository.dart';
 
@@ -67,6 +68,7 @@ class SupabaseSocialRepository
     required String displayName,
     String? acknowledgedPrivacyVersion,
   }) async {
+    _requireAllowedKeeperName(displayName);
     try {
       final result = await _client.auth.signUp(
         email: email.trim().toLowerCase(),
@@ -471,6 +473,7 @@ class SupabaseSocialRepository
     String? frameKey,
     String? badgeKey,
   }) async {
+    _requireAllowedKeeperName(displayName);
     await _rpc('update_my_profile', params: {
       'p_display_name': displayName.trim(),
       'p_title': title.trim(),
@@ -886,6 +889,7 @@ class SupabaseSocialRepository
       'request_not_found',
       'invalid_response',
       'invalid_profile',
+      'keeper_name_inappropriate',
       'inventory_already_imported',
       'invalid_inventory',
       'email_not_verified',
@@ -976,6 +980,14 @@ class SupabaseSocialRepository
         orElse: () => 'online_server_error',
       ),
     );
+  }
+
+  static void _requireAllowedKeeperName(String displayName) {
+    final issue = KeeperNamePolicy.issue(displayName);
+    if (issue == KeeperNameIssue.inappropriate) {
+      throw const SocialException('keeper_name_inappropriate');
+    }
+    if (issue != null) throw const SocialException('invalid_profile');
   }
 
   @override

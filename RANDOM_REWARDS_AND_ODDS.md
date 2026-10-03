@@ -306,7 +306,7 @@ Ruleset: v0.05.29 published and verified; production schema 65, economy activati
 
 Source baseline: v0.05.16, with subsequent changes and dormant server rules below
 
-<!-- reference-source-fingerprint: a69b7d6e6eae6d00 -->
+<!-- reference-source-fingerprint: d3f45d8e338e4262 -->
 
 Calendar hardening after v0.05.29: canonical commands normalize the database
 instant to UTC. Legacy offline play retains its local day. Long-adventure

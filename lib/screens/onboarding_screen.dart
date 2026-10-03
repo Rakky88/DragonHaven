@@ -6,6 +6,7 @@ import '../providers/household_provider.dart';
 import '../services/audio_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/rooftop_egg_nest.dart';
+import '../widgets/keeper_name_validation.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key, this.completeOnboarding});
@@ -97,10 +98,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       strings.pick('For example: Rick', 'Bijvoorbeeld: Rick'),
                   prefixIcon: const Icon(Icons.person_rounded),
                 ),
-                validator: (value) => value == null || value.trim().isEmpty
-                    ? strings.pick(
-                        'Choose a name first.', 'Kies eerst een naam.')
-                    : null,
+                validator: (value) =>
+                    keeperNameValidationMessage(strings, value),
                 onFieldSubmitted: (_) => _continue(),
               ),
             ),

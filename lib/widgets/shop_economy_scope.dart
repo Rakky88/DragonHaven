@@ -51,6 +51,9 @@ String gameConnectionMessage(AppStrings strings, String? code) =>
       'privacy_confirmation_required' => strings.pick(
           'Reconnect to review the updated privacy notice.',
           'Verbind opnieuw om de bijgewerkte privacyverklaring te bekijken.'),
+      'keeper_name_inappropriate' => strings.pick(
+          'Choose a different name. Offensive words are not allowed.',
+          'Kies een andere naam. Scheldwoorden zijn niet toegestaan.'),
       'game_engine_disabled' => strings.pick(
           'Game actions are temporarily paused. Your inventory is safe.',
           'Spelacties zijn tijdelijk gepauzeerd. Je inventaris is veilig.'),

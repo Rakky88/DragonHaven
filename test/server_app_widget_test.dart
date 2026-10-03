@@ -180,6 +180,22 @@ void main() {
         expect(tester.takeException(), isNull, reason: 'Server page $page');
         if (page == 'Account Info') {
           expect(find.text('Language'), findsOneWidget);
+          expect(find.byKey(const Key('keeper-level-card')), findsOneWidget);
+          expect(
+              find.byKey(const Key('keeper-level-progress')), findsOneWidget);
+          if (pass == 1) {
+            await tester.tap(find.byKey(const Key('keeper-level-rewards')));
+            await tester.pumpAndSettle();
+            expect(find.text('A level-specific emote'), findsOneWidget);
+            await tester.tap(find.byKey(const Key('keeper-level-info')));
+            await tester.pumpAndSettle();
+            expect(find.byKey(const Key('keeper-level-xp-dialog')),
+                findsOneWidget);
+            expect(find.textContaining('After a dragon reaches Level 50'),
+                findsOneWidget);
+            await tester.tap(find.text('Got it'));
+            await tester.pumpAndSettle();
+          }
         }
         Navigator.of(tester.element(find.byType(Scaffold).last)).pop();
         await tester.pumpAndSettle();

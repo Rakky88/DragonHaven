@@ -687,6 +687,9 @@ String socialMessage(
     'online_login_required' || 'online_session_expired' => strings.pick(
         'Your online session expired. Sign in again.',
         'Je online sessie is verlopen. Log opnieuw in.'),
+    'keeper_name_inappropriate' => strings.pick(
+        'Choose a different name. Offensive words are not allowed.',
+        'Kies een andere naam. Scheldwoorden zijn niet toegestaan.'),
     _ => strings.pick(
         'The online service could not complete this action. Please try again.',
         'De online dienst kon deze actie niet uitvoeren. Probeer het opnieuw.'),

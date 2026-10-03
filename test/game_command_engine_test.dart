@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:crypto/crypto.dart';
 import 'package:dragon_haven/domain/game_command_engine.dart';
@@ -6,6 +7,7 @@ import 'package:dragon_haven/domain/server_entropy.dart';
 import 'package:dragon_haven/models/chest.dart';
 import 'package:dragon_haven/models/dragon_egg.dart';
 import 'package:dragon_haven/models/egg_altar.dart';
+import 'package:dragon_haven/models/keeper_name_policy.dart';
 import 'package:dragon_haven/models/pet.dart';
 import 'package:dragon_haven/providers/household_provider.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -77,6 +79,37 @@ void main() {
     ]);
     expect(ServerEntropy(_seed, stream: 'identities').uuid(),
         '97fa765a-9bf2-4d59-ba8e-3473373da625');
+  });
+
+  test('keeper names reject embedded and disguised offensive words', () async {
+    expect(KeeperNamePolicy.issue('Nova Star'), isNull);
+    expect(KeeperNamePolicy.issue('Night f.u.c.k Dragon'),
+        KeeperNameIssue.inappropriate);
+    expect(KeeperNamePolicy.issue('sh1tkeeper'), KeeperNameIssue.inappropriate);
+    expect(KeeperNamePolicy.issue('K.U.T'), KeeperNameIssue.inappropriate);
+    expect(KeeperNamePolicy.issue('DragonKutKeeper'),
+        KeeperNameIssue.inappropriate);
+
+    final state = _fixture();
+    await expectLater(
+      _execute(state, 'set_account_name', {'name': 'FriendlySh1tKeeper'}),
+      throwsA(
+        isA<GameCommandException>().having(
+          (error) => error.code,
+          'code',
+          'keeper_name_inappropriate',
+        ),
+      ),
+    );
+
+    final migration = File(
+      'supabase/migrations/202610030107_keeper_name_policy.sql',
+    ).readAsStringSync();
+    expect(migration, contains('guard_keeper_display_name_insert'));
+    expect(migration, contains('guard_keeper_display_name_update'));
+    expect(migration, contains('keeper_name_inappropriate'));
+    expect(migration, contains("'godverdom'"));
+    expect(migration, contains("'motherfucker'"));
   });
 
   test(
